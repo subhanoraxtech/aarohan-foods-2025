@@ -40,30 +40,6 @@ const PendingCard = ({
   const premisesName = item.premisesName || "Unknown Premises";
   const status = formatStatus(item.status || "N/A");
 
-  const getContactInfo = () => {
-    if (userRole === Role.DELIVERY_AGENT) {
-      const supplier = item.assignedSupplier as Supplier;
-      if (supplier && typeof supplier === "object") {
-        return {
-          name: `${supplier.firstName} ${supplier.lastName}`,
-          mobile: supplier.mobile,
-          address: supplier.address
-            ? `${supplier.address.addressLine1}${
-                supplier.address.addressLine2
-                  ? ", " + supplier.address.addressLine2
-                  : ""
-              }${supplier.address.area ? ", " + supplier.address.area : ""}${
-                supplier.address.city ? ", " + supplier.address.city : ""
-              }`
-            : "N/A",
-          type: "Supplier",
-        };
-      }
-    }
-    return null;
-  };
-
-  const contactInfo = getContactInfo();
 
   
 
@@ -249,64 +225,6 @@ const PendingCard = ({
           </XStack>
 
 
-          {/* Contact Info */}
-          {contactInfo && (
-            <View
-              backgroundColor="$grey6"
-              borderRadius="$6"
-              padding="$3"
-              marginTop="$2"
-            >
-              <YStack gap="$2.5">
-                <XStack alignItems="center" gap="$2">
-                  <View
-                    backgroundColor="$orange"
-                    borderRadius="$5"
-                    padding="$2"
-                    width={32}
-                    height={32}
-                    alignItems="center"
-                    justifyContent="center"
-                  >
-                    <Icon name="user" type="feather" size={14} color="white" />
-                  </View>
-                  <Text fontSize="$4" fontWeight="700" color="$black1" fontFamily="$heading">
-                    {contactInfo.type} Details
-                  </Text>
-                </XStack>
-
-                <XStack gap="$3">
-                  <YStack flex={1} gap="$1">
-                    <Text fontSize="$2" color="$gray10" fontFamily="$body" fontWeight="500">
-                      Name
-                    </Text>
-                    <Text fontSize="$3" fontWeight="600" color="$black1" fontFamily="$body">
-                      {contactInfo.name}
-                    </Text>
-                  </YStack>
-                  <YStack flex={1} gap="$1">
-                    <Text fontSize="$2" color="$gray10" fontFamily="$body" fontWeight="500">
-                      Mobile
-                    </Text>
-                    <Text fontSize="$3" fontWeight="600" color="$black1" fontFamily="$body">
-                      {contactInfo.mobile}
-                    </Text>
-                  </YStack>
-                </XStack>
-
-                {contactInfo.address && (
-                  <YStack gap="$1">
-                    <Text fontSize="$2" color="$gray10" fontFamily="$body" fontWeight="500">
-                      Pickup Address
-                    </Text>
-                    <Text fontSize="$3" fontWeight="600" color="$black1" fontFamily="$body" lineHeight="$3">
-                      {contactInfo.address}
-                    </Text>
-                  </YStack>
-                )}
-              </YStack>
-            </View>
-          )}
         </YStack>
       </Card>
     </Pressable>
@@ -328,7 +246,7 @@ const PendingDeliveriesScreen = () => {
       page: 1 as any,
       limit: 50 as any,
       status: BUNDLE_STATUS.ASSIGNED,
-      bundleDate: "2025-10-11",
+      bundleDate: today,
     },
   });
 

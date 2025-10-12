@@ -266,7 +266,7 @@ const DeliveryCard = ({
               DELIVERED
             </Text>
           </XStack>
-        ) : item.order_status === 'ready' ? (
+        ) : item.order_status === 'placed' ? (
           <Button
             backgroundColor="$orange"
             color="white"

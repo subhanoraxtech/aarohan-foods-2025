@@ -61,36 +61,7 @@ const BundlesCard = ({
       .join(' ');
   };
   const status = formatStatus(item.status || "N/A");
-  const supplier_status = formatStatus(item.supplierAssignedStatus || "N/A");
-  const agent_status = formatStatus(item.deliveryAgentAssignedStatus || "N/A");
 
-  const getContactInfo = () => {
-    if (userRole === Role.SUPPLIER) {
-      const agent = item.assignedDeliveryAgent as DeliveryAgent;
-      if (agent && typeof agent === 'object') {
-        return {
-          name: `${agent.firstName} ${agent.lastName}`,
-          mobile: agent.mobile,
-          type: 'Delivery Agent'
-        };
-      }
-    } else if (userRole === Role.DELIVERY_AGENT) {
-      const supplier = item.assignedSupplier as Supplier;
-      if (supplier && typeof supplier === 'object') {
-        return {
-          name: `${supplier.firstName} ${supplier.lastName}`,
-          mobile: supplier.mobile,
-          address: supplier.address ? 
-            `${supplier.address.addressLine1} ${supplier.address.area}` 
-            : 'N/A',
-          type: 'Supplier'
-        };
-      }
-    }
-    return null;
-  };
-
-  const contactInfo = getContactInfo();
 
   return (
     <Card
@@ -267,89 +238,12 @@ const BundlesCard = ({
             paddingVertical="$2"
           >
             <Text fontSize="$2" color="$gray10" fontFamily="$body" fontWeight="600">
-              {status}
+              Bundle Status: {status}
             </Text>
           </View>
-          <View
-            backgroundColor="$grey6"
-            borderRadius="$6"
-            paddingHorizontal="$3"
-            paddingVertical="$2"
-          >
-            <Text fontSize="$2" color="$gray10" fontFamily="$body" fontWeight="600">
-              Supplier: {supplier_status}
-            </Text>
-          </View>
-          <View
-            backgroundColor="$grey6"
-            borderRadius="$6"
-            paddingHorizontal="$3"
-            paddingVertical="$2"
-          >
-            <Text fontSize="$2" color="$gray10" fontFamily="$body" fontWeight="600">
-              Agent: {agent_status}
-            </Text>
-          </View>
+      
         </XStack>
 
-        {/* Contact Info */}
-        {contactInfo && (
-          <View
-            backgroundColor="$grey6"
-            borderRadius="$6"
-            padding="$3"
-            marginTop="$2"
-          >
-            <YStack gap="$2.5">
-              <XStack alignItems="center" gap="$2">
-                <View
-                  backgroundColor="$orange"
-                  borderRadius="$5"
-                  padding="$2"
-                  width={32}
-                  height={32}
-                  alignItems="center"
-                  justifyContent="center"
-                >
-                  <Icon name="user" type="feather" size={14} color="white" />
-                </View>
-                <Text fontSize="$4" fontWeight="700" color="$black1" fontFamily="$heading">
-                  {contactInfo.type}
-                </Text>
-              </XStack>
-
-              <XStack gap="$3">
-                <YStack flex={1} gap="$1">
-                  <Text fontSize="$2" color="$gray10" fontFamily="$body" fontWeight="500">
-                    Name
-                  </Text>
-                  <Text fontSize="$3" fontWeight="600" color="$black1" fontFamily="$body">
-                    {contactInfo.name}
-                  </Text>
-                </YStack>
-                <YStack flex={1} gap="$1">
-                  <Text fontSize="$2" color="$gray10" fontFamily="$body" fontWeight="500">
-                    Mobile
-                  </Text>
-                  <Text fontSize="$3" fontWeight="600" color="$black1" fontFamily="$body">
-                    {contactInfo.mobile}
-                  </Text>
-                </YStack>
-              </XStack>
-
-              {contactInfo.address && (
-                <YStack gap="$1">
-                  <Text fontSize="$2" color="$gray10" fontFamily="$body" fontWeight="500">
-                    Pickup Address
-                  </Text>
-                  <Text fontSize="$3" fontWeight="600" color="$black1" fontFamily="$body" lineHeight="$3">
-                    {contactInfo.address}
-                  </Text>
-                </YStack>
-              )}
-            </YStack>
-          </View>
-        )}
       </YStack>
     </Card>
   );

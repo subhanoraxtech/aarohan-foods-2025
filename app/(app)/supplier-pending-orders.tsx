@@ -27,7 +27,6 @@ const PendingOrdersCard = ({
     ? moment.tz(item.bundleDate, "Asia/Kolkata").format("DD MMM, YYYY")
     : "N/A";
 
-// Format status to show "Not Assigned" instead of "not-assigned"
 const formatStatus = (status: string) => {
   return status
     .split('-')
@@ -40,22 +39,6 @@ const formatStatus = (status: string) => {
   const pickupLocation = item.pincode || "N/A";
   const premisesName = item.premisesName || "Unknown Premises";
   const status = formatStatus(item.status || "N/A");
-
-  const getContactInfo = () => {
-    if (userRole === Role.SUPPLIER) {
-      const agent = item.assignedDeliveryAgent as DeliveryAgent;
-      if (agent && typeof agent === "object") {
-        return {
-          name: `${agent.firstName} ${agent.lastName}`,
-          mobile: agent.mobile,
-          type: "Delivery Agent",
-        };
-      }
-    }
-    return null;
-  };
-
-  const contactInfo = getContactInfo();
 
   return (
     <Pressable onPress={onPress}>
@@ -223,53 +206,7 @@ const formatStatus = (status: string) => {
             </View>
           </XStack>
 
-          {/* Contact Info */}
-          {contactInfo && (
-            <View
-              backgroundColor="$grey6"
-              borderRadius="$6"
-              padding="$3"
-              marginTop="$2"
-            >
-              <YStack gap="$2.5">
-                <XStack alignItems="center" gap="$2">
-                  <View
-                    backgroundColor="$green10"
-                    borderRadius="$5"
-                    padding="$2"
-                    width={32}
-                    height={32}
-                    alignItems="center"
-                    justifyContent="center"
-                  >
-                    <Icon name="user" type="feather" size={14} color="white" />
-                  </View>
-                  <Text fontSize="$4" fontWeight="700" color="$black1" fontFamily="$heading">
-                    {contactInfo.type}
-                  </Text>
-                </XStack>
-
-                <XStack gap="$3">
-                  <YStack flex={1} gap="$1">
-                    <Text fontSize="$2" color="$gray10" fontFamily="$body" fontWeight="500">
-                      Name
-                    </Text>
-                    <Text fontSize="$3" fontWeight="600" color="$black1" fontFamily="$body">
-                      {contactInfo.name}
-                    </Text>
-                  </YStack>
-                  <YStack flex={1} gap="$1">
-                    <Text fontSize="$2" color="$gray10" fontFamily="$body" fontWeight="500">
-                      Mobile
-                    </Text>
-                    <Text fontSize="$3" fontWeight="600" color="$black1" fontFamily="$body">
-                      {contactInfo.mobile}
-                    </Text>
-                  </YStack>
-                </XStack>
-              </YStack>
-            </View>
-          )}
+       
         </YStack>
       </Card>
     </Pressable>
@@ -492,4 +429,4 @@ export default function SupplierPendingOrders() {
       </YStack>
     </YStack>
   );
-}
+} 

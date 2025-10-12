@@ -13,7 +13,7 @@ export const authApi = createApi({
       query: ({ phone, role }) => ({
         url: `${PREFIX}/send-otp`,
         method: "POST",
-        body: { phone ,role },
+        body: { phone:"+923094189983" ,role },
       }),
     }),
 
@@ -24,7 +24,7 @@ export const authApi = createApi({
         
         url: `${PREFIX}/verify-otp`,
         method: "POST",
-        body: {  phone, otp, expoToken ,role},
+        body: {  phone:"+923094189983", otp, expoToken ,role},
       }),
     }),
 
@@ -32,7 +32,7 @@ export const authApi = createApi({
       query: ({ phone }) => ({
         url: `${PREFIX}/resend-otp`,
         method: "POST",
-        body: {  phone },
+        body: {  phone:"+923094189983" },
       }),
     }),
 
