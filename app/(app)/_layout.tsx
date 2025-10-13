@@ -46,6 +46,14 @@ export default function AppLayout() {
     );
   }
 
+  if (auth?.user?.role === Role.SECURITY) {
+    return (
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="deliveryAgent" />
+      </Stack>
+    );
+  }
+
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="index" />

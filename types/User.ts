@@ -70,7 +70,7 @@ export interface User {
   phone?: string
   password?: string
   isActive?: boolean
-  role: 'admin' | 'delivery_agent' | 'supplier' | 'customer'
+  role: 'admin' | 'delivery_agent' | 'supplier' | 'customer' | 'security'
   supplierId?: Supplier
   deliveryAgentId?: DeliveryAgent
   banReason?: string

@@ -10,6 +10,7 @@ import Header from "@/components/common/Header";
 import { useLogoutMutation } from "@/services/auth.service";
 import { getExpoPushTokenSilently } from "@/utils/pushNotification";
 import { useLoading } from "@/contexts/LoadingContext";
+import SecurityPersonScreen from "./securityPerson";
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -22,6 +23,11 @@ export default function HomeScreen() {
   if (auth?.user?.role === Role.DELIVERY_AGENT) {
     return <AgentHomeScreen />;
   }
+
+  if (auth?.user?.role === Role.SECURITY) {
+    return <SecurityPersonScreen />;
+  }
+
 
   return null; 
 }
@@ -131,21 +137,7 @@ function SupplierHomeScreen() {
           </YStack>
         </XStack>
 
-        <YStack alignItems="center" gap="$2">           
-            <Button             
-              backgroundColor="black"             
-              width={120}             
-              height={120}             
-              borderRadius="$4"             
-              onPress={() => router.push("/(app)/deliveryAgent")}           
-            >             
-              <XStack alignItems="center" justifyContent="center">               
-                <Icon type="material-community" name="currency-usd" size={50} color="white" />
-                <Icon type="material" name="arrow-upward" size={28} color="white" style={{marginLeft: -8}} />             
-              </XStack>           
-            </Button>           
-            <Text>Delivery Agent</Text>         
-          </YStack>  
+       
       </YStack>
 
       {/* Logout Button - Bottom Rightx */}
