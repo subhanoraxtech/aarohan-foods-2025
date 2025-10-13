@@ -10,21 +10,21 @@ export const authApi = createApi({
   baseQuery: baseQueryWithReauth,
   endpoints: (builder) => ({
     sendOtp: builder.mutation<any, { phone: string; role?: string }>({
-      query: ({ phone, role }) => ({
+      query: ({ phone }) => ({
         url: `${PREFIX}/send-otp`,
         method: "POST",
-        body: { phone:"+923094189983" ,role },
+        body: { phone:"+923094189983"  },
       }),
     }),
 
     verifyOtp: builder.mutation<
       any,
-      { phone: string; otp: string; expoToken: string , role: string }>({
-      query: ({ phone, otp, expoToken ,role}) => ({
+      { phone: string; otp: string; expoToken: string  }>({
+      query: ({ phone, otp, expoToken }) => ({
         
         url: `${PREFIX}/verify-otp`,
         method: "POST",
-        body: {  phone:"+923094189983", otp, expoToken ,role},
+        body: {  phone:"+923094189983", otp, expoToken },
       }),
     }),
 

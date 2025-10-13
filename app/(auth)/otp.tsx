@@ -23,7 +23,7 @@ import {
 } from "@/services/auth.service";
 
 export default function OtpScreen() {
-  const { phone, otpExpires, role } = useLocalSearchParams();
+  const { phone, otpExpires } = useLocalSearchParams();
   const [otp, setOtp] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [timeLeft, setTimeLeft] = useState(0);
@@ -74,11 +74,9 @@ export default function OtpScreen() {
     try {
       // Extract phone - handle array case from useLocalSearchParams
       const phoneNumber = Array.isArray(phone) ? phone[0] : phone;
-      const userRole = Array.isArray(role) ? role[0] : role;
       
       console.log("=== OTP VERIFICATION START ===");
       console.log("Phone:", phoneNumber);
-      console.log("Role:", userRole);
       
       if (!phoneNumber) {
         console.error("Phone number is missing!");
@@ -103,7 +101,7 @@ export default function OtpScreen() {
         phone: phoneNumber,
         otp: otp,
         expoToken: expoToken,
-        role: userRole || "",
+   
       };
 
       console.log("=== CALLING API ===");
@@ -111,7 +109,7 @@ export default function OtpScreen() {
         phone: payload.phone,
         otp: payload.otp,
         expoToken: "present",
-        role: payload.role
+     
       });
 
       const response = await verifyOtpMutation(payload).unwrap();

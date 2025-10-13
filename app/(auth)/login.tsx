@@ -32,8 +32,6 @@ import RoleSelectionModal from "@/components/common/RoleSelectionModal";
 export default function LoginScreen() {
   const [sendOtp, { isLoading }] = useSendOtpMutation();
   const [loading, setLoading] = useState(false);
-  const [showRoleModal, setShowRoleModal] = useState(false);
-  const [formDataForSubmit, setFormDataForSubmit] = useState<registerFormData | null>(null);
   
   const router = useRouter();
   const selectedCountry: ICountry = {
@@ -58,33 +56,15 @@ export default function LoginScreen() {
   });
 
   // This function is called when the form is submitted
-  const onFormSubmit = (data: registerFormData) => {
-    // Store form data and show role selection modal
-    setFormDataForSubmit(data);
-    setShowRoleModal(true);
-  };
-
-  // This function is called when a role is selected in the modal
-  const handleRoleSelection = async (selectedRole?: 'supplier' | 'delivery_agent') => {
-    setShowRoleModal(false);
-    
-    // If no role selected (modal closed), don't proceed
-    if (!selectedRole || !formDataForSubmit) {
-      setFormDataForSubmit(null);
-      return;
-    }
-
-    // Proceed with OTP sending
+  const onFormSubmit = async (data: registerFormData) => {
     setLoading(true);
     try {
-      const fullPhoneNumber = `+91${formDataForSubmit.phoneNumber}`;
+      const fullPhoneNumber = `+91${data.phoneNumber}`;
       const response = await sendOtp({ 
         phone: fullPhoneNumber,
-        role: selectedRole 
       });
 
       console.log("fullPhoneNumber", fullPhoneNumber);
-      console.log("Selected role:", selectedRole);
       console.log("response login", response);
       
       if (response?.data?.success) {
@@ -98,11 +78,9 @@ export default function LoginScreen() {
           params: {
             phone: fullPhoneNumber,
             otpExpires: response.data?.otpExpires,
-            role: selectedRole,
           },
         });
         reset();
-        setFormDataForSubmit(null);
       }
       else if (response?.error) {
         const errorMessage = response.error?.data?.message || "An error occurred";
@@ -131,7 +109,6 @@ export default function LoginScreen() {
       });
     } finally {
       setLoading(false);
-      setFormDataForSubmit(null);
     }
   };
 
@@ -266,17 +243,12 @@ export default function LoginScreen() {
                 loading={loading || isLoading}
                 disabled={loading || isLoading}
               >
-                Submit Code
+                Get Code
               </Button>
             </YStack>
           </ScrollView>
         </KeyboardAvoidingView>
       </YStack>
-
-      <RoleSelectionModal 
-        isOpen={showRoleModal}
-        onClose={handleRoleSelection}
-      />
     </>
   );
 }
