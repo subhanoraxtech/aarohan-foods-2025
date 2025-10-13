@@ -309,7 +309,7 @@ const BundleScreen = () => {
     payload: {
       page: 1 as any,
       limit: 50 as any,
-      bundleDate: bundleDate as string,
+      // bundleDate: bundleDate as string,
       status: BUNDLE_STATUS.PENDING
     },
   });

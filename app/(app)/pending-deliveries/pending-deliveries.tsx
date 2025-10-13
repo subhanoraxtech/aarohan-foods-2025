@@ -246,7 +246,7 @@ const PendingDeliveriesScreen = () => {
       page: 1 as any,
       limit: 50 as any,
       status: BUNDLE_STATUS.ASSIGNED,
-      bundleDate: today,
+      // bundleDate: today,
     },
   });
 
