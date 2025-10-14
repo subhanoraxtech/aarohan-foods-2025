@@ -23,6 +23,7 @@ import { requestApi } from "@/services/request/request.service";
 import { notificationApi } from "@/services/notifications/notification.service";
 import { ordersApi } from "@/services/order/order.service";
 import { statsApi } from "@/services/stats/stats.service";
+import { getrequestApi } from "@/services/requestedBundle/requestedbundle.service";
 
 const persistConfig = {
   key: "root",
@@ -41,6 +42,7 @@ const combinedReducer = combineReducers({
   [requestApi.reducerPath]: requestApi.reducer,
   [ordersApi.reducerPath]: ordersApi.reducer,
   [statsApi.reducerPath]: statsApi.reducer,
+  [getrequestApi.reducerPath]: getrequestApi.reducer,
 });
 
 const persistedReducer = persistReducer(persistConfig, combinedReducer);
@@ -60,7 +62,8 @@ export const store = configureStore({
       bundlesApi.middleware,
       requestApi.middleware,
       ordersApi.middleware,
-      statsApi.middleware
+      statsApi.middleware,
+      getrequestApi.middleware
     ),
 });
 

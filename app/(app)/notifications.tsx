@@ -1,10 +1,12 @@
+
+
 // import Button from "@/components/common/Button";
 // import Header from "@/components/common/Header";
 // import moment from "moment";
 // import "moment-timezone";
 // import { useRouter, useFocusEffect } from "expo-router";
 // import { useCallback, useEffect, useState } from "react";
-// import { SectionList, RefreshControl, Linking } from "react-native";
+// import { SectionList, RefreshControl, Linking, Image } from "react-native";
 // import { Text, XStack, YStack } from "tamagui";
 // import { Skeleton } from "moti/skeleton";
 // import * as Notifications from "expo-notifications";
@@ -258,8 +260,16 @@
 //           jc="center"
 //           bg="$grey6"
 //           borderRadius={8}
+//           overflow="hidden"
 //         >
-//           <Text fontSize="$8">{style.emoji}</Text>
+//           {item.menuId?.image ? (
+//             <Image
+//               source={{ uri: item.menuId.image }}
+//               style={{ width: "100%", height: "100%", resizeMode: "cover" }}
+//             />
+//           ) : (
+//             <Text fontSize="$8">{style.emoji}</Text>
+//           )}
 //         </YStack>
 
 //         <YStack mt="$3" gap="$2">
@@ -425,32 +435,40 @@
 
 // export default NotificationScreen;
 
-import Button from "@/components/common/Button";
-import Header from "@/components/common/Header";
-import moment from "moment";
-import "moment-timezone";
-import { useRouter, useFocusEffect } from "expo-router";
+
 import { useCallback, useEffect, useState } from "react";
+import { useRouter, useFocusEffect } from "expo-router";
 import { SectionList, RefreshControl, Linking, Image } from "react-native";
 import { Text, XStack, YStack } from "tamagui";
 import { Skeleton } from "moti/skeleton";
 import * as Notifications from "expo-notifications";
+import moment from "moment";
+import "moment-timezone";
+
+import Button from "@/components/common/Button";
+import Header from "@/components/common/Header";
 import { useGetAllNotificationsQuery } from "@/services/notifications/notification.service";
+import { useGetAllRequestsQuery } from "@/services/requestedBundle/requestedbundle.service";
 import { NOTIFICATION_TYPE } from "@/types/enums";
 import { NotificationType } from "@/types/notification";
+import { Role } from "@/types/enums";
+import { useAuth } from "@/hooks/useAuth";
 
 const NotificationScreen = () => {
   const router = useRouter();
+  const auth = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [notificationPermission, setNotificationPermission] = useState<string | null>(null);
 
   const {
-    data,
-    isLoading: isFetching,
-    error: fetchError,
-    refetch,
+    data: notificationData,
+    isLoading: isFetchingNotifications,
+    error: notificationError,
+    refetch: refetchNotifications,
   } = useGetAllNotificationsQuery();
+
+ 
 
   // Check notification permissions
   const checkNotificationPermissions = async () => {
@@ -462,18 +480,16 @@ const NotificationScreen = () => {
   useFocusEffect(
     useCallback(() => {
       checkNotificationPermissions();
-      refetch();
-    }, [refetch])
+      refetchNotifications();
+    }, [refetchNotifications])
   );
 
   const handleEnableNotifications = async () => {
     const { status: currentStatus } = await Notifications.getPermissionsAsync();
     
     if (currentStatus === "denied") {
-      // If denied, open app settings
       await Linking.openSettings();
     } else {
-      // Request permissions
       const { status } = await Notifications.requestPermissionsAsync({
         ios: {
           allowAlert: true,
@@ -488,21 +504,21 @@ const NotificationScreen = () => {
   const onRefresh = useCallback(async () => {
     setIsRefreshing(true);
     try {
-      await refetch();
+      await refetchNotifications();
       await checkNotificationPermissions();
     } finally {
       setIsRefreshing(false);
     }
-  }, [refetch]);
+  }, [refetchNotifications]);
 
   useEffect(() => {
-    if (fetchError) {
+    if (notificationError) {
       setError("Failed to fetch notifications. Please try again.");
     }
-  }, [fetchError]);
+  }, [notificationError]);
 
-  const notifications: NotificationType[] = Array.isArray(data?.notifications)
-    ? data.notifications
+  const notifications: NotificationType[] = Array.isArray(notificationData?.notifications)
+    ? notificationData.notifications
     : [];
 
   const currentDate = moment.tz("Asia/Kolkata");
@@ -531,9 +547,6 @@ const NotificationScreen = () => {
       data,
     }));
 
-    console.log("Notification Sections:", JSON.stringify(data, null, 2));
-
-  // Get notification styling based on type
   const getNotificationStyle = (type: string) => {
     switch (type) {
       case NOTIFICATION_TYPE.MENU_PLACED:
@@ -579,7 +592,7 @@ const NotificationScreen = () => {
           chipLabel: "Approved",
           borderColor: "$green10",
           buttonBg: "$green10",
-          buttonText: "View Details",
+          buttonText: "View Bundle",
         };
       case NOTIFICATION_TYPE.DELIVERY_REQUEST_REJECTED:
         return {
@@ -640,29 +653,60 @@ const NotificationScreen = () => {
     const style = getNotificationStyle(item.type);
 
     const handlePress = () => {
-      if (
-        item.type === NOTIFICATION_TYPE.BUNDLE_AVAILABLE ||
-        item.type === NOTIFICATION_TYPE.SUPPLIER_REQUEST_APPROVED ||  
-        item.type === NOTIFICATION_TYPE.DELIVERY_REQUEST_APPROVED || 
-        item.type === NOTIFICATION_TYPE.DELIVERY_REQUEST_REJECTED 
-      ) {
-        const navDate = item.bundleDate
-          ? moment(item.bundleDate).format("YYYY-MM-DD")
-          : moment().format("YYYY-MM-DD");
-        try {
-          router.push(`/(app)/bundles/${navDate}`);
-        } catch (error) {
-          console.error("Navigation error:", error);
-        }
-        return;
-      }
-
       const navDate = item.bundleDate
         ? moment(item.bundleDate).format("YYYY-MM-DD")
         : moment().format("YYYY-MM-DD");
 
       try {
-        router.push(`/(app)/bundles/${navDate}`);
+        if (item.type === NOTIFICATION_TYPE.SUPPLIER_REQUEST_APPROVED && item.supplierRequestId) {
+          router.push({
+            pathname: `/(app)/bundles/${navDate}`,
+            params: {
+              type: 'supplierRequest',
+              id: item.supplierRequestId,
+              status: 'approved'
+            }
+          });
+        } else if (item.type === NOTIFICATION_TYPE.SUPPLIER_REQUEST_REJECTED && item.supplierRequestId) {
+          router.push({
+            pathname: `/(app)/bundles/${navDate}`,
+            params: {
+              type: 'supplierRequest',
+              id: item.supplierRequestId,
+              status: 'rejected'
+            }
+          });
+        } else if (item.type === NOTIFICATION_TYPE.DELIVERY_REQUEST_APPROVED && item.deliveryRequestId) {
+          router.push({
+            pathname: `/(app)/bundles/${navDate}`,
+            params: {
+              type: 'deliveryRequest',
+              id: item.deliveryRequestId,
+              status: 'approved'
+            }
+          });
+        } else if (item.type === NOTIFICATION_TYPE.DELIVERY_REQUEST_REJECTED && item.deliveryRequestId) {
+          router.push({
+            pathname: `/(app)/bundles/${navDate}`,
+            params: {
+              type: 'deliveryRequest',
+              id: item.deliveryRequestId,
+              status: 'rejected'
+            }
+          });
+        } else if (item.type === NOTIFICATION_TYPE.BUNDLE_AVAILABLE) {
+          // router.push(`/(app)/bundles/${navDate}`);
+
+          router.push({
+            pathname: `/(app)/bundles/${navDate}`,
+            params: {
+              type: 'bundle',
+            
+            }
+          });
+        } else {
+          router.push(`/(app)/bundles/${navDate}`);
+        }
       } catch (error) {
         console.error("Navigation error:", error);
       }
@@ -758,14 +802,13 @@ const NotificationScreen = () => {
 
   const handleRetry = () => {
     setError(null);
-    refetch();
+    refetchNotifications();
   };
 
   return (
     <YStack flex={1} bg="$background" p="$3">
       <Header title="Notifications" />
 
-      {/* Notification Permission Banner */}
       {notificationPermission !== "granted" && notificationPermission !== null && (
         <YStack
           bg="$orange"
@@ -794,7 +837,7 @@ const NotificationScreen = () => {
         </YStack>
       )}
 
-      {isFetching ? (
+      {isFetchingNotifications ? (
         <YStack flex={1} gap="$4">
           <SkeletonCard />
           <SkeletonCard />

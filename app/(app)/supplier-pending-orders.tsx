@@ -228,7 +228,6 @@ export default function SupplierPendingOrders() {
       page: 1 as any,
       limit: 50 as any,
       status: BUNDLE_STATUS.ASSIGNED,
-      // bundleDate: todayDate,
     },
   });
 

@@ -14,6 +14,11 @@ export enum BUNDLE_STATUS {
   CANCELLED = 'cancelled'
 }
 
+export enum STATUS {
+  PENDING = 'pending',
+  APPROVED = 'approved',
+  REJECTED = 'rejected'
+}
 
 
  export enum PAYMENT_STATUS {

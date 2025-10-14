@@ -5,6 +5,8 @@ export interface ListAllBundlesRequest {
       bundleDate?: string
       limit?: string
       page?: string
+      supplierAssignedStatus?: string; // Added for supplier-assigned bundles
+    deliveryAgentAssignedStatus?: string; // Added for delivery agent-assigned bundles
     }
   }
   
