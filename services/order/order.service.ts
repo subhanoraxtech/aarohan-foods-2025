@@ -173,6 +173,24 @@ export const ordersApi = createApi({
       transformResponse: (response: any) => response.data,
       providesTags: ['Orders'],
     }),
+
+    getOrdersForSecurity: builder.query({
+      query: ({ payload }) => {
+        const queryParams = new URLSearchParams()
+        Object.entries(payload || {}).forEach(([key, value]) => {
+          if (typeof value !== "undefined" && value !== "") {
+            queryParams.append(key, String(value))
+          }
+        })
+        return {
+          url: `${API_PREFIX}/getOrdersForSecurity?${queryParams.toString()}`,
+          method: "GET",
+        }
+      },
+      transformResponse: (response: any) => response,
+      providesTags: ["Orders"],
+    }),
+    
   }),
 })
 
@@ -181,4 +199,5 @@ export const {
   useUpdateOrderMutation,
   useGetOrderHistoryQuery,
   useUpdateOrderReadyMutation,
+  useGetOrdersForSecurityQuery
 } = ordersApi
