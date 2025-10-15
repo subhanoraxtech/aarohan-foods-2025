@@ -36,8 +36,8 @@ const formatStatus = (status: string) => {
 
   const bundleNumber = item.bundleNumber;
   const quantity = item.totalOrders || 0;
-  const pickupLocation = item.pincode || "N/A";
-  const premisesName = item.premisesName || "Unknown Premises";
+  const pickupLocation = item.servicedPremisesId.pincode || "N/A";
+  const premisesName = item.servicedPremisesId.apartmentName || "Unknown Premises";
   const status = formatStatus(item.status || "N/A");
 
   return (
@@ -162,6 +162,45 @@ const formatStatus = (status: string) => {
                 </XStack>
               </View>
             </XStack>
+
+
+            <View
+  backgroundColor="$grey6"
+  borderRadius="$6"
+  padding="$3"
+>
+  <XStack alignItems="center" gap="$2">
+    <View
+      backgroundColor="$background"
+      borderRadius="$5"
+      padding="$2"
+      width={36}
+      height={36}
+      alignItems="center"
+      justifyContent="center"
+    >
+      <Icon name="home" type="feather" size={16} color="#1EA556" />
+    </View>
+    <YStack flex={1}>
+      <Text
+        fontSize="$2"
+        color="$gray10"
+        fontFamily="$body"
+        fontWeight="500"
+      >
+        Apartment Code
+      </Text>
+      <Text
+        fontSize="$5"
+        fontWeight="700"
+        color="$black1"
+        fontFamily="$heading"
+      >
+        {item.servicedPremisesId?.apartmentcode || "N/A"}
+      </Text>
+    </YStack>
+  </XStack>
+</View>
 
             <View
               backgroundColor="$grey6"
