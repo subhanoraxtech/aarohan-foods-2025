@@ -192,11 +192,7 @@ export default function LoginScreen() {
                           <XStack color="$gray3" alignItems="center">
                             <Text fontSize="$2"> By proceeding, I agree to </Text>
                             <TouchableOpacity
-                              onPress={() =>
-                                handleLinkPress(
-                                  "https://www.breakfastbengaluru.com/privacy"
-                                )
-                              }
+                              onPress={() => router.push("/terms-conditions")}
                             >
                               <Text fontSize="$2" color="$orange" fontWeight="500">
                                 terms and conditions &
@@ -204,11 +200,7 @@ export default function LoginScreen() {
                             </TouchableOpacity>
                           </XStack>
                           <TouchableOpacity
-                            onPress={() =>
-                              handleLinkPress(
-                                "https://www.breakfastbengaluru.com/terms"
-                              )
-                            }
+                            onPress={() => router.push("/privacy-policy")}
                           >
                             <Text
                               fontSize="$2"
