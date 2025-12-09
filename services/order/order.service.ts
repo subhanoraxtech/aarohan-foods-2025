@@ -136,7 +136,7 @@ export const ordersApi = createApi({
           await queryFulfilled
           dispatch(ordersApi.util.invalidateTags(['Orders']))
           dispatch(statsApi.util.invalidateTags(['Stats']))
-          dispatch(bundlesApi.util.invalidateTags(['Bundles']))
+          dispatch(bundlesApi.util.invalidateTags(['Bundles', 'Orders']))
         } catch {}
       },
     }),
@@ -152,7 +152,7 @@ export const ordersApi = createApi({
           await queryFulfilled
           dispatch(ordersApi.util.invalidateTags(['Orders']))
           dispatch(statsApi.util.invalidateTags(['Stats']))
-          dispatch(bundlesApi.util.invalidateTags(['Bundles']))
+          dispatch(bundlesApi.util.invalidateTags(['Bundles', 'Orders']))
         } catch {}
       },
     }),

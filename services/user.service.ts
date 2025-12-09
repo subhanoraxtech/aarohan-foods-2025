@@ -15,6 +15,7 @@ export const userApi = createApi({
       return headers;
     },
   }),
+  tagTypes: ['User'],
   endpoints: (builder) => ({
     // GET /user/me
     profileData: builder.query<any, void>({
@@ -22,6 +23,7 @@ export const userApi = createApi({
         url: "me",
         method: "GET",
       }),
+      providesTags: ['User'],
     }),
 
     // PATCH /user/profile
@@ -31,6 +33,7 @@ export const userApi = createApi({
         method: "PATCH",
         body: data,
       }),
+      invalidatesTags: ['User'],
     }),
   }),
 });

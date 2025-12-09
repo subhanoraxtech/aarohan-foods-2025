@@ -26,7 +26,6 @@ import { useCreateRequestMutation } from "@/services/request/request.service";
 
 import { BundleType } from "@/types/bundleTypes";
 import { BUNDLE_STATUS, Role, STATUS } from "@/types/enums";
-import { showToast } from "@/utils/toast";
 import { useAuth } from "@/hooks/useAuth";
 import { RootState } from "@/store";
 
@@ -348,6 +347,11 @@ const BundleScreen = () => {
   const [selectedBundles, setSelectedBundles] = useState<string[]>([]);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showLimitModal, setShowLimitModal] = useState(false);
+  const [showRefreshModal, setShowRefreshModal] = useState(false);
+  const [refreshModalConfig, setRefreshModalConfig] = useState<{
+    type: 'success' | 'error';
+    message: string;
+  }>({ type: 'success', message: '' });
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const settings = useSelector((state: RootState) => state.settings);
@@ -453,15 +457,17 @@ const BundleScreen = () => {
       } else {
         await refetchRequests();
       }
-      showToast({
+      setRefreshModalConfig({
+        type: 'success',
         message: isBundleView ? "Bundles refreshed successfully" : "Requests refreshed successfully",
-        type: "success",
       });
+      setShowRefreshModal(true);
     } catch (error) {
-      showToast({
+      setRefreshModalConfig({
+        type: 'error',
         message: isBundleView ? "Failed to refresh bundles" : "Failed to refresh requests",
-        type: "error",
       });
+      setShowRefreshModal(true);
     } finally {
       setIsRefreshing(false);
     }
@@ -509,10 +515,11 @@ const BundleScreen = () => {
       await createRequest({ bundleIds: selectedBundles }).unwrap();
       setShowSuccessModal(true);
     } catch (error: any) {
-      showToast({
+      setRefreshModalConfig({
+        type: 'error',
         message: error?.data?.message || "Failed to submit request. Please try again.",
-        type: "error",
       });
+      setShowRefreshModal(true);
     }
   }, [selectedBundles, createRequest]);
 
@@ -524,6 +531,10 @@ const BundleScreen = () => {
 
   const handleLimitModalClose = useCallback(() => {
     setShowLimitModal(false);
+  }, []);
+
+  const handleRefreshModalClose = useCallback(() => {
+    setShowRefreshModal(false);
   }, []);
 
   const availableBundles = bundles.map((bundle) => ({
@@ -752,6 +763,14 @@ const BundleScreen = () => {
         subTitle={getRoleBasedSettings().limitMessage}
         buttonTitle="OK"
         buttonColor="$orange"
+      />
+
+      <SuccessModal
+        isOpen={showRefreshModal}
+        onClose={handleRefreshModalClose}
+        modalType={refreshModalConfig.type}
+        subTitle={refreshModalConfig.message}
+        buttonTitle="OK"
       />
     </YStack>
   );

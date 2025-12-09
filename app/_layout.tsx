@@ -5,7 +5,7 @@ import { TamaguiProvider } from "tamagui";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Slot } from "expo-router";
-import Toast from "react-native-toast-message";
+
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import * as SplashScreen from "expo-splash-screen";
 
@@ -74,7 +74,6 @@ export default function RootLayout() {
           </BottomSheetModalProvider>
         </GestureHandlerRootView>
       </TamaguiProvider>
-      <Toast />
     </Provider>
   );
 }

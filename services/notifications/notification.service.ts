@@ -10,6 +10,7 @@ const API_PREFIX = 'notification'
 export const notificationApi = createApi({
   reducerPath: 'notificationApi',
   baseQuery: baseQueryWithReauth,
+  tagTypes: ['Notifications'],
   endpoints: builder => ({
     getAllNotifications: builder.query<ListAllNotificationResponse, void>({
       query: () => ({
@@ -17,7 +18,7 @@ export const notificationApi = createApi({
         method: 'GET'
       }),
       transformResponse: (response: { data: any }) => response.data,
-      
+      providesTags: ['Notifications'],
     }),
   }),
 })

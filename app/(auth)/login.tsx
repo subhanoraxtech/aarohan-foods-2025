@@ -1,8 +1,8 @@
 import Button from "@/components/common/Button";
 import Icon from "@/components/common/Icon";
 import TextField from "@/components/common/TextField";
+import NotificationModal, { NotificationModalType } from "@/components/common/SuccesModal";
 
-import { showToast } from "@/utils/toast";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -32,6 +32,22 @@ import RoleSelectionModal from "@/components/common/RoleSelectionModal";
 export default function LoginScreen() {
   const [sendOtp, { isLoading }] = useSendOtpMutation();
   const [loading, setLoading] = useState(false);
+  const [loginSuccessData, setLoginSuccessData] = useState<{
+    phone: string;
+    otpExpires?: string;
+  } | null>(null);
+
+  const [modalConfig, setModalConfig] = useState<{
+    isOpen: boolean;
+    type: NotificationModalType;
+    title?: string;
+    subtitle?: string;
+  }>({
+    isOpen: false,
+    type: 'success',
+    title: '',
+    subtitle: '',
+  });
   
   const router = useRouter();
   const selectedCountry: ICountry = {
@@ -68,32 +84,34 @@ export default function LoginScreen() {
       console.log("response login", response);
       
       if (response?.data?.success) {
-        showToast({ 
-          message: response.data.message || "OTP sent successfully", 
-          type: "success" 
+        setLoginSuccessData({
+          phone: fullPhoneNumber,
+          otpExpires: response.data?.otpExpires,
         });
-        
-        router.push({
-          pathname: "/otp",
-          params: {
-            phone: fullPhoneNumber,
-            otpExpires: response.data?.otpExpires,
-          },
+
+        setModalConfig({
+          isOpen: true,
+          type: 'success',
+          title: 'Code Sent!',
+          subtitle: "Check your phone for the 4-digit verification code.",
         });
-        reset();
       }
       else if (response?.error) {
         const errorMessage = response.error?.data?.message || "An error occurred";
-        showToast({ 
-          message: errorMessage, 
-          type: "error" 
+        setModalConfig({
+          isOpen: true,
+          type: 'error',
+          title: 'Error',
+          subtitle: errorMessage,
         });
       }
       // Fallback for unexpected response structure
       else {
-        showToast({ 
-          message: "Unexpected response from server", 
-          type: "error" 
+        setModalConfig({
+          isOpen: true,
+          type: 'error',
+          title: 'Error',
+          subtitle: "Unexpected response from server",
         });
       }
     } 
@@ -103,12 +121,30 @@ export default function LoginScreen() {
       const errorMessage = err?.response?.data?.message || 
                           err?.message || 
                           "Network error occurred";
-      showToast({ 
-        message: errorMessage, 
-        type: "error" 
+      setModalConfig({
+        isOpen: true,
+        type: 'error',
+        title: 'Error',
+        subtitle: errorMessage,
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleModalClose = () => {
+    setModalConfig(prev => ({ ...prev, isOpen: false }));
+    
+    if (modalConfig.type === 'success' && loginSuccessData) {
+      router.push({
+        pathname: "/otp",
+        params: {
+          phone: loginSuccessData.phone,
+          otpExpires: loginSuccessData.otpExpires,
+        },
+      });
+      reset();
+      setLoginSuccessData(null);
     }
   };
 
@@ -241,6 +277,17 @@ export default function LoginScreen() {
           </ScrollView>
         </KeyboardAvoidingView>
       </YStack>
+
+      <NotificationModal
+        isOpen={modalConfig.isOpen}
+        onClose={handleModalClose}
+        modalType={modalConfig.type}
+        modalTitle={modalConfig.title}
+        subTitle={modalConfig.subtitle}
+        buttonTitle="Continue"
+        iconName="message"
+        iconType="material-community"
+      />
     </>
   );
 }

@@ -12,6 +12,7 @@ import { H2, Paragraph, Text, useTheme, XStack, YStack } from "tamagui";
 import Header from "@/components/common/Header";
 import Button from "@/components/common/Button";
 import Icon from "@/components/common/Icon";
+import NotificationModal, { NotificationModalType } from "@/components/common/SuccesModal";
 import { OtpInput } from "react-native-otp-entry";
 
 import { setUserData } from "@/store/slice/user.slice";
@@ -28,6 +29,17 @@ export default function OtpScreen() {
   const [errorMsg, setErrorMsg] = useState("");
   const [timeLeft, setTimeLeft] = useState(0);
   const [expiresAt, setExpiresAt] = useState(() => Number(otpExpires));
+  const [modalConfig, setModalConfig] = useState<{
+    isOpen: boolean;
+    type: NotificationModalType;
+    title?: string;
+    subtitle?: string;
+  }>({
+    isOpen: false,
+    type: 'error',
+    title: '',
+    subtitle: '',
+  });
 
   const theme = useTheme();
   const router = useRouter();
@@ -199,6 +211,10 @@ export default function OtpScreen() {
     }
   };
 
+  const handleModalClose = () => {
+    setModalConfig(prev => ({ ...prev, isOpen: false }));
+  };
+
   return (
     <YStack flex={1} bg="$background">
       <Header title="OTP" />
@@ -287,6 +303,26 @@ export default function OtpScreen() {
               </Text>
             </XStack>
 
+            <YStack 
+              mt="$3" 
+              mb="$4" 
+              p="$3" 
+              bg="$grey6" 
+              borderRadius="$4"
+              borderWidth={1}
+              borderColor="$grey7"
+              alignItems="center"
+            >
+              <Text 
+                color="$gray10" 
+                fontSize="$3" 
+                textAlign="center"
+                lineHeight={18}
+              >
+                A one-time OTP is sent to your WhatsApp
+              </Text>
+            </YStack>
+
             <Button
               onPress={handleOtpVerification}
               loading={loading}
@@ -299,6 +335,15 @@ export default function OtpScreen() {
           </YStack>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <NotificationModal
+        isOpen={modalConfig.isOpen}
+        onClose={handleModalClose}
+        modalType={modalConfig.type}
+        modalTitle={modalConfig.title}
+        subTitle={modalConfig.subtitle}
+        buttonTitle="OK"
+      />
     </YStack>
   );
 }

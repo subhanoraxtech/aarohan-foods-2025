@@ -1,34 +1,95 @@
 //  React Imports
 import React from "react";
 
-//  Expo Imports
-
 //  Tamagui Imports
 import { Button, Dialog, Text, useTheme, XStack, YStack } from "tamagui";
 
 //  Custom Components Imports
+import Icon, { IconType } from "./Icon";
 
-//  Utils Imports
-import Icon from "./Icon";
+export type NotificationModalType = 'success' | 'error' | 'info' | 'warning';
 
-interface SuccesModalProps {
-  modalTitle?: string;
-  buttonTitle?: string;
-  subTitle?: string;
+interface NotificationModalProps {
   isOpen: boolean;
   onClose: () => void;
-  buttonColor?: string; // Add this prop for button color
+  modalType?: NotificationModalType;
+  modalTitle?: string;
+  subTitle?: string;
+  buttonTitle?: string;
+  buttonColor?: string;
+  iconName?: string;
+  iconType?: IconType;
+  iconColor?: string;
+  iconBackgroundColor?: string;
 }
 
-const SuccessModal = ({
+const NotificationModal = ({
   isOpen,
   onClose,
-  buttonTitle,
-  subTitle,
+  modalType = 'success',
   modalTitle,
-  buttonColor, // Default to orange
-}: SuccesModalProps) => {
+  subTitle,
+  buttonTitle = 'OK',
+  buttonColor,
+  iconName,
+  iconType,
+  iconColor,
+  iconBackgroundColor,
+}: NotificationModalProps) => {
   const theme = useTheme();
+
+  // Default configurations for each modal type
+  const getDefaultConfig = () => {
+    switch (modalType) {
+      case 'success':
+        return {
+          title: modalTitle || 'Success',
+          icon: iconName || 'check',
+          iconType: iconType || 'feather' as IconType,
+          iconColor: iconColor || theme.green10.val,
+          iconBg: iconBackgroundColor || '$green5',
+          btnColor: buttonColor || '$green10',
+        };
+      case 'error':
+        return {
+          title: modalTitle || 'Error',
+          icon: iconName || 'x',
+          iconType: iconType || 'feather' as IconType,
+          iconColor: iconColor || theme.red10.val,
+          iconBg: iconBackgroundColor || '$red5',
+          btnColor: buttonColor || '$red10',
+        };
+      case 'warning':
+        return {
+          title: modalTitle || 'Warning',
+          icon: iconName || 'alert-triangle',
+          iconType: iconType || 'feather' as IconType,
+          iconColor: iconColor || theme.orange.val,
+          iconBg: iconBackgroundColor || '$orange5',
+          btnColor: buttonColor || '$orange',
+        };
+      case 'info':
+        return {
+          title: modalTitle || 'Info',
+          icon: iconName || 'info',
+          iconType: iconType || 'feather' as IconType,
+          iconColor: iconColor || theme.blue10.val,
+          iconBg: iconBackgroundColor || '$blue5',
+          btnColor: buttonColor || '$blue10',
+        };
+      default:
+        return {
+          title: modalTitle || 'Notification',
+          icon: iconName || 'bell',
+          iconType: iconType || 'feather' as IconType,
+          iconColor: iconColor || theme.gray10.val,
+          iconBg: iconBackgroundColor || '$gray5',
+          btnColor: buttonColor || '$gray10',
+        };
+    }
+  };
+
+  const config = getDefaultConfig();
 
   return (
     <Dialog modal open={isOpen}>
@@ -51,7 +112,7 @@ const SuccessModal = ({
           bordered
           bg="white"
           mx={"$6"}
-          borderRadius={16}
+          {...({ borderRadius: 16 } as any)}
           elevate
           key="content"
           animateOnly={["transform", "opacity"]}
@@ -69,40 +130,43 @@ const SuccessModal = ({
         >
           <YStack justify={"center"} items={"center"}>
             <Text fontSize={24} fontWeight="700" color={"$black1"}>
-              {modalTitle}
+              {config.title}
             </Text>
           </YStack>
+          
           <XStack justify={"center"} items={"center"}>
             <XStack
               justify={"center"}
               items={"center"}
               px={"$2"}
               py={"$2"}
-              borderRadius={32}
-              bg={"$green5"}
+              {...({ borderRadius: 32 } as any)}
+              bg={config.iconBg as any}
             >
               <Icon
-                name="check"
-                type="feather"
+                name={config.icon}
+                type={config.iconType}
                 size={40}
-                color={theme.green10.val}
+                color={config.iconColor}
               />
             </XStack>
           </XStack>
 
-          <Text
-            fontSize={16}
-            fontWeight="400"
-            color="$slate1"
-            px={"$5"}
-            textAlign="center"
-          >
-            {subTitle}
-          </Text>
+          {subTitle && (
+            <Text
+              fontSize={16}
+              fontWeight="400"
+              color="$slate1"
+              px={"$5"}
+              {...({ textAlign: "center" } as any)}
+            >
+              {subTitle}
+            </Text>
+          )}
 
           <Dialog.Close asChild>
             <Button 
-              backgroundColor={buttonColor}
+              {...({ backgroundColor: config.btnColor } as any)}
               color="white"
               onPress={onClose}
             >
@@ -115,4 +179,7 @@ const SuccessModal = ({
   );
 };
 
-export default SuccessModal;
+export default NotificationModal;
+
+// Export as SuccessModal for backward compatibility
+export { NotificationModal as SuccessModal };
