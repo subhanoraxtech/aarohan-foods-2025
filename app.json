@@ -9,19 +9,16 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.subhan.exe.aarohanfoods"
+      "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/logo.png"
-        
       },
       "googleServicesFile": "./google-services.json",
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false,
-      "package": "com.subhan.exe.aarohanfoods"
+      "predictiveBackGestureEnabled": false
     },
     "web": {
       "output": "static",
@@ -49,9 +46,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "4a6aab3a-6424-4029-83c6-12a518e8845b"
+        "projectId": "0fae13dd-fe30-465d-83fe-c0bc59b5c9b0"
       }
     },
-    "owner": "subhan.exe"
+    "owner": "keerthi.blr"
   }
 }
