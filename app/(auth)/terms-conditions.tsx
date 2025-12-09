@@ -9,9 +9,11 @@ import { YStack, H2, H3, Paragraph, XStack, Text } from "tamagui";
 import Icon from "@/components/common/Icon";
 import { useRouter } from "expo-router";
 import Header from "@/components/common/Header";
+import { useColorScheme } from "@/hooks/useColorScheme";
 
 export default function TermsAndConditionsScreen() {
   const router = useRouter();
+  const colorScheme = useColorScheme();
 
   const handleBack = () => {
     router.back();
@@ -19,7 +21,10 @@ export default function TermsAndConditionsScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#FAFAF9" }}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FAFAF9" />
+      <StatusBar 
+        barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'} 
+        backgroundColor={colorScheme === 'dark' ? '#000000' : '#FAFAF9'} 
+      />
       
       {/* Header */}
       {/* <XStack
