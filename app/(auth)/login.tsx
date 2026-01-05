@@ -6,12 +6,12 @@ import NotificationModal, { NotificationModalType } from "@/components/common/Su
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { 
-  Image, 
-  Linking, 
-  TouchableOpacity, 
-  ScrollView, 
-  KeyboardAvoidingView, 
+import {
+  Image,
+  Linking,
+  TouchableOpacity,
+  ScrollView,
+  KeyboardAvoidingView,
   Platform
 } from "react-native";
 import { ICountry } from "react-native-international-phone-number";
@@ -48,7 +48,7 @@ export default function LoginScreen() {
     title: '',
     subtitle: '',
   });
-  
+
   const router = useRouter();
   const selectedCountry: ICountry = {
     iso2: "in",
@@ -76,25 +76,27 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       const fullPhoneNumber = `+91${data.phoneNumber}`;
-      const response = await sendOtp({ 
+      const response = await sendOtp({
         phone: fullPhoneNumber,
       });
 
       console.log("fullPhoneNumber", fullPhoneNumber);
       console.log("response login", response);
-      
+
       if (response?.data?.success) {
         setLoginSuccessData({
           phone: fullPhoneNumber,
           otpExpires: response.data?.otpExpires,
         });
 
-        setModalConfig({
-          isOpen: true,
-          type: 'success',
-          title: 'Code Sent!',
-          subtitle: "Check your phone for the 4-digit verification code.",
+        router.push({
+          pathname: "/otp",
+          params: {
+            phone: fullPhoneNumber,
+            otpExpires: response.data?.otpExpires,
+          },
         });
+        reset();
       }
       else if (response?.error) {
         const errorMessage = response.error?.data?.message || "An error occurred";
@@ -114,13 +116,13 @@ export default function LoginScreen() {
           subtitle: "Unexpected response from server",
         });
       }
-    } 
+    }
     catch (err: any) {
       console.log("err", err);
       // Handle network errors or other exceptions
-      const errorMessage = err?.response?.data?.message || 
-                          err?.message || 
-                          "Network error occurred";
+      const errorMessage = err?.response?.data?.message ||
+        err?.message ||
+        "Network error occurred";
       setModalConfig({
         isOpen: true,
         type: 'error',
@@ -134,7 +136,7 @@ export default function LoginScreen() {
 
   const handleModalClose = () => {
     setModalConfig(prev => ({ ...prev, isOpen: false }));
-    
+
     if (modalConfig.type === 'success' && loginSuccessData) {
       router.push({
         pathname: "/otp",
@@ -271,7 +273,7 @@ export default function LoginScreen() {
                 loading={loading || isLoading}
                 disabled={loading || isLoading}
               >
-                Get Code
+                Get OTP on Whatsapp
               </Button>
             </YStack>
           </ScrollView>
