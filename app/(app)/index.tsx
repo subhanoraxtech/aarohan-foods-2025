@@ -63,7 +63,7 @@ function SupplierHomeScreen() {
         <Button
         backgroundColor="transparent"
           borderColor="transparent"
-          onPress={() => router.push("/(app)/notifications")}
+          onPress={() => router.navigate("/(app)/notifications")}
         >
           <Icon type="feather" name="bell" size={24} color="#333" />
         </Button>
@@ -80,7 +80,7 @@ function SupplierHomeScreen() {
               width={120}             
               height={120}             
               borderRadius="$4"             
-              onPress={() => router.push("/(app)/amountPaid")}           
+              onPress={() => router.navigate("/(app)/amountPaid")}           
             >             
               <XStack alignItems="center" justifyContent="center">               
                 <Icon type="material-community" name="currency-usd" size={50} color="white" />
@@ -97,7 +97,7 @@ function SupplierHomeScreen() {
               width={120}             
               height={120}             
               borderRadius="$4"             
-              onPress={() => router.push("/(app)/amountDue")}           
+              onPress={() => router.navigate("/(app)/amountDue")}           
             >             
               <YStack alignItems="center" justifyContent="center" flexDirection="row">               
                 <Icon type="material-community" name="currency-usd" size={50} color="white" />
@@ -116,7 +116,7 @@ function SupplierHomeScreen() {
               width={120}
               height={120}
               borderRadius="$4"
-              onPress={() => router.push("/supplier/order-history")}
+              onPress={() => router.navigate("/supplier/order-history")}
             >
               <Icon type="feather" name="list" size={40} color="white" />
             </Button>
@@ -129,7 +129,7 @@ function SupplierHomeScreen() {
               width={120}
               height={120}
               borderRadius="$4"
-              onPress={() => router.push("/(app)/supplier-pending-orders")}
+              onPress={() => router.navigate("/(app)/supplier-pending-orders")}
             >
               <Icon type="material-community" name="playlist-check" size={40} color="white" />
             </Button>
@@ -195,7 +195,7 @@ function AgentHomeScreen() {
         <Button
           backgroundColor="transparent"
           borderColor="transparent"
-          onPress={() => router.push("/(app)/notifications")}
+          onPress={() => router.navigate("/(app)/notifications")}
         >
           <Icon type="feather" name="bell" size={24} color="#333" />
         </Button>
@@ -211,7 +211,7 @@ function AgentHomeScreen() {
               width={120}             
               height={120}             
               borderRadius="$4"             
-              onPress={() => router.push("/(app)/amountPaid")}           
+              onPress={() => router.navigate("/(app)/amountPaid")}           
             >             
               <XStack alignItems="center" justifyContent="center">               
                 <Icon type="material-community" name="currency-usd" size={50} color="white" />
@@ -228,7 +228,7 @@ function AgentHomeScreen() {
               width={120}             
               height={120}             
               borderRadius="$4"             
-              onPress={() => router.push("/(app)/amountDue")}           
+              onPress={() => router.navigate("/(app)/amountDue")}           
             >             
               <YStack alignItems="center" justifyContent="center" flexDirection="row">               
                 <Icon type="material-community" name="currency-usd" size={50} color="white" />
@@ -247,7 +247,7 @@ function AgentHomeScreen() {
               width={120}
               height={120}
               borderRadius="$4"
-              onPress={() => router.push("/(app)/deliveryHistory")}
+              onPress={() => router.navigate("/(app)/deliveryHistory")}
             >
               <Icon type="feather" name="truck" size={40} color="white" />
             </Button>
@@ -260,7 +260,7 @@ function AgentHomeScreen() {
               width={120}
               height={120}
               borderRadius="$4"
-              onPress={() => router.push("/(app)/pending-deliveries/pending-deliveries")}
+              onPress={() => router.navigate("/(app)/pending-deliveries/pending-deliveries")}
             >
               <Icon type="material-community" name="truck-check" size={40} color="white" />
             </Button>

@@ -35,7 +35,8 @@ export enum NOTIFICATION_TYPE {
   DELIVERY_REQUEST_APPROVED = 'delivery_request_approved',
   DELIVERY_REQUEST_REJECTED = 'delivery_request_rejected',
   SUPPLIER_REQUEST_APPROVED = 'supplier_request_approved',
-  SUPPLIER_REQUEST_REJECTED = 'supplier_request_rejected'
+  SUPPLIER_REQUEST_REJECTED = 'supplier_request_rejected',
+  NO_SERVICE = 'no_service'
 }
 
 

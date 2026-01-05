@@ -314,7 +314,7 @@ const PendingDeliveriesScreen = () => {
 
   const handleDeliveryPress = (id: string) => {
     console.log("this is bundle id", id);
-    router.push(`/(app)/pending-deliveries/${id}`);
+    router.navigate(`/(app)/pending-deliveries/${id}`);
   };
 
   const renderItem = ({ item }: { item: BundleType }) => (

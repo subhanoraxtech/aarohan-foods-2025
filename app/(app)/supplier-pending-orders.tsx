@@ -294,7 +294,7 @@ export default function SupplierPendingOrders() {
 
   const handleOrderPress = (id: string) => {
     console.log("this is bundle id", id);
-    router.push(`/(app)/supplier/${id}`);
+    router.navigate(`/(app)/supplier/${id}`);
   };
 
   const renderPendingOrdersCard = ({ item }: { item: BundleType }) => (

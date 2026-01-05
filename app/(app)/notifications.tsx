@@ -9,6 +9,7 @@ import "moment-timezone";
 
 import Button from "@/components/common/Button";
 import Header from "@/components/common/Header";
+import SuccessModal from "@/components/common/SuccesModal";
 import { useGetAllNotificationsQuery } from "@/services/notifications/notification.service";
 import { useGetAllRequestsQuery } from "@/services/requestedBundle/requestedbundle.service";
 import { NOTIFICATION_TYPE } from "@/types/enums";
@@ -16,12 +17,15 @@ import { NotificationType } from "@/types/notification";
 import { Role } from "@/types/enums";
 import { useAuth } from "@/hooks/useAuth";
 
+const NoServiceImage = require("@/assets/images/no.png");
+
 const NotificationScreen = () => {
   const router = useRouter();
   const auth = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [notificationPermission, setNotificationPermission] = useState<string | null>(null);
+  const [showClosedModal, setShowClosedModal] = useState(false);
 
   const {
     data: notificationData,
@@ -86,6 +90,14 @@ const NotificationScreen = () => {
     console.log(JSON.stringify(notifications,null,2))
 
   const currentDate = moment.tz("Asia/Kolkata");
+  
+  // Check if all notifications are expired
+  const allNotificationsExpired = notifications.length > 0 && notifications.every(notification => {
+    if (!notification.expiryTime) return false;
+    return moment.tz(notification.expiryTime, "Asia/Kolkata").isBefore(currentDate);
+  });
+
+  const hasNoActiveOrders = notifications.length === 0 || allNotificationsExpired;
   const groupedNotifications = notifications.reduce((acc, notification) => {
     const notificationDate = notification.bundleDate
       ? moment.tz(notification.bundleDate, "Asia/Kolkata")
@@ -121,6 +133,8 @@ const NotificationScreen = () => {
           borderColor: "$orange",
           buttonBg: "$orange",
           buttonText: "Order Now",
+          showButton: true,
+          image: null,
         };
       case NOTIFICATION_TYPE.BUNDLE_AVAILABLE:
         return {
@@ -130,6 +144,8 @@ const NotificationScreen = () => {
           borderColor: "$blue10",
           buttonBg: "$blue10",
           buttonText: "View Bundle",
+          showButton: true,
+          image: null,
         };
       case NOTIFICATION_TYPE.ORDER_COMPLETED:
         return {
@@ -139,6 +155,8 @@ const NotificationScreen = () => {
           borderColor: "$green10",
           buttonBg: "$green10",
           buttonText: "View Details",
+          showButton: true,
+          image: null,
         };
       case NOTIFICATION_TYPE.ORDER_READY:
         return {
@@ -148,6 +166,8 @@ const NotificationScreen = () => {
           borderColor: "$purple10",
           buttonBg: "$purple10",
           buttonText: "View Order",
+          showButton: true,
+          image: null,
         };
       case NOTIFICATION_TYPE.DELIVERY_REQUEST_APPROVED:
         return {
@@ -157,6 +177,7 @@ const NotificationScreen = () => {
           borderColor: "$green10",
           buttonBg: "$green10",
           buttonText: "View Bundle",
+          showButton: true,
         };
       case NOTIFICATION_TYPE.DELIVERY_REQUEST_REJECTED:
         return {
@@ -166,6 +187,7 @@ const NotificationScreen = () => {
           borderColor: "$red10",
           buttonBg: "$red10",
           buttonText: "View Details",
+          showButton: true,
         };
       case NOTIFICATION_TYPE.SUPPLIER_REQUEST_APPROVED:
         return {
@@ -175,6 +197,7 @@ const NotificationScreen = () => {
           borderColor: "$green10",
           buttonBg: "$green10",
           buttonText: "View Bundle",
+          showButton: true,
         };
       case NOTIFICATION_TYPE.SUPPLIER_REQUEST_REJECTED:
         return {
@@ -184,6 +207,18 @@ const NotificationScreen = () => {
           borderColor: "$red10",
           buttonBg: "$red10",
           buttonText: "View Details",
+          showButton: true,
+        };
+      case NOTIFICATION_TYPE.NO_SERVICE:
+        return {
+          emoji: null,
+          chipBg: "$red10",
+          chipLabel: "No Service",
+          borderColor: "$red10",
+          buttonBg: "$red10",
+          buttonText: "",
+          showButton: false,
+          image: NoServiceImage,
         };
       default:
         return {
@@ -193,6 +228,8 @@ const NotificationScreen = () => {
           borderColor: "$grey5",
           buttonBg: "$gray10",
           buttonText: "View",
+          showButton: true,
+          image: null,
         };
     }
   };
@@ -217,13 +254,21 @@ const NotificationScreen = () => {
     const style = getNotificationStyle(item.type);
 
     const handlePress = () => {
+      // Check if notification is expired
+      const isExpired = item.expiryTime && moment.tz(item.expiryTime, "Asia/Kolkata").isBefore(currentDate);
+      
+      if (isExpired || hasNoActiveOrders) {
+        setShowClosedModal(true);
+        return;
+      }
+
       const navDate = item.bundleDate
         ? moment(item.bundleDate).format("YYYY-MM-DD")
         : moment().format("YYYY-MM-DD");
 
       try {
         if (item.type === NOTIFICATION_TYPE.SUPPLIER_REQUEST_APPROVED && item.supplierRequestId) {
-          router.push({
+          router.navigate({
             pathname: `/(app)/bundles/${navDate}`,
             params: {
               type: 'supplierRequest',
@@ -232,7 +277,7 @@ const NotificationScreen = () => {
             }
           });
         } else if (item.type === NOTIFICATION_TYPE.SUPPLIER_REQUEST_REJECTED && item.supplierRequestId) {
-          router.push({
+          router.navigate({
             pathname: `/(app)/bundles/${navDate}`,
             params: {
               type: 'supplierRequest',
@@ -241,7 +286,7 @@ const NotificationScreen = () => {
             }
           });
         } else if (item.type === NOTIFICATION_TYPE.DELIVERY_REQUEST_APPROVED && item.deliveryRequestId) {
-          router.push({
+          router.navigate({
             pathname: `/(app)/bundles/${navDate}`,
             params: {
               type: 'deliveryRequest',
@@ -250,7 +295,7 @@ const NotificationScreen = () => {
             }
           });
         } else if (item.type === NOTIFICATION_TYPE.DELIVERY_REQUEST_REJECTED && item.deliveryRequestId) {
-          router.push({
+          router.navigate({
             pathname: `/(app)/bundles/${navDate}`,
             params: {
               type: 'deliveryRequest',
@@ -259,17 +304,14 @@ const NotificationScreen = () => {
             }
           });
         } else if (item.type === NOTIFICATION_TYPE.BUNDLE_AVAILABLE) {
-          // router.push(`/(app)/bundles/${navDate}`);
-
-          router.push({
+          router.navigate({
             pathname: `/(app)/bundles/${navDate}`,
             params: {
               type: 'bundle_available',
-            
             }
           });
         } else {
-          router.push(`/(app)/bundles/${navDate}`);
+          router.navigate(`/(app)/bundles/${navDate}`);
         }
       } catch (error) {
         console.error("Navigation error:", error);
@@ -300,6 +342,11 @@ const NotificationScreen = () => {
               source={{ uri: item.menuId.image }}
               style={{ width: "100%", height: "100%", resizeMode: "cover" }}
             />
+          ) : style.image ? (
+             <Image
+              source={style.image}
+              style={{ width: "100%", height: "100%", resizeMode: "contain" }}
+            />
           ) : (
             <Text fontSize="$8">{style.emoji}</Text>
           )}
@@ -327,17 +374,19 @@ const NotificationScreen = () => {
             </Text>
           </XStack>
 
-          <Button
-            mt="$3"
-            bg={style.buttonBg}
-            borderRadius="$6"
-            padding="$3"
-            onPress={handlePress}
-          >
-            <Text fontWeight="600" color="$background">
-              {style.buttonText}
-            </Text>
-          </Button>
+          {style.showButton && (
+            <Button
+              mt="$3"
+              bg={style.buttonBg}
+              borderRadius="$6"
+              padding="$3"
+              onPress={handlePress}
+            >
+              <Text fontWeight="600" color="$background">
+                {style.buttonText}
+              </Text>
+            </Button>
+          )}
         </YStack>
       </YStack>
     );
@@ -461,6 +510,17 @@ const NotificationScreen = () => {
           }
         />
       )}
+
+      <SuccessModal
+        isOpen={showClosedModal}
+        onClose={() => setShowClosedModal(false)}
+        modalType="info"
+        modalTitle="Ordering Window Closed"
+        subTitle="Please wait for a notification from us to place order"
+        buttonTitle="OK"
+        iconName="clock"
+        iconType="feather"
+      />
     </YStack>
   );
 };

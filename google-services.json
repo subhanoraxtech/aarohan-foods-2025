@@ -1,21 +1,21 @@
 {
   "project_info": {
-    "project_number": "569328713767",
-    "project_id": "aarohanfoods",
-    "storage_bucket": "aarohanfoods.firebasestorage.app"
+    "project_number": "307152500652",
+    "project_id": "aarohan-foods-9bf38",
+    "storage_bucket": "aarohan-foods-9bf38.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:569328713767:android:29db611aeae9acf9ab0e02",
+        "mobilesdk_app_id": "1:307152500652:android:32ffce0f629eea1f976c09",
         "android_client_info": {
-          "package_name": "com.subhan.exe.aarohanfoods"
+          "package_name": "com.bfb.ops"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyCrh6q93FOjxKCm1ty6U1yysVtHPn3WKaE"
+          "current_key": "AIzaSyD7FxL5C44p5nT5z040J3P9O4uUschMhZM"
         }
       ],
       "services": {
