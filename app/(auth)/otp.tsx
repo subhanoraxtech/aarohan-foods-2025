@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { 
-  Vibration, 
-  ScrollView, 
-  KeyboardAvoidingView, 
-  Platform 
+import {
+  Vibration,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform
 } from "react-native";
 import { useDispatch } from "react-redux";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -86,10 +86,10 @@ export default function OtpScreen() {
     try {
       // Extract phone - handle array case from useLocalSearchParams
       const phoneNumber = Array.isArray(phone) ? phone[0] : phone;
-      
+
       console.log("=== OTP VERIFICATION START ===");
       console.log("Phone:", phoneNumber);
-      
+
       if (!phoneNumber) {
         console.error("Phone number is missing!");
         setErrorMsg("Phone number is missing. Please try again.");
@@ -98,30 +98,30 @@ export default function OtpScreen() {
 
       // Get expo token with retries
       console.log("Getting expo token...");
-      const expoToken = await getExpoPushTokenSilently();
-      
-      if (!expoToken) {
-        console.error("Failed to get expo token after retries");
-        setErrorMsg("Could not register device for notifications. Please check notification permissions and try again.");
-        Vibration.vibrate([100, 100, 100]);
-        return;
+      const pushInfo = await getExpoPushTokenSilently();
+
+      if (pushInfo) {
+        console.log("✓ Expo token retrieved successfully");
+      } else {
+        console.log("⚠️ Failed to retrieve expo token, proceeding without it");
       }
-      
-      console.log("✓ Expo token retrieved successfully");
 
       const payload = {
         phone: phoneNumber,
         otp: otp,
-        expoToken: expoToken,
-   
+        ...(pushInfo
+          ? {
+            expoToken: pushInfo.expoToken,
+            projectId: pushInfo.projectId,
+          }
+          : {}),
       };
 
       console.log("=== CALLING API ===");
       console.log("Payload:", {
         phone: payload.phone,
         otp: payload.otp,
-        expoToken: "present",
-     
+        expoToken: pushInfo ? "present" : "missing",
       });
 
       const response = await verifyOtpMutation(payload).unwrap();
@@ -132,22 +132,22 @@ export default function OtpScreen() {
       if (response?.success) {
         setTimeLeft(0);
         dispatch(setUserData(response.data));
-        
+
         // Small delay to ensure state updates
         setTimeout(() => {
           router.replace("/(app)");
         }, 100);
-      } 
+      }
     } catch (error: any) {
       console.error("=== OTP VERIFICATION ERROR ===");
       console.error("Error:", error);
       console.error("Error data:", error?.data);
       console.error("Error status:", error?.status);
-      
+
       Vibration.vibrate([200, 200, 200]);
-      
+
       let message = "Invalid OTP. Please try again.";
-      
+
       if (error?.data?.message) {
         message = error.data.message;
       } else if (error?.message) {
@@ -159,7 +159,7 @@ export default function OtpScreen() {
       } else if (error?.status >= 500) {
         message = "Server error. Please try again later.";
       }
-      
+
       setErrorMsg(message);
     }
   };
@@ -181,7 +181,7 @@ export default function OtpScreen() {
 
     try {
       console.log("Resending OTP to:", phoneNumber);
-      
+
       const response = await resendOtpMutation({
         phone: phoneNumber,
       }).unwrap();
@@ -198,15 +198,15 @@ export default function OtpScreen() {
     } catch (error: any) {
       console.error("Resend OTP error:", error);
       Vibration.vibrate([200, 100, 200]);
-      
+
       let message = "Failed to resend OTP. Please try again.";
-      
+
       if (error?.data?.message) {
         message = error.data.message;
       } else if (error?.status === "FETCH_ERROR") {
         message = "Network error. Please check your connection.";
       }
-      
+
       setErrorMsg(message);
     }
   };
@@ -303,19 +303,19 @@ export default function OtpScreen() {
               </Text>
             </XStack>
 
-            <YStack 
-              mt="$3" 
-              mb="$4" 
-              p="$3" 
-              bg="$grey6" 
+            <YStack
+              mt="$3"
+              mb="$4"
+              p="$3"
+              bg="$grey6"
               borderRadius="$4"
               borderWidth={1}
               borderColor="$grey7"
               alignItems="center"
             >
-              <Text 
-                color="$gray10" 
-                fontSize="$3" 
+              <Text
+                color="$gray10"
+                fontSize="$3"
                 textAlign="center"
                 lineHeight={18}
               >

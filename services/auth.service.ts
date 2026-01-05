@@ -19,12 +19,11 @@ export const authApi = createApi({
 
     verifyOtp: builder.mutation<
       any,
-      { phone: string; otp: string; expoToken: string  }>({
-      query: ({ phone, otp, expoToken }) => ({
-        
+      { phone: string; otp: string; expoToken?: string; projectId?: string }>({
+      query: (body) => ({
         url: `${PREFIX}/verify-otp`,
         method: "POST",
-        body: {  phone, otp, expoToken },
+        body,
       }),
     }),
 
