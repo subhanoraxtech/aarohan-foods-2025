@@ -2,11 +2,12 @@ import Button from "@/components/common/Button";
 import FlatList from "@/components/common/FlatList";
 import Header from "@/components/common/Header";
 import Icon from "@/components/common/Icon";
+import TextField from "@/components/common/TextField";
 import moment from "moment";
 import "moment-timezone";
 import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
-import { RefreshControl } from "react-native";
+import { RefreshControl, ScrollView, KeyboardAvoidingView, Platform } from "react-native";
 import { Spinner, Text, XStack, YStack, View, Card } from "tamagui";
 import SuccessModal from "@/components/common/SuccesModal";
 import { useGetOrdersByBundleIdQuery } from "@/services/bundle/bundles.service";
@@ -27,17 +28,33 @@ interface Delivery {
   deliveryDate: string;
   menuName: string;
   order_status: 'ready' | 'placed';
+  quantity: number;
 }
 
 const DeliveryCard = ({
   item,
   onConfirm,
   isUpdating,
+  packageIds,
+  onPackageIdChange,
 }: {
   item: Delivery;
   onConfirm: () => void;
   isUpdating: boolean;
+  packageIds: string[];
+  onPackageIdChange: (index: number, value: string) => void;
 }) => {
+  
+  // Check if all required package IDs are entered
+  const areAllPackageIdsEntered = (): boolean => {
+    // If no package IDs are required, button should be enabled
+    if (item.quantity <= 0) return true;
+    // Count how many package IDs have been filled
+    const filledCount = packageIds.filter(id => id && id.trim() !== '').length;
+    // Button is enabled only when all required package IDs are filled
+    return filledCount === item.quantity;
+  };
+  
   return (
     <Card
       backgroundColor="$background"
@@ -246,6 +263,81 @@ const DeliveryCard = ({
           </YStack>
         </View>
 
+        {/* Package ID Input Fields */}
+        {item.quantity > 0 && (
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            keyboardVerticalOffset={100}
+          >
+            <View
+              backgroundColor="$background"
+              borderRadius="$6"
+              padding="$4"
+              borderColor="$orange"
+              borderWidth={2}
+              gap="$3"
+            >
+              <YStack gap="$2">
+                <XStack alignItems="center" gap="$2">
+                  <View
+                    backgroundColor="$orange"
+                    borderRadius="$5"
+                    padding="$2"
+                    width={32}
+                    height={32}
+                    alignItems="center"
+                    justifyContent="center"
+                  >
+                    <Icon name="box" type="feather" size={16} color="white" />
+                  </View>
+                  <YStack flex={1}>
+                    <Text fontSize="$4" fontWeight="700" color="$black1" fontFamily="$heading">
+                      Package Numbers
+                    </Text>
+                    <Text fontSize="$2" color="$gray10" fontFamily="$body">
+                      Enter {item.quantity} {item.quantity === 1 ? 'Package Number' : 'Package Numbers'} to confirm
+                    </Text>
+                  </YStack>
+                </XStack>
+              </YStack>
+
+              <ScrollView 
+                showsVerticalScrollIndicator={true}
+                nestedScrollEnabled={true}
+                style={{ maxHeight: 220 }}
+                keyboardShouldPersistTaps="handled"
+              >
+                <YStack gap="$3">
+                  {Array.from({ length: item.quantity }).map((_, index) => (
+                    <View
+                      key={index}
+                      borderRadius="$6"
+                      borderColor="$orange"
+                      borderWidth={1}
+                      overflow="hidden"
+                    >
+                      <TextField
+                        placeholder={`Package Number ${index + 1}`}
+                        value={packageIds[index] || ''}
+                        onChangeText={(value) => onPackageIdChange(index, value)}
+                        placeholderTextColor="$gray10"
+                        backgroundColor="$grey6"
+                        borderRadius="$0"
+                        borderWidth={0}
+                        padding="$3"
+                        paddingLeft="$4"
+                        fontSize="$3"
+                        fontWeight="500"
+                        color="$black1"
+                      />
+                    </View>
+                  ))}
+                </YStack>
+              </ScrollView>
+            </View>
+          </KeyboardAvoidingView>
+        )}
+
         {/* Action Section */}
         {item.status === 'delivered' ? (
           <XStack 
@@ -268,12 +360,14 @@ const DeliveryCard = ({
           </XStack>
         ) : item.order_status === 'placed' ? (
           <Button
-            backgroundColor="$orange"
-            color="white"
+            backgroundColor={!isUpdating && areAllPackageIdsEntered() ? "$orange" : "$gray8"}
+            color={!isUpdating && areAllPackageIdsEntered() ? "white" : "$gray10"}
+            borderColor={!isUpdating && areAllPackageIdsEntered() ? "transparent" : "$gray7"}
+            borderWidth={!isUpdating && areAllPackageIdsEntered() ? 0 : 1}
             borderRadius="$7"
             size="$4"
             onPress={onConfirm}
-            disabled={isUpdating}
+            disabled={isUpdating || !areAllPackageIdsEntered()}
           >
             {isUpdating ? (
               <XStack alignItems="center" gap="$2">
@@ -354,6 +448,7 @@ const DeliveryScreen = () => {
   const [error, setError] = useState<string | null>(null);
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [packageIds, setPackageIds] = useState<{ [key: string]: string[] }>({});
 
   console.log("this is id from prev screen :", id)
 
@@ -409,6 +504,7 @@ const DeliveryScreen = () => {
       deliveryDate: moment(order.deliveryDate).format('DD.MM.YYYY'),
       order_status: order.status as 'ready' | 'placed',
       menuName: order.menuId.name,
+      quantity: order.quantity || 0,
     }));
   };
 
@@ -417,10 +513,27 @@ const DeliveryScreen = () => {
       const delivery = deliveries.find(d => d.id === deliveryId);
       if (!delivery) return;
 
+      // Validate package IDs
+      const ids = packageIds[deliveryId] || [];
+      const filledIds = ids.filter(id => id.trim() !== '');
+      
+      if (delivery.quantity > 0 && filledIds.length !== delivery.quantity) {
+        setSuccessModalConfig({
+          title: "Incomplete Package IDs",
+          subtitle: `Please enter all ${delivery.quantity} package ${delivery.quantity === 1 ? 'ID' : 'IDs'} before confirming delivery.`,
+          buttonTitle: "OK",
+          buttonColor: "$orange",
+          onClose: () => setShowSuccessModal(false)
+        });
+        setShowSuccessModal(true);
+        return;
+      }
+
       setUpdatingOrderId(deliveryId);
 
       const result = await updateOrder({
         _id: deliveryId,
+        packageIds: filledIds,
       }).unwrap();
 
       setDeliveries((prev) =>
@@ -430,6 +543,13 @@ const DeliveryScreen = () => {
             : d
         )
       );
+
+      // Clear package IDs for this delivery
+      setPackageIds((prev) => {
+        const updated = { ...prev };
+        delete updated[deliveryId];
+        return updated;
+      });
 
       setSuccessModalConfig({
         title: "Delivery Confirmed!",
@@ -454,7 +574,7 @@ const DeliveryScreen = () => {
     } finally {
       setUpdatingOrderId(null);
     }
-  }, [deliveries, updateOrder]);
+  }, [deliveries, updateOrder, packageIds]);
 
   const handleJobCompleted = useCallback(() => {
     setSuccessModalConfig({
@@ -494,11 +614,25 @@ const DeliveryScreen = () => {
     console.log("Data",data)
   }, [data])
 
+  const handlePackageIdChange = useCallback((deliveryId: string, index: number, value: string) => {
+    setPackageIds((prev) => {
+      const currentIds = prev[deliveryId] || [];
+      const updatedIds = [...currentIds];
+      updatedIds[index] = value;
+      return {
+        ...prev,
+        [deliveryId]: updatedIds,
+      };
+    });
+  }, []);
+
   const renderDeliveryCard = ({ item }: { item: Delivery }) => (
     <DeliveryCard
       item={item}
       onConfirm={() => handleConfirmDelivery(item.id)}
       isUpdating={updatingOrderId === item.id}
+      packageIds={packageIds[item.id] || []}
+      onPackageIdChange={(index, value) => handlePackageIdChange(item.id, index, value)}
     />
   );
 
@@ -619,44 +753,51 @@ const DeliveryScreen = () => {
   }
 
   return (
-    <YStack flex={1} backgroundColor="$grey6">
-      <Header title="Pending Deliveries" />
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={{ flex: 1 }}
+    >
+      <YStack flex={1} backgroundColor="$grey6">
+        <Header title="Pending Deliveries" />
 
-      <YStack flex={1}>
-        <FlatList
-          data={deliveries}
-          renderItem={renderDeliveryCard}
-          keyExtractor={(item) => item.id}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{
-            paddingTop: 16,
-            paddingBottom: 120, 
-          }}
-          refreshControl={
-            <RefreshControl
-              refreshing={isRefreshing}
-              onRefresh={onRefresh}
-              colors={["#FE8C00"]}
-              tintColor="#FE8C00"
-            />
-          }
+        <YStack flex={1}>
+          <FlatList
+            data={deliveries}
+            renderItem={renderDeliveryCard}
+            keyExtractor={(item) => item.id}
+            showsVerticalScrollIndicator={true}
+            contentContainerStyle={{
+              paddingTop: 16,
+              paddingBottom: 120, 
+            }}
+            keyboardShouldPersistTaps="handled"
+            scrollEnabled={true}
+            refreshControl={
+              <RefreshControl
+                refreshing={isRefreshing}
+                onRefresh={onRefresh}
+                colors={["#FE8C00"]}
+                tintColor="#FE8C00"
+              />
+            }
+          />
+        </YStack>
+
+        <FixedJobCompletedButton
+          onJobCompleted={handleJobCompleted}
+          hasPendingDeliveries={hasPendingDeliveries}
+        />
+
+        <SuccessModal
+          isOpen={showSuccessModal}
+          onClose={successModalConfig.onClose}
+          modalTitle={successModalConfig.title}
+          subTitle={successModalConfig.subtitle}
+          buttonTitle={successModalConfig.buttonTitle}
+          buttonColor={successModalConfig.buttonColor}
         />
       </YStack>
-
-      <FixedJobCompletedButton
-        onJobCompleted={handleJobCompleted}
-        hasPendingDeliveries={hasPendingDeliveries}
-      />
-
-      <SuccessModal
-        isOpen={showSuccessModal}
-        onClose={successModalConfig.onClose}
-        modalTitle={successModalConfig.title}
-        subTitle={successModalConfig.subtitle}
-        buttonTitle={successModalConfig.buttonTitle}
-        buttonColor={successModalConfig.buttonColor}
-      />
-    </YStack>
+    </KeyboardAvoidingView>
   );
 };
  
