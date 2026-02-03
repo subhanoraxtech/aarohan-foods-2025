@@ -6,12 +6,12 @@ export const userApi = createApi({
   baseQuery: fetchBaseQuery({
     baseUrl: `${API_URL}/user`,
     prepareHeaders: (headers, { getState }) => {
-      // ✅ If you store token in user slice, attach it here
-      const token = (getState() as any).user?.token;
+      headers.set("Content-Type", "application/json");
+      headers.set("x-app-type", "ops");
+      const token = (getState() as any).user?.accessToken;
       if (token) {
         headers.set("Authorization", `Bearer ${token}`);
       }
-      headers.set("Content-Type", "application/json");
       return headers;
     },
   }),

@@ -19,7 +19,7 @@ export default function AppLayout() {
     return <Redirect href="/(auth)/login" />;
   }
 
-  if (auth?.user?.role=== Role.SUPPLIER) {
+  if (auth?.user?.role === Role.SUPPLIER) {
     return (
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="index" />
@@ -39,7 +39,7 @@ export default function AppLayout() {
         <Stack.Screen name="index" />
         <Stack.Screen name="approval" />
         <Stack.Screen name="notifications" />
-        <Stack.Screen name="bundles/[bundleDate]" /> 
+        <Stack.Screen name="bundles/[bundleDate]" />
         <Stack.Screen name="pending-deliveries/[id]" />
         <Stack.Screen name="pending-deliveries" />
       </Stack>
@@ -49,7 +49,7 @@ export default function AppLayout() {
   if (auth?.user?.role === Role.SECURITY) {
     return (
       <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="deliveryAgent" />
+        <Stack.Screen name="securityPerson" />
       </Stack>
     );
   }

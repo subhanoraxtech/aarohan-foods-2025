@@ -8,6 +8,8 @@ import {
   import { API_URL } from "@/utils/envVar";
   
   
+  const PROJECT_ID = "6eeae299-f414-43de-a93e-ce819756e081";
+  
   interface ApiErrorData {
     message?: string;
     success?: boolean;
@@ -20,10 +22,20 @@ import {
     prepareHeaders: (headers, { getState }) => {
       headers.set("Accept", "application/json");
       headers.set("Content-Type", "application/json");
+      headers.set("x-app-type", "ops");
+      headers.set("x-project-id", PROJECT_ID);
   
-      const token = (getState() as RootState).user.accessToken;
+      const state = getState() as any;
+      const token = state.user?.accessToken;
+      
+      console.log("=== API REQUEST DEBUG ===");
+      console.log("x-app-type: ops");
+      console.log("x-project-id:", PROJECT_ID);
+      console.log("Token present:", !!token);
+      
       if (token) {
         headers.set("Authorization", `Bearer ${token}`);
+        headers.set("authorization", `Bearer ${token}`); // For redundancy
       }
   
       return headers;

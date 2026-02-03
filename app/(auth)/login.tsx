@@ -50,11 +50,11 @@ export default function LoginScreen() {
   });
 
   const router = useRouter();
-  const selectedCountry: ICountry = {
+  const selectedCountry = {
     iso2: "in",
     callingCode: "+91",
     name: "India",
-  };
+  } as any;
 
   const {
     control,
@@ -99,7 +99,8 @@ export default function LoginScreen() {
         reset();
       }
       else if (response?.error) {
-        const errorMessage = response.error?.data?.message || "An error occurred";
+        const errorData = (response.error as any)?.data;
+        const errorMessage = errorData?.message || "An error occurred";
         setModalConfig({
           isOpen: true,
           type: 'error',
@@ -170,17 +171,17 @@ export default function LoginScreen() {
             contentContainerStyle={{ paddingBottom: 40 }}
           >
             <YStack
-              padding="$6"
-              justifyContent="flex-start"
+              p="$6"
+              jc="flex-start"
             >
-              <YStack alignItems="center" marginTop="$4" marginBottom="$6">
+              <YStack ai="center" mt="$4" mb="$6">
                 <Image
                   source={require("@/assets/images/logo.png")}
                   style={{ width: 200, height: 80, resizeMode: "cover" }}
                 />
               </YStack>
 
-              <YStack gap="$6" marginBottom="$4">
+              <YStack gap="$6" mb="$4">
                 <H2 fontWeight="bold" fontSize={40} lineHeight={48}>
                   Login to your account.
                 </H2>
@@ -189,7 +190,7 @@ export default function LoginScreen() {
                 </Paragraph>
               </YStack>
 
-              <YStack space="$4" marginBottom="$6">
+              <YStack gap="$4" mb="$6">
                 <Controller
                   control={control}
                   name="phoneNumber"
@@ -213,7 +214,7 @@ export default function LoginScreen() {
                   name="acceptedTerms"
                   render={({ field: { onChange, value } }) => (
                     <YStack space="$2">
-                      <XStack gap="$2" justifyContent="center" px="$3">
+                      <XStack gap="$2" jc="center" px="$3">
                         <Checkbox
                           size="$4"
                           checked={value}
@@ -227,7 +228,7 @@ export default function LoginScreen() {
                         </Checkbox>
 
                         <YStack>
-                          <XStack color="$gray3" alignItems="center">
+                          <XStack ai="center">
                             <Text fontSize="$2"> By proceeding, I agree to </Text>
                             <TouchableOpacity
                               onPress={() => router.push("/terms-conditions")}
@@ -244,7 +245,7 @@ export default function LoginScreen() {
                               fontSize="$2"
                               color="$orange"
                               fontWeight="500"
-                              textAlign="center"
+                              ta="center"
                             >
                               privacy policy
                             </Text>
@@ -255,7 +256,7 @@ export default function LoginScreen() {
                         <SizableText
                           color="$red1"
                           fontWeight="$6"
-                          margin="$2"
+                          m="$2"
                         >
                           {errors.acceptedTerms.message}
                         </SizableText>

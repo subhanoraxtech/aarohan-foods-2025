@@ -75,18 +75,18 @@ const userSlice = createSlice({
         user: User;
         accessToken: string;
         refreshToken: string;
-        role: Role; // Include role in payload
+        role?: Role;
       }>
     ) => {
       state.user = action.payload.user;
       state.accessToken = action.payload.accessToken;
       state.refreshToken = action.payload.refreshToken;
-      state.role = action.payload.role;
+      state.role = action.payload.role || (action.payload.user?.role as Role) || null;
     },
     updateUserData: (state, action: PayloadAction<User | null>) => {
       state.user = action.payload;
       // Update role from user object if available
-      state.role = action.payload?.role || null;
+      state.role = (action.payload?.role as Role) || null;
     },
     updateUserRole: (state, action: PayloadAction<Role>) => {
       state.role = action.payload;

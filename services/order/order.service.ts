@@ -182,8 +182,10 @@ export const ordersApi = createApi({
             queryParams.append(key, String(value))
           }
         })
+        const url = `${API_PREFIX}/getOrdersForSecurity`;
+        const queryString = queryParams.toString();
         return {
-          url: `${API_PREFIX}/getOrdersForSecurity?${queryParams.toString()}`,
+          url: queryString ? `${url}?${queryString}` : url,
           method: "GET",
         }
       },
