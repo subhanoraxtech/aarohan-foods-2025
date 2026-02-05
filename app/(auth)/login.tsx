@@ -174,10 +174,10 @@ export default function LoginScreen() {
               p="$6"
               jc="flex-start"
             >
-              <YStack ai="center" mt="$4" mb="$6">
+              <YStack width="100%" ai="center" mt="$4" mb="$6">
                 <Image
                   source={require("@/assets/images/logo.png")}
-                  style={{ width: 200, height: 80, resizeMode: "cover" }}
+                  style={{ width: 200, height: 120, resizeMode: "cover", alignSelf: "center" }}
                 />
               </YStack>
 
