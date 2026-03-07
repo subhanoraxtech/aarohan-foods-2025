@@ -15,14 +15,12 @@ import { useNotifications } from "@/hooks/useNotifications";
 import { LoadingProvider } from "@/contexts/LoadingContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { StatusBar } from "expo-status-bar";
-import { useColorScheme } from "react-native";
 
 
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [appIsReady, setAppIsReady] = useState(false);
-  const colorScheme = useColorScheme();
 
   const [fontsLoaded, fontError] = useFonts({
     DMSansRegular: require("../assets/fonts/DMSans-Regular.ttf"),
@@ -57,17 +55,17 @@ export default function RootLayout() {
 
   return (
     <Provider store={store}>
-      <TamaguiProvider config={tamaguiConfig}>
+      <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
         <GestureHandlerRootView style={{ flex: 1 }}>
           <BottomSheetModalProvider>
             <SafeAreaView
- style={{ flex: 1, backgroundColor: colorScheme === "dark" ? "black" : "white" }}
+ style={{ flex: 1, backgroundColor: "white" }}
  edges={["top", "bottom", "left", "right"]}
             >
               <AuthProvider>
               <LoadingProvider>
                 <Slot />
-                <StatusBar style="auto"  />
+                <StatusBar style="dark"  />
               </LoadingProvider>
               </AuthProvider>
             </SafeAreaView>
