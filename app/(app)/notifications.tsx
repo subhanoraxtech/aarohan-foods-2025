@@ -186,12 +186,16 @@ const NotificationScreen = () => {
 
       if (extractedId) {
         console.log("Navigating to bundles with ID(s):", extractedId);
+        const targetStatus = (item.type === NOTIFICATION_TYPE.DELIVERY_REQUEST_APPROVED || 
+                             item.type === NOTIFICATION_TYPE.SUPPLIER_REQUEST_APPROVED) 
+                             ? "approved" : "pending";
+
         router.navigate({
           pathname: "/(app)/bundles/[id]",
           params: { 
             id: extractedId,
             type: item.type,
-            status: "pending"
+            status: targetStatus
           },
         });
       }

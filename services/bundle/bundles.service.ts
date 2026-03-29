@@ -10,51 +10,44 @@ export const bundlesApi = createApi({
   baseQuery: baseQueryWithReauth,
   tagTypes: ["Bundles", "Orders", "Stats"],
   endpoints: (builder) => ({
-    getAllBundles: builder.query<ListAllBundlesResponse, ListAllBundlesRequest>({
-      query: ({ payload }) => {
-        const queryParams = new URLSearchParams();
+    getAllBundles: builder.query<ListAllBundlesResponse, ListAllBundlesRequest>(
+      {
+        query: ({ payload }) => {
+          const queryParams = new URLSearchParams();
 
-        Object.entries(payload).forEach(([key, value]) => {
-          if (value !== undefined && value !== null && value !== "") {
-            if (Array.isArray(value)) {
-              value.forEach((v) => queryParams.append(key, String(v)));
-            } else {
-              queryParams.append(key, String(value));
+          Object.entries(payload).forEach(([key, value]) => {
+            if (value !== undefined && value !== null && value !== "") {
+              if (Array.isArray(value)) {
+                value.forEach((v) => queryParams.append(key, String(v)));
+              } else {
+                queryParams.append(key, String(value));
+              }
             }
-          }
-        });
+          });
 
-        return {
-          url: `${API_PREFIX}?${queryParams.toString()}`,
-          method: "GET",
-        };
+          return {
+            url: `${API_PREFIX}?${queryParams.toString()}`,
+            method: "GET",
+          };
+        },
+        transformResponse: (response: any) => response.data,
+        providesTags: ["Bundles"],
       },
-      transformResponse: (response: any) => response.data,
-      providesTags: ["Bundles"],
-    }),
+    ),
 
-    getBundleById: builder.query<ListAllBundlesResponse, ListAllBundlesRequest>({
-      query: ({ payload }) => {
-        const queryParams = new URLSearchParams();
-
-        Object.entries(payload).forEach(([key, value]) => {
-          if (value !== undefined && value !== null && value !== "") {
-            if (Array.isArray(value)) {
-              value.forEach((v) => queryParams.append(key, String(v)));
-            } else {
-              queryParams.append(key, String(value));
-            }
-          }
-        });
-
-        return {
-          url: `${API_PREFIX}?${queryParams.toString()}`,
-          method: "GET",
-        };
+    getBundleById: builder.mutation<ListAllBundlesResponse, ListAllBundlesRequest>(
+      {
+        query: ({ payload }) => {
+          console.log("=== BUNDLE API POST PAYLOAD ===", payload);
+          return {
+            url: `${API_PREFIX}/getbundlebyIds`,
+            method: "POST",
+            body: payload,
+          };
+        },
+        transformResponse: (response: any) => response.data,
       },
-      transformResponse: (response: any) => response.data,
-      providesTags: ["Bundles"],
-    }),
+    ),
 
     getOrdersByBundleId: builder.query({
       query: ({ id }) => ({
@@ -72,6 +65,6 @@ export const bundlesApi = createApi({
 
 export const {
   useGetAllBundlesQuery,
-  useGetBundleByIdQuery,
+  useGetBundleByIdMutation,
   useGetOrdersByBundleIdQuery,
 } = bundlesApi;

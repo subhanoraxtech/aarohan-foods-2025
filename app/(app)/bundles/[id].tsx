@@ -20,7 +20,7 @@ import Header from "@/components/common/Header";
 import Icon from "@/components/common/Icon";
 import SuccessModal from "@/components/common/SuccesModal";
 
-import { useGetBundleByIdQuery } from "@/services/bundle/bundles.service";
+import { useGetBundleByIdMutation } from "@/services/bundle/bundles.service";
 import { useGetAllRequestsQuery } from "@/services/requestedBundle/requestedbundle.service";
 import { useCreateRequestMutation } from "@/services/request/request.service";
 
@@ -363,25 +363,39 @@ const BundleScreen = () => {
   }>({ type: "success", message: "" });
   const [isRefreshing, setIsRefreshing] = useState(false);
 
+  console.log("=== BUNDLE SCREEN DEBUG ===", { id, type, status, idArray });
+
   const settings = useSelector((state: RootState) => state.settings);
 
   // Conditionally execute the appropriate query based on type
-  const isBundleView = type === "bundle_available";
+  const isBundleView = type === "bundle_available" || status === "approved";
 
-  const {
-    data: bundleData,
-    isLoading: isBundleLoading,
-    error: bundleError,
-    refetch: refetchBundles,
-  } = useGetBundleByIdQuery(
-    {
-      payload: {
-        _id: idArray,
-        status: BUNDLE_STATUS.PENDING,
-      },
-    },
-    { skip: !isBundleView || idArray.length === 0 }
-  );
+  const [
+    getBundleById,
+    { data: bundleData, isLoading: isBundleLoading, error: bundleError },
+  ] = useGetBundleByIdMutation();
+
+  useEffect(() => {
+    if (isBundleView && idArray.length > 0) {
+      getBundleById({
+        payload: {
+          _id: idArray,
+          status: (status as string) || BUNDLE_STATUS.PENDING,
+        },
+      });
+    }
+  }, [isBundleView, idArray, status, getBundleById]);
+
+  const refetchBundles = useCallback(async () => {
+    if (isBundleView && idArray.length > 0) {
+      await getBundleById({
+        payload: {
+          _id: idArray,
+          status: (status as string) || BUNDLE_STATUS.PENDING,
+        },
+      }).unwrap();
+    }
+  }, [isBundleView, idArray, status, getBundleById]);
 
 
 
@@ -495,9 +509,9 @@ const BundleScreen = () => {
 
           if (auth?.user?.role === Role.SUPPLIER && roleSettings.maxQuantity) {
             const selectedBundle = bundles.find((b) => b._id === bundleId);
-            const currentTotalQuantity = prev.reduce((total, id) => {
-              const bundle = bundles.find((b) => b._id === id);
-              return total + (bundle ? bundle.totalOrders : 0);
+            const currentTotalQuantity = prev.reduce((total, bundleId) => {
+              const bundle = bundles.find((b) => b._id === bundleId);
+              return total + (bundle?.totalOrders ?? 0);
             }, 0);
 
             if (
@@ -571,15 +585,15 @@ const BundleScreen = () => {
 
   const getTotalDisplay = useCallback(() => {
     if (auth?.user?.role === Role.SUPPLIER) {
-      const totalQuantity = selectedBundles.reduce((total, id) => {
-        const bundle = bundles.find((b) => b?._id === id);
-        return total + (bundle?.totalOrders || 0);
+      const totalQuantity = selectedBundles.reduce((total, bundleId) => {
+        const bundle = bundles.find((b) => b._id === bundleId);
+        return total + (bundle?.totalOrders ?? 0);
       }, 0);
       return `${totalQuantity} plates selected`;
     } else {
-      const totalDeliveries = selectedBundles.reduce((total, id) => {
-        const bundle = bundles.find((b) => b?._id === id);
-        return total + (bundle?.totalOrders || 0);
+      const totalDeliveries = selectedBundles.reduce((total, bundleId) => {
+        const bundle = bundles.find((b) => b._id === bundleId);
+        return total + (bundle?.totalOrders ?? 0);
       }, 0);
       return `${totalDeliveries} deliveries selected`;
     }
