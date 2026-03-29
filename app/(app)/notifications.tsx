@@ -1,351 +1,229 @@
-import { useCallback, useEffect, useState } from "react";
-import { useRouter, useFocusEffect } from "expo-router";
-import { SectionList, RefreshControl, Linking, Image } from "react-native";
-import { Text, XStack, YStack } from "tamagui";
-import { Skeleton } from "moti/skeleton";
 import * as Notifications from "expo-notifications";
+import { useRouter } from "expo-router";
 import moment from "moment";
 import "moment-timezone";
+import { Skeleton } from "moti/skeleton";
+import React, { useState } from "react";
+import { Image, Linking, RefreshControl, SectionList } from "react-native";
+import { Text, XStack, YStack } from "tamagui";
 
 import Button from "@/components/common/Button";
 import Header from "@/components/common/Header";
+import Icon from "@/components/common/Icon";
 import SuccessModal from "@/components/common/SuccesModal";
+import { useAuth } from "@/hooks/useAuth";
 import { useGetAllNotificationsQuery } from "@/services/notifications/notification.service";
-import { useGetAllRequestsQuery } from "@/services/requestedBundle/requestedbundle.service";
 import { NOTIFICATION_TYPE } from "@/types/enums";
 import { NotificationType } from "@/types/notification";
-import { Role } from "@/types/enums";
-import { useAuth } from "@/hooks/useAuth";
 
 const NoServiceImage = require("@/assets/images/no.png");
 
 const NotificationScreen = () => {
   const router = useRouter();
-  const auth = useAuth();
-  const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
+
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [notificationPermission, setNotificationPermission] = useState<string | null>(null);
+  const [notificationPermission, setNotificationPermission] = useState<
+    string | null
+  >(null);
   const [showClosedModal, setShowClosedModal] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const {
     data: notificationData,
     isLoading: isFetchingNotifications,
     error: notificationError,
-    refetch: refetchNotifications,
-  } = useGetAllNotificationsQuery();
-
- 
-
-  // Check notification permissions
-  const checkNotificationPermissions = async () => {
-    const { status } = await Notifications.getPermissionsAsync();
-    setNotificationPermission(status);
-  };
-
-  // Check permissions on mount and when screen focuses
-  useFocusEffect(
-    useCallback(() => {
-      checkNotificationPermissions();
-      refetchNotifications();
-    }, [refetchNotifications])
+    refetch,
+  } = useGetAllNotificationsQuery(
+    {},
+    {
+      refetchOnMountOrArgChange: true,
+      refetchOnReconnect: true,
+    },
   );
 
   const handleEnableNotifications = async () => {
     const { status: currentStatus } = await Notifications.getPermissionsAsync();
-    
+
     if (currentStatus === "denied") {
       await Linking.openSettings();
     } else {
       const { status } = await Notifications.requestPermissionsAsync({
-        ios: {
-          allowAlert: true,
-          allowBadge: true,
-          allowSound: true,
-        },
+        ios: { allowAlert: true, allowBadge: true, allowSound: true },
       });
       setNotificationPermission(status);
     }
   };
 
-  const onRefresh = useCallback(async () => {
+  const onRefresh = async () => {
     setIsRefreshing(true);
-    try {
-      await refetchNotifications();
-      await checkNotificationPermissions();
-    } finally {
-      setIsRefreshing(false);
-    }
-  }, [refetchNotifications]);
+    await refetch();
+    setIsRefreshing(false);
+  };
 
-  useEffect(() => {
-    if (notificationError) {
-      setError("Failed to fetch notifications. Please try again.");
-    }
-  }, [notificationError]);
-
-  const notifications: NotificationType[] = Array.isArray(notificationData?.notifications)
+  const notifications: NotificationType[] = Array.isArray(
+    notificationData?.notifications,
+  )
     ? notificationData.notifications
     : [];
 
-    console.log(JSON.stringify(notifications,null,2))
-
   const currentDate = moment.tz("Asia/Kolkata");
-  
-  // Check if all notifications are expired
-  const allNotificationsExpired = notifications.length > 0 && notifications.every(notification => {
-    if (!notification.expiryTime) return false;
-    return moment.tz(notification.expiryTime, "Asia/Kolkata").isBefore(currentDate);
-  });
 
-  const hasNoActiveOrders = notifications.length === 0 || allNotificationsExpired;
-  const groupedNotifications = notifications.reduce((acc, notification) => {
-    const notificationDate = notification.bundleDate
-      ? moment.tz(notification.bundleDate, "Asia/Kolkata")
-      : moment.tz(notification.createdAt, "Asia/Kolkata");
-    const key = notificationDate.isSame(currentDate, "day")
-      ? "Today"
-      : notificationDate.format("MMM DD, YYYY");
-    acc[key] = acc[key] || [];
-    acc[key].push(notification);
-    return acc;
-  }, {} as Record<string, NotificationType[]>);
+  const allNotificationsExpired =
+    notifications.length > 0 &&
+    notifications.every((n) => {
+      if (!n.expiresAt) return false;
+      return moment.tz(n.expiresAt, "Asia/Kolkata").isBefore(currentDate);
+    });
 
-  const sections = Object.entries(groupedNotifications)
+  const hasNoActiveOrders =
+    notifications.length === 0 || allNotificationsExpired;
+
+  const grouped = notifications.reduce<Record<string, NotificationType[]>>(
+    (acc, n) => {
+      const date = n.deliveryDate
+        ? moment.tz(n.deliveryDate, "Asia/Kolkata")
+        : moment.tz(n.createdAt, "Asia/Kolkata");
+
+      const key = date.isSame(currentDate, "day")
+        ? "Today"
+        : date.format("MMM DD, YYYY");
+
+      acc[key] = acc[key] || [];
+      acc[key].push(n);
+      return acc;
+    },
+    {},
+  );
+
+  const sections = Object.entries(grouped)
     .sort(([a], [b]) => {
       if (a === "Today") return -1;
       if (b === "Today") return 1;
-      return moment(a, "MMM DD, YYYY").isAfter(moment(b, "MMM DD, YYYY"))
-        ? -1
-        : 1;
+      return moment(a, "MMM DD, YYYY").isAfter(moment(b)) ? -1 : 1;
     })
-    .map(([title, data]) => ({
-      title,
-      data,
-    }));
+    .map(([title, data]) => ({ title, data }));
 
-  const getNotificationStyle = (type: string) => {
+  const getStyle = (type: string) => {
     switch (type) {
       case NOTIFICATION_TYPE.MENU_PLACED:
         return {
           emoji: "🍕",
-          chipBg: "$orange",
-          chipLabel: "Menu Placed",
-          borderColor: "$orange",
-          buttonBg: "$orange",
-          buttonText: "Order Now",
-          showButton: true,
-          image: null,
+          bg: "$orange",
+          label: "Menu Placed",
+          btn: "Order Now",
         };
       case NOTIFICATION_TYPE.BUNDLE_AVAILABLE:
         return {
           emoji: "📦",
-          chipBg: "$blue10",
-          chipLabel: "Bundle Available",
-          borderColor: "$blue10",
-          buttonBg: "$blue10",
-          buttonText: "View Bundle",
-          showButton: true,
-          image: null,
+          bg: "$blue10",
+          label: "Bundle Available",
+          btn: "View Bundle",
         };
       case NOTIFICATION_TYPE.ORDER_COMPLETED:
         return {
           emoji: "✅",
-          chipBg: "$green10",
-          chipLabel: "Order Completed",
-          borderColor: "$green10",
-          buttonBg: "$green10",
-          buttonText: "View Details",
-          showButton: true,
-          image: null,
+          bg: "$green10",
+          label: "Completed",
+          btn: "View Details",
         };
       case NOTIFICATION_TYPE.ORDER_READY:
         return {
           emoji: "🎉",
-          chipBg: "$purple10",
-          chipLabel: "Order Ready",
-          borderColor: "$purple10",
-          buttonBg: "$purple10",
-          buttonText: "View Order",
-          showButton: true,
-          image: null,
-        };
-      case NOTIFICATION_TYPE.DELIVERY_REQUEST_APPROVED:
-        return {
-          emoji: "✅",
-          chipBg: "$green10",
-          chipLabel: "Approved",
-          borderColor: "$green10",
-          buttonBg: "$green10",
-          buttonText: "View Bundle",
-          showButton: true,
-        };
-      case NOTIFICATION_TYPE.DELIVERY_REQUEST_REJECTED:
-        return {
-          emoji: "❌",
-          chipBg: "$red10",
-          chipLabel: "Rejected",
-          borderColor: "$red10",
-          buttonBg: "$red10",
-          buttonText: "View Details",
-          showButton: true,
-        };
-      case NOTIFICATION_TYPE.SUPPLIER_REQUEST_APPROVED:
-        return {
-          emoji: "🎊",
-          chipBg: "$green10",
-          chipLabel: "Approved",
-          borderColor: "$green10",
-          buttonBg: "$green10",
-          buttonText: "View Bundle",
-          showButton: true,
-        };
-      case NOTIFICATION_TYPE.SUPPLIER_REQUEST_REJECTED:
-        return {
-          emoji: "❌",
-          chipBg: "$red10",
-          chipLabel: "Rejected",
-          borderColor: "$red10",
-          buttonBg: "$red10",
-          buttonText: "View Details",
-          showButton: true,
+          bg: "$purple10",
+          label: "Ready",
+          btn: "View Order",
         };
       case NOTIFICATION_TYPE.NO_SERVICE:
         return {
           emoji: null,
-          chipBg: "$red10",
-          chipLabel: "No Service",
-          borderColor: "$red10",
-          buttonBg: "$red10",
-          buttonText: "",
-          showButton: false,
+          bg: "$red10",
+          label: "No Service",
+          btn: "",
           image: NoServiceImage,
         };
       default:
         return {
           emoji: "🔔",
-          chipBg: "$gray10",
-          chipLabel: "Notification",
-          borderColor: "$grey5",
-          buttonBg: "$gray10",
-          buttonText: "View",
-          showButton: true,
-          image: null,
+          bg: "$gray10",
+          label: "Notification",
+          btn: "View",
         };
     }
   };
 
-  const renderStatusChip = (type: string) => {
-    const style = getNotificationStyle(type);
-    
-    return (
-      <YStack px="$2" py="$1" borderRadius="$4" ai="center" jc="center" bg={style.chipBg}>
-        <Text fontSize="$2" fontWeight="600" color="$background">
-          {style.chipLabel}
-        </Text>
-      </YStack>
-    );
-  };
-
   const renderRow = ({ item }: { item: NotificationType }) => {
+    const style = getStyle(item.type || "");
     const created = moment
       .tz(item.createdAt, "Asia/Kolkata")
       .format("hh:mm A • MMM DD");
 
-    const style = getNotificationStyle(item.type);
-
     const handlePress = () => {
-      // Check if notification is expired
-      const isExpired = item.expiryTime && moment.tz(item.expiryTime, "Asia/Kolkata").isBefore(currentDate);
-      
-      if (isExpired || hasNoActiveOrders) {
-        setShowClosedModal(true);
-        return;
+      console.log("Notification item pressed:", item);
+      const bundleData = item?.metadata?.bundleId;
+      if (!bundleData) return;
+
+      let extractedId: string | null = null;
+
+      if (Array.isArray(bundleData)) {
+        const ids = bundleData
+          .map((b: any) => {
+            if (typeof b === "string") return b;
+            if (b?.$oid) return b.$oid;
+            if (b?._id) return b._id;
+            return null;
+          })
+          .filter(Boolean);
+
+        if (ids.length > 0) {
+          extractedId = ids.join(",");
+        }
+      } else if (typeof bundleData === "string") {
+        extractedId = bundleData;
+      } else if ((bundleData as any)?.$oid) {
+        extractedId = (bundleData as any).$oid;
       }
 
-      const navDate = item.bundleDate
-        ? moment(item.bundleDate).format("YYYY-MM-DD")
-        : moment().format("YYYY-MM-DD");
-
-      try {
-        if (item.type === NOTIFICATION_TYPE.SUPPLIER_REQUEST_APPROVED && item.supplierRequestId) {
-          router.navigate({
-            pathname: `/(app)/bundles/${navDate}`,
-            params: {
-              type: 'supplierRequest',
-              id: item.supplierRequestId,
-              status: 'approved'
-            }
-          });
-        } else if (item.type === NOTIFICATION_TYPE.SUPPLIER_REQUEST_REJECTED && item.supplierRequestId) {
-          router.navigate({
-            pathname: `/(app)/bundles/${navDate}`,
-            params: {
-              type: 'supplierRequest',
-              id: item.supplierRequestId,
-              status: 'rejected'
-            }
-          });
-        } else if (item.type === NOTIFICATION_TYPE.DELIVERY_REQUEST_APPROVED && item.deliveryRequestId) {
-          router.navigate({
-            pathname: `/(app)/bundles/${navDate}`,
-            params: {
-              type: 'deliveryRequest',
-              id: item.deliveryRequestId,
-              status: 'approved'
-            }
-          });
-        } else if (item.type === NOTIFICATION_TYPE.DELIVERY_REQUEST_REJECTED && item.deliveryRequestId) {
-          router.navigate({
-            pathname: `/(app)/bundles/${navDate}`,
-            params: {
-              type: 'deliveryRequest',
-              id: item.deliveryRequestId,
-              status: 'rejected'
-            }
-          });
-        } else if (item.type === NOTIFICATION_TYPE.BUNDLE_AVAILABLE) {
-          router.navigate({
-            pathname: `/(app)/bundles/${navDate}`,
-            params: {
-              type: 'bundle_available',
-            }
-          });
-        } else {
-          router.navigate(`/(app)/bundles/${navDate}`);
-        }
-      } catch (error) {
-        console.error("Navigation error:", error);
+      if (extractedId) {
+        console.log("Navigating to bundles with ID(s):", extractedId);
+        router.navigate({
+          pathname: "/(app)/bundles/[id]",
+          params: { 
+            id: extractedId,
+            type: item.type,
+            status: "pending"
+          },
+        });
       }
     };
 
     return (
       <YStack
-        mb="$4"
-        bg="$background"
-        p="$3"
-        elevation={2}
-        borderWidth={1}
-        borderColor={style.borderColor}
-        borderRadius="$6"
+        {...({
+          mb: "$4",
+          bg: "$background",
+          p: "$3",
+          borderRadius: "$6",
+          borderWidth: 1,
+          borderColor: style.bg as any,
+        } as any)}
       >
         <YStack
-          width="100%"
-          height={160}
-          ai="center"
-          jc="center"
-          bg="$grey6"
-          borderRadius={8}
-          overflow="hidden"
+          height={150}
+          items="center"
+          justify="center"
+          bg="$grey5"
+          style={{ borderRadius: 12 }}
         >
-          {item.menuId?.image ? (
+          {(item.metadata.menuId as any)?.image ? (
             <Image
-              source={{ uri: item.menuId.image }}
-              style={{ width: "100%", height: "100%", resizeMode: "cover" }}
+              source={{ uri: (item.metadata.menuId as any).image }}
+              style={{ width: "100%", height: "100%" }}
             />
           ) : style.image ? (
-             <Image
+            <Image
               source={style.image}
-              style={{ width: "100%", height: "100%", resizeMode: "contain" }}
+              style={{ width: "100%", height: "100%" }}
             />
           ) : (
             <Text fontSize="$8">{style.emoji}</Text>
@@ -353,160 +231,211 @@ const NotificationScreen = () => {
         </YStack>
 
         <YStack mt="$3" gap="$2">
-          <Text
-            fontFamily="$heading"
-            fontSize="$6"
-            color="$black1"
-            fontWeight="700"
-            numberOfLines={2}
-          >
+          <Text fontSize="$6" fontWeight="700">
             {item.title}
           </Text>
-
-          <Text fontSize="$3" color="$gray10" numberOfLines={2}>
+          <Text fontSize="$3" color="$gray10">
             {item.message}
           </Text>
 
-          <XStack ai="center" gap="$2" flexWrap="wrap" mt="$2">
-            {renderStatusChip(item.type)}
-            <Text fontSize="$2" color="$gray10">
-              {created}
-            </Text>
+          <XStack gap="$2" items="center">
+            <YStack bg={style.bg as any} px="$2" py="$1" style={{ borderRadius: 8 }}>
+              <Text color="$background" fontSize="$2">
+                {style.label}
+              </Text>
+            </YStack>
+            <Text fontSize="$2">{created}</Text>
           </XStack>
 
-          {style.showButton && (
-            <Button
-              mt="$3"
-              bg={style.buttonBg}
-              borderRadius="$6"
-              padding="$3"
-              onPress={handlePress}
-            >
-              <Text fontWeight="600" color="$background">
-                {style.buttonText}
-              </Text>
+          {style.btn ? (
+            <Button mt="$2" bg={style.bg as any} onPress={handlePress}>
+              <Text color="$background">{style.btn}</Text>
             </Button>
-          )}
+          ) : null}
         </YStack>
       </YStack>
     );
-  };
-
-  const SkeletonCard = () => (
-    <YStack
-      mb="$4"
-      bg="$background"
-      p="$3"
-      elevation={2}
-      borderWidth={1}
-      borderColor="$grey5"
-      borderRadius="$6"
-    >
-      <Skeleton colorMode="light" width="100%" height={160} radius={8} />
-      <YStack mt="$3" gap="$2">
-        <Skeleton colorMode="light" width="70%" height={20} />
-        <Skeleton colorMode="light" width="40%" height={18} />
-        <Skeleton colorMode="light" width="90%" height={14} />
-        <Skeleton colorMode="light" width="50%" height={14} />
-        <Skeleton colorMode="light" width="100%" height={36} radius={6} />
-      </YStack>
-    </YStack>
-  );
-
-  const handleRetry = () => {
-    setError(null);
-    refetchNotifications();
   };
 
   return (
     <YStack flex={1} bg="$background" p="$3">
       <Header title="Notifications" />
 
-      {notificationPermission !== "granted" && notificationPermission !== null && (
-        <YStack
-          bg="$orange"
-          p="$3"
-          borderRadius="$4"
-          mb="$3"
-          gap="$2"
-        >
-          <Text fontSize="$4" fontWeight="600" color="$background">
-            Enable Notifications
-          </Text>
-          <Text fontSize="$3" color="$background">
-            Turn on notifications to stay updated about your orders and deliveries
-          </Text>
-          <Button
-            bg="$background"
-            borderRadius="$4"
-            padding="$2"
-            onPress={handleEnableNotifications}
-            mt="$2"
+      {notificationPermission !== "granted" &&
+        notificationPermission !== null && (
+          <YStack
+            bg="$orange"
+            p="$4"
+            mb="$4"
+            {...({
+              gap: "$3",
+              alignItems: "center",
+              justifyContent: "center",
+              borderRadius: 16,
+            } as any)}
           >
-            <Text fontWeight="600" color="$orange">
-              Turn On Notifications
+            <Text
+              fontSize="$5"
+              fontWeight="700"
+              color="$background"
+              style={{ textAlign: "center" }}
+            >
+              Enable Notifications
             </Text>
-          </Button>
-        </YStack>
-      )}
+
+            <Text fontSize="$3" color="$background" style={{ textAlign: "center" }}>
+              Turn on notifications to stay updated about your orders and
+              deliveries
+            </Text>
+
+            <Button
+              bg="$background"
+              borderRadius="$5"
+              px="$4"
+              py="$2"
+              onPress={handleEnableNotifications}
+            >
+              <Text fontWeight="700" color="$orange">
+                Turn On Notifications
+              </Text>
+            </Button>
+          </YStack>
+        )}
 
       {isFetchingNotifications ? (
-        <YStack flex={1} gap="$4">
-          <SkeletonCard />
-          <SkeletonCard />
-          <SkeletonCard />
-        </YStack>
-      ) : error ? (
-        <YStack flex={1} ai="center" jc="center" gap="$3">
-          <Text fontSize="$4" color="$red10">
-            Failed to load notifications
-          </Text>
-          <Button bg="$orange" onPress={handleRetry}>
-            <Text color="$background" fontWeight="600">
-              Retry
-            </Text>
-          </Button>
+        <YStack gap="$4">
+          {[1, 2, 3].map((i) => (
+            <YStack
+              key={i}
+              bg="$background"
+              p="$3"
+              gap="$3"
+              style={{
+                borderRadius: 24,
+                borderWidth: 1,
+              borderColor: "#EBEBED" as any,
+              marginBottom: 16,
+            }}
+            >
+              {/* Image Skeleton */}
+              <Skeleton
+                colorMode="light"
+                width="100%"
+                height={150}
+                radius={12}
+                backgroundColor="#E5E5E5"
+              />
+              <YStack gap="$2" mt="$3">
+                {/* Title Skeleton */}
+                <Skeleton
+                  colorMode="light"
+                  width="70%"
+                  height={24}
+                  backgroundColor="#E5E5E5"
+                />
+                {/* Message Skeleton */}
+                <Skeleton
+                  colorMode="light"
+                  width="100%"
+                  height={16}
+                  backgroundColor="#E5E5E5"
+                />
+                <Skeleton
+                  colorMode="light"
+                  width="90%"
+                  height={16}
+                  backgroundColor="#E5E5E5"
+                />
+
+                {/* Badge and Time Skeleton */}
+                <XStack gap="$2" items="center" mt="$1">
+                  <Skeleton
+                    colorMode="light"
+                    width={80}
+                    height={20}
+                    radius={6}
+                    backgroundColor="#E5E5E5"
+                  />
+                  <Skeleton
+                    colorMode="light"
+                    width={100}
+                    height={16}
+                    backgroundColor="#E5E5E5"
+                  />
+                </XStack>
+
+                {/* Button Skeleton */}
+                <YStack mt="$2">
+                  <Skeleton
+                    colorMode="light"
+                    width="100%"
+                    height={45}
+                    radius={10}
+                    backgroundColor="#E5E5E5"
+                  />
+                </YStack>
+              </YStack>
+            </YStack>
+          ))}
         </YStack>
       ) : sections.length === 0 ? (
-        <YStack flex={1} items="center" justify="center" px="$6" gap="$5">
-          <Text
-            fontSize="$6"
-            fontWeight="500"
-            color="$gray10"
-            textAlign="center"
+        <YStack
+          {...({
+            flex: 1,
+            alignItems: "center",
+            justifyContent: "flex-start",
+            width: "100%",
+            gap: "$4",
+            marginTop: 40, // Top-centered position below header
+          } as any)}
+        >
+          <YStack
+            {...({
+              bg: "$grey6",
+              p: "$6",
+              br: "$10",
+              alignItems: "center",
+              justifyContent: "center",
+            } as any)}
           >
-            🔔  No notifications yet
-          </Text>
-          <Text
-            fontSize="$4"
-            color="$gray10"
-            textAlign="center"
-            px="$4"
-          >
-            You'll see updates about your orders and deliveries here
-          </Text>
+            <Icon
+              type="material-community"
+              name="bell-off-outline"
+              size={60}
+              color="#878787"
+            />
+          </YStack>
+          <YStack {...({ items: "center", gap: "$2" } as any)}>
+            <Text
+              fontSize="$7"
+              fontWeight="700"
+              color="$black1"
+              fontFamily="$heading"
+            >
+              No notifications yet
+            </Text>
+            <Text
+              fontSize="$4"
+              color="$gray10"
+              style={{ textAlign: "center", maxWidth: 280 }}
+              fontFamily="$body"
+            >
+              We'll let you know when something important happens
+            </Text>
+          </YStack>
         </YStack>
       ) : (
         <SectionList
           sections={sections}
-          keyExtractor={(item) => item._id}
+          keyExtractor={(item) => item._id || Math.random().toString()}
           renderItem={renderRow}
           renderSectionHeader={({ section: { title } }) => (
-            <YStack py="$2">
-              <Text fontSize="$6" fontWeight="700" color="$black1">
-                {title}
-              </Text>
-            </YStack>
+            <Text fontSize="$6" fontWeight="700" py="$2">
+              {title}
+            </Text>
           )}
-          contentContainerStyle={{ paddingBottom: 120 }}
-          showsVerticalScrollIndicator={false}
           refreshControl={
-            <RefreshControl
-              refreshing={isRefreshing}
-              onRefresh={onRefresh}
-              colors={["#FE8C00"]}
-              tintColor="#FE8C00"
-            />
+            <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
           }
         />
       )}
@@ -518,8 +447,6 @@ const NotificationScreen = () => {
         modalTitle="Ordering Window Closed"
         subTitle="Please wait for a notification from us to place order"
         buttonTitle="OK"
-        iconName="clock"
-        iconType="feather"
       />
     </YStack>
   );

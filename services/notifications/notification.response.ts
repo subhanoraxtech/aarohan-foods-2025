@@ -3,7 +3,7 @@ import { NotificationType } from "@/types/notification"
 
 export interface ListAllNotificationResponse {
  
-    notifications:NotificationType
+    notifications: NotificationType[];
    
   }
 

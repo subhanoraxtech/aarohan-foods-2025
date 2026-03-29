@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSelector } from "react-redux";
 import { RefreshControl } from "react-native";
@@ -20,7 +20,7 @@ import Header from "@/components/common/Header";
 import Icon from "@/components/common/Icon";
 import SuccessModal from "@/components/common/SuccesModal";
 
-import { useGetAllBundlesQuery } from "@/services/bundle/bundles.service";
+import { useGetBundleByIdQuery } from "@/services/bundle/bundles.service";
 import { useGetAllRequestsQuery } from "@/services/requestedBundle/requestedbundle.service";
 import { useCreateRequestMutation } from "@/services/request/request.service";
 
@@ -46,14 +46,14 @@ const BundlesCard = ({
   requestStatus?: string;
   isRequestView?: boolean;
 }) => {
-  const formattedDateTime = item.bundleDate
-    ? moment.tz(item.bundleDate, "Asia/Kolkata").format("DD MMM, YYYY")
+  const formattedDateTime = item.deliveryDate
+    ? moment.tz(item.deliveryDate, "Asia/Kolkata").format("DD MMM, YYYY")
     : "N/A";
 
   const quantity = item.totalOrders || 0;
   const bundleNumber = item.bundleNumber || 0;
-  const pickupLocation = item.servicedPremisesId.pincode || "N/A";
-  const premisesName = item.servicedPremisesId.apartmentName || "Unknown Premises";
+  const pickupLocation = item.servicedPremisesId?.pincode || "N/A";
+  const premisesName = item.servicedPremisesId?.apartmentName || "Unknown Premises";
   
   const formatStatus = (status: string) => {
     return status
@@ -66,11 +66,13 @@ const BundlesCard = ({
 
   return (
     <Card
-      backgroundColor="$background"
-      borderRadius="$7"
-      padding="$0"
-      marginHorizontal="$3"
-      marginBottom="$4"
+      {...({
+        backgroundColor: "$background",
+        borderRadius: 16, // Explicit radius for smoothness
+        padding: "$0",
+        marginHorizontal: "$3",
+        marginBottom: 16,
+      } as any)}
       borderColor={isSelected ? "$green10" : requestStatus === STATUS.APPROVED ? "$green10" : requestStatus === STATUS.REJECTED ? "$red10" : "$grey7"}
       borderWidth={isSelected || requestStatus ? 2 : 1}
       elevate
@@ -84,10 +86,12 @@ const BundlesCard = ({
         <XStack justifyContent="space-between" alignItems="center">
           <XStack alignItems="center" gap="$3">
             <View
-              backgroundColor={isExpired ? "$gray8" : isSelected ? "$green10" : "$orange"}
-              borderRadius="$8"
-              paddingHorizontal="$4"
-              paddingVertical="$2"
+              {...({
+                backgroundColor: isExpired ? "$gray8" : isSelected ? "$green10" : "$orange",
+                borderRadius: 20,
+                paddingHorizontal: "$4",
+                paddingVertical: "$2",
+              } as any)}
             >
               <Text
                 fontSize="$6"
@@ -102,22 +106,26 @@ const BundlesCard = ({
 
           {!isExpired && !requestStatus && !isRequestView && (
             <View
-              backgroundColor={isSelected ? "$green10" : "$grey6"}
-              borderRadius="$10"
-              padding="$2"
-              width={36}
-              height={36}
-              alignItems="center"
-              justifyContent="center"
+              {...({
+                backgroundColor: isSelected ? "$green10" : "$grey6",
+                borderRadius: 20,
+                padding: "$2",
+                width: 36,
+                height: 36,
+                alignItems: "center",
+                justifyContent: "center",
+              } as any)}
             >
               {isSelected ? (
                 <Icon name="check" type="feather" size={20} color="white" />
               ) : (
-                <Circle
-                  size={20}
+                <View
+                  width={20}
+                  height={20}
+                  {...({ borderRadius: 10 } as any)}
                   borderColor="$grey2"
                   borderWidth={2}
-                  backgroundColor="transparent"
+                  bg="transparent"
                 />
               )}
             </View>
@@ -141,19 +149,19 @@ const BundlesCard = ({
           <XStack gap="$3">
             <View
               flex={1}
-              backgroundColor="$grey6"
-              borderRadius="$6"
-              padding="$3"
+              {...({ backgroundColor: "$grey6", borderRadius: 12, padding: "$3" } as any)}
             >
-              <XStack alignItems="center" gap="$2">
+              <XStack {...({ alignItems: "center", gap: "$2" } as any)}>
                 <View
-                  backgroundColor="$background"
-                  borderRadius="$5"
-                  padding="$2"
-                  width={36}
-                  height={36}
-                  alignItems="center"
-                  justifyContent="center"
+                  {...({
+                    backgroundColor: "$background",
+                    borderRadius: 10,
+                    padding: "$2",
+                    width: 36,
+                    height: 36,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  } as any)}
                 >
                   <Icon name="package" type="feather" size={16} color="#FE8C00" />
                 </View>
@@ -170,19 +178,19 @@ const BundlesCard = ({
 
             <View
               flex={1}
-              backgroundColor="$grey6"
-              borderRadius="$6"
-              padding="$3"
+              {...({ backgroundColor: "$grey6", borderRadius: 12, padding: "$3" } as any)}
             >
-              <XStack alignItems="center" gap="$2">
+              <XStack {...({ alignItems: "center", gap: "$2" } as any)}>
                 <View
-                  backgroundColor="$background"
-                  borderRadius="$5"
-                  padding="$2"
-                  width={36}
-                  height={36}
-                  alignItems="center"
-                  justifyContent="center"
+                  {...({
+                    backgroundColor: "$background",
+                    borderRadius: 10,
+                    padding: "$2",
+                    width: 36,
+                    height: 36,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  } as any)}
                 >
                   <Icon name="map-pin" type="feather" size={16} color="#FE8C00" />
                 </View>
@@ -201,19 +209,19 @@ const BundlesCard = ({
           </XStack>
 
           <View
-  backgroundColor="$grey6"
-  borderRadius="$6"
-  padding="$3"
+  {...({ backgroundColor: "$grey6", borderRadius: 12, padding: "$3" } as any)}
 >
-  <XStack alignItems="center" gap="$2">
+  <XStack {...({ alignItems: "center", gap: "$2" } as any)}>
     <View
-      backgroundColor="$background"
-      borderRadius="$5"
-      padding="$2"
-      width={36}
-      height={36}
-      alignItems="center"
-      justifyContent="center"
+      {...({
+        backgroundColor: "$background",
+        borderRadius: 10,
+        padding: "$2",
+        width: 36,
+        height: 36,
+        alignItems: "center",
+        justifyContent: "center",
+      } as any)}
     >
       <Icon name="home" type="feather" size={16} color="#FE8C00" />
     </View>
@@ -240,19 +248,19 @@ const BundlesCard = ({
 
 
           <View
-            backgroundColor="$grey6"
-            borderRadius="$6"
-            padding="$3"
+            {...({ backgroundColor: "$grey6", borderRadius: 12, padding: "$3" } as any)}
           >
-            <XStack alignItems="center" gap="$3">
+            <XStack {...({ alignItems: "center", gap: "$3" } as any)}>
               <View
-                backgroundColor="$background"
-                borderRadius="$5"
-                padding="$2"
-                width={36}
-                height={36}
-                alignItems="center"
-                justifyContent="center"
+                {...({
+                  backgroundColor: "$background",
+                  borderRadius: 10,
+                  padding: "$2",
+                  width: 36,
+                  height: 36,
+                  alignItems: "center",
+                  justifyContent: "center",
+                } as any)}
               >
                 <Icon name="calendar" type="feather" size={16} color="#FE8C00" />
               </View>
@@ -270,10 +278,7 @@ const BundlesCard = ({
 
         <XStack gap="$2" flexWrap="wrap">
           <View
-            backgroundColor="$grey6"
-            borderRadius="$6"
-            paddingHorizontal="$3"
-            paddingVertical="$2"
+            {...({ backgroundColor: "$grey6", borderRadius: 12, paddingHorizontal: "$3", paddingVertical: "$2" } as any)}
           >
             <Text fontSize="$2" color="$gray10" fontFamily="$body" fontWeight="600">
               Bundle Status: {status}
@@ -281,10 +286,12 @@ const BundlesCard = ({
           </View>
           {requestStatus && (
             <View
-              backgroundColor={requestStatus === STATUS.APPROVED ? "$green10" : "$red10"}
-              borderRadius="$6"
-              paddingHorizontal="$3"
-              paddingVertical="$2"
+              {...({
+                backgroundColor: requestStatus === STATUS.APPROVED ? "$green10" : "$red10",
+                borderRadius: 12,
+                paddingHorizontal: "$3",
+                paddingVertical: "$2",
+              } as any)}
             >
               <Text fontSize="$2" color="$background" fontFamily="$body" fontWeight="600">
                 Request Status: {requestStatus.charAt(0).toUpperCase() + requestStatus.slice(1)}
@@ -312,18 +319,19 @@ const FixedAcceptButton = ({
       bottom={0}
       left={0}
       right={0}
-      backgroundColor="$background"
-      padding="$4"
-      borderTopLeftRadius="$8"
-      borderTopRightRadius="$8"
+      {...({ backgroundColor: "$background", padding: "$4" } as any)}
+      style={{ borderTopLeftRadius: 32, borderTopRightRadius: 32 }}
       elevation="$4"
       borderTopWidth={1}
       borderTopColor="$grey7"
     >
       <Button
-        backgroundColor={disabled ? "$gray8" : "$green10"}
+        {...({
+          backgroundColor: disabled ? "$gray8" : "$green10",
+          borderRadius: 30,
+          fontWeight: "700",
+        } as any)}
         color="white"
-        borderRadius="$8"
         size="$5"
         onPress={onAccept}
         disabled={disabled}
@@ -337,21 +345,22 @@ const FixedAcceptButton = ({
 
 const BundleScreen = () => {
   const router = useRouter();
-  const { bundleDate, type, id, status } = useLocalSearchParams();
+  const { type, id, status } = useLocalSearchParams<{ type: string; id: string; status: string }>();
+  const idArray = useMemo(() => {
+    if (!id) return [];
+    if (Array.isArray(id)) return id;
+    return id.split(",");
+  }, [id]);
   const auth = useAuth();
 
-  console.log("Search Params:", { bundleDate, type, id, status });
-
-
-  const [bundles, setBundles] = useState<BundleType[]>([]);
   const [selectedBundles, setSelectedBundles] = useState<string[]>([]);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showLimitModal, setShowLimitModal] = useState(false);
   const [showRefreshModal, setShowRefreshModal] = useState(false);
   const [refreshModalConfig, setRefreshModalConfig] = useState<{
-    type: 'success' | 'error';
+    type: "success" | "error";
     message: string;
-  }>({ type: 'success', message: '' });
+  }>({ type: "success", message: "" });
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const settings = useSelector((state: RootState) => state.settings);
@@ -364,17 +373,17 @@ const BundleScreen = () => {
     isLoading: isBundleLoading,
     error: bundleError,
     refetch: refetchBundles,
-  } = useGetAllBundlesQuery(
+  } = useGetBundleByIdQuery(
     {
       payload: {
-        page: 1 as any,
-        limit: 50 as any,
-        // bundleDate: bundleDate as string,
+        _id: idArray,
         status: BUNDLE_STATUS.PENDING,
       },
     },
-    { skip: !isBundleView } // Skip if not in bundle view
+    { skip: !isBundleView || idArray.length === 0 }
   );
+
+
 
   const {
     data: requestData,
@@ -390,34 +399,26 @@ const BundleScreen = () => {
         status: status as string,
       },
     },
-    { skip: isBundleView } // Skip if in bundle view
+    { skip: isBundleView }
   );
-
-  console.log(JSON.stringify(requestData,null,2))
-
 
   const [createRequest] = useCreateRequestMutation();
 
-  useEffect(() => {
-    if (isBundleView && bundleData?.bundles) {
-      // For bundle view, show all pending bundles
-      setBundles(bundleData.bundles);
-    } 
-    else if (!isBundleView && requestData?.requests?.length > 0) {
-      const request = requestData.requests.find((req: any) => req._id === id);
-      if (request && request.bundleId) {
-        // Ensure we have full bundle + premises info
-        const bundle = {
-          ...request.bundleId,
-          servicedPremisesId: request.bundleId.servicedPremisesId || request.servicedPremisesId || {},
-        };
-        setBundles([bundle]);
-      } else {
-        setBundles([]);
-      }
+  const bundles: BundleType[] = useMemo(() => {
+    if (isBundleView) {
+      return bundleData?.bundles || [];
     }
     
-  }, [bundleData, requestData, id, isBundleView]);
+    // For specific request view, find the request matching the ID and extract the bundle
+    const request = requestData?.requests?.find((req: any) => req._id === id);
+    if (request && request.bundleId) {
+      return [{
+        ...request.bundleId,
+        servicedPremisesId: request.bundleId.servicedPremisesId || request.servicedPremisesId || {},
+      }];
+    }
+    return [];
+  }, [isBundleView, bundleData, requestData, id]);
 
   const today = moment.tz("Asia/Kolkata").startOf("day");
 
@@ -458,14 +459,18 @@ const BundleScreen = () => {
         await refetchRequests();
       }
       setRefreshModalConfig({
-        type: 'success',
-        message: isBundleView ? "Bundles refreshed successfully" : "Requests refreshed successfully",
+        type: "success",
+        message: isBundleView
+          ? "Bundles refreshed successfully"
+          : "Requests refreshed successfully",
       });
       setShowRefreshModal(true);
     } catch (error) {
       setRefreshModalConfig({
-        type: 'error',
-        message: isBundleView ? "Failed to refresh bundles" : "Failed to refresh requests",
+        type: "error",
+        message: isBundleView
+          ? "Failed to refresh bundles"
+          : "Failed to refresh requests",
       });
       setShowRefreshModal(true);
     } finally {
@@ -482,7 +487,7 @@ const BundleScreen = () => {
           return prev.filter((id) => id !== bundleId);
         } else {
           const roleSettings = getRoleBasedSettings();
-          
+
           if (prev.length >= roleSettings.maxSelection) {
             setShowLimitModal(true);
             return prev;
@@ -494,8 +499,12 @@ const BundleScreen = () => {
               const bundle = bundles.find((b) => b._id === id);
               return total + (bundle ? bundle.totalOrders : 0);
             }, 0);
-            
-            if (selectedBundle && (currentTotalQuantity + selectedBundle.totalOrders) > roleSettings.maxQuantity) {
+
+            if (
+              selectedBundle &&
+              currentTotalQuantity + selectedBundle.totalOrders >
+                roleSettings.maxQuantity
+            ) {
               setShowLimitModal(true);
               return prev;
             }
@@ -544,8 +553,8 @@ const BundleScreen = () => {
 
   const renderBundleCard = ({ item }: { item: BundleType & { requestStatus?: string } }) => {
     const isExpired =
-      item.bundleDate &&
-      moment.tz(item.bundleDate, "Asia/Kolkata").isBefore(today, "day");
+      item.deliveryDate &&
+      moment.tz(item.deliveryDate, "Asia/Kolkata").isBefore(today, "day");
 
     return (
       <BundlesCard
@@ -563,14 +572,14 @@ const BundleScreen = () => {
   const getTotalDisplay = useCallback(() => {
     if (auth?.user?.role === Role.SUPPLIER) {
       const totalQuantity = selectedBundles.reduce((total, id) => {
-        const bundle = bundles.find((b) => b._id === id);
-        return total + (bundle ? bundle.totalOrders : 0);
+        const bundle = bundles.find((b) => b?._id === id);
+        return total + (bundle?.totalOrders || 0);
       }, 0);
       return `${totalQuantity} plates selected`;
     } else {
       const totalDeliveries = selectedBundles.reduce((total, id) => {
-        const bundle = bundles.find((b) => b._id === id);
-        return total + (bundle ? bundle.totalOrders : 0);
+        const bundle = bundles.find((b) => b?._id === id);
+        return total + (bundle?.totalOrders || 0);
       }, 0);
       return `${totalDeliveries} deliveries selected`;
     }
@@ -580,53 +589,62 @@ const BundleScreen = () => {
     bundles.length > 0 &&
     bundles.every(
       (b) =>
-        b.bundleDate &&
-        moment.tz(b.bundleDate, "Asia/Kolkata").isBefore(today, "day")
+        b.deliveryDate &&
+        moment.tz(b.deliveryDate, "Asia/Kolkata").isBefore(today, "day")
     );
 
   const shouldShowAcceptButton = !isBundleView ? false : !isBundleLoading && !bundleError && availableBundles.length > 0 && !allExpired;
 
   return (
-    <YStack flex={1} backgroundColor="$grey6">
+    <YStack flex={1} {...({ backgroundColor: "$grey6" } as any)}>
       <Header title={isBundleView ? "Available Bundles" : "Requests"} />
 
       {(isBundleView ? isBundleLoading : isRequestLoading) && !isRefreshing ? (
-        <YStack flex={1} alignItems="center" justifyContent="center" padding="$6">
+        <YStack
+          flex={1}
+          {...({ alignItems: "center", justifyContent: "center", padding: "$6" } as any)}
+        >
           <View
-            backgroundColor="$background"
-            padding="$6"
-            borderRadius="$8"
-            alignItems="center"
-            gap="$4"
+            {...({
+              backgroundColor: "$background",
+              padding: "$6",
+              borderRadius: 20,
+              alignItems: "center",
+              gap: "$4",
+            } as any)}
           >
             <Icon type="feather" name="package" size={48} color="#FE8C00" />
             <YStack alignItems="center" gap="$2">
               <Text fontSize="$6" fontWeight="700" color="$black1" fontFamily="$heading">
                 Loading {isBundleView ? "Bundles" : "Requests"}
               </Text>
-              <Text fontSize="$4" color="$gray10" textAlign="center" fontFamily="$body">
+              <Text fontSize="$4" color="$gray10" style={{ textAlign: "center" }} fontFamily="$body">
                 Please wait...
               </Text>
             </YStack>
           </View>
         </YStack>
       ) : (isBundleView ? bundleError : false) && !isRefreshing ? (
-        <YStack flex={1} padding="$4" justifyContent="center">
+        <YStack flex={1} {...({ padding: "$4", justifyContent: "center" } as any)}>
           <Card
-            backgroundColor="$background"
-            borderRadius="$7"
-            padding="$6"
-            alignItems="center"
-            gap="$4"
+            {...({
+              backgroundColor: "$background",
+              borderRadius: 16,
+              padding: "$6",
+              alignItems: "center",
+              gap: "$4",
+            } as any)}
           >
             <View
-              backgroundColor="$grey6"
-              padding="$4"
-              borderRadius="$8"
-              alignItems="center"
-              justifyContent="center"
-              width={64}
-              height={64}
+              {...({
+                backgroundColor: "$grey6",
+                padding: "$4",
+                borderRadius: 20,
+                alignItems: "center",
+                justifyContent: "center",
+                width: 64,
+                height: 64,
+              } as any)}
             >
               <Icon type="feather" name="alert-circle" size={32} color="#E74C3C" />
             </View>
@@ -634,13 +652,12 @@ const BundleScreen = () => {
               <Text fontSize="$6" color="$black1" fontWeight="700" fontFamily="$heading">
                 Connection Error
               </Text>
-              <Text fontSize="$4" color="$gray10" textAlign="center" fontFamily="$body">
+              <Text fontSize="$4" color="$gray10" style={{ textAlign: "center" }} fontFamily="$body">
                 Failed to load bundles. Please check your connection.
               </Text>
             </YStack>
             <Button
-              backgroundColor="$orange"
-              borderRadius="$7"
+              {...({ backgroundColor: "$orange", borderRadius: 16 } as any)}
               size="$4"
               onPress={refetchBundles}
               marginTop="$2"
@@ -661,22 +678,29 @@ const BundleScreen = () => {
             />
           }
         >
-          <YStack flex={1} padding="$4" justifyContent="center" minHeight={500}>
+          <YStack
+            flex={1}
+            {...({ padding: "$4", justifyContent: "center", minHeight: 500 } as any)}
+          >
             <Card
-              backgroundColor="$background"
-              borderRadius="$7"
-              padding="$6"
-              alignItems="center"
-              gap="$4"
+              {...({
+                backgroundColor: "$background",
+                borderRadius: 16,
+                padding: "$6",
+                alignItems: "center",
+                gap: "$4",
+              } as any)}
             >
               <View
-                backgroundColor="$grey6"
-                padding="$4"
-                borderRadius="$8"
-                alignItems="center"
-                justifyContent="center"
-                width={80}
-                height={80}
+                {...({
+                  backgroundColor: "$grey6",
+                  padding: "$4",
+                  borderRadius: 20,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: 80,
+                  height: 80,
+                } as any)}
               >
                 <Icon type="feather" name="inbox" size={40} color="#878787" />
               </View>
@@ -684,7 +708,7 @@ const BundleScreen = () => {
                 <Text fontSize="$6" fontWeight="700" color="$black1" fontFamily="$heading">
                   No {isBundleView ? "Bundles" : "Requests"} Available
                 </Text>
-                <Text fontSize="$4" color="$gray10" textAlign="center" maxWidth={280} fontFamily="$body">
+                <Text fontSize="$4" color="$gray10" style={{ textAlign: "center", maxWidth: 280 }} fontFamily="$body">
                   Pull down to refresh or check back later
                 </Text>
               </YStack>
@@ -695,18 +719,22 @@ const BundleScreen = () => {
         <>
           {selectedBundles.length > 0 && isBundleView && (
             <XStack
-              padding="$4"
-              alignItems="center"
-              justifyContent="center"
-              backgroundColor="$background"
+              {...({
+                padding: "$4",
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: "$background",
+              } as any)}
               borderBottomWidth={1}
               borderBottomColor="$grey7"
             >
               <View
-                backgroundColor="$grey6"
-                borderRadius="$6"
-                paddingHorizontal="$4"
-                paddingVertical="$2"
+                {...({
+                  backgroundColor: "$grey6",
+                  borderRadius: 12,
+                  paddingHorizontal: "$4",
+                  paddingVertical: "$2",
+                } as any)}
                 borderWidth={1}
                 borderColor="$green10"
               >
@@ -721,7 +749,7 @@ const BundleScreen = () => {
             <FlatList
               data={availableBundles}
               renderItem={renderBundleCard}
-              keyExtractor={(item) => item._id}
+              keyExtractor={(item, index) => item._id || index.toString()}
               showsVerticalScrollIndicator={false}
               contentContainerStyle={{
                 paddingTop: 16,

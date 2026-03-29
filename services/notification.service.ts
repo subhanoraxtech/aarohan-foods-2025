@@ -1,6 +1,13 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { API_URL } from "@/utils/envVar";
 
+export interface ListAllNotificationsRequest {
+  payload: {
+    page: number;
+    limit: number;
+  };
+}
+
 export const notificationApi = createApi({
   reducerPath: "notificationApi",
   baseQuery: fetchBaseQuery({
@@ -19,10 +26,14 @@ export const notificationApi = createApi({
     },
   }),
   endpoints: (builder) => ({
-    getAllNotifications: builder.query<any, void>({
-      query: () => ({
+    getAllNotifications: builder.query<any, ListAllNotificationsRequest>({
+      query: (params) => ({
         url: "",
         method: "GET",
+        params: {
+          page: params.payload.page,
+          limit: params.payload.limit,
+        },
       }),
     }),
   }),

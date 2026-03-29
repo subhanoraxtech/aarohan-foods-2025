@@ -39,7 +39,7 @@ export default function AppLayout() {
         <Stack.Screen name="index" />
         <Stack.Screen name="approval" />
         <Stack.Screen name="notifications" />
-        <Stack.Screen name="bundles/[bundleDate]" />
+        <Stack.Screen name="bundles/[id]" />
         <Stack.Screen name="pending-deliveries/[id]" />
         <Stack.Screen name="pending-deliveries" />
       </Stack>
