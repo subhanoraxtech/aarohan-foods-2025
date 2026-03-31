@@ -60,8 +60,18 @@ export default function SecurityPersonScreen() {
   const dispatch = useDispatch();
   const { setLoading } = useLoading();
   const logout = useLogout();
-  const auth = useAuth();
   const { data, isLoading, isError } = useOrdersForSecurity();
+  const auth = useAuth();
+
+  React.useEffect(() => {
+    console.log(" \ud83d\udd10 Security Section Auth:", JSON.stringify(auth, null, 2));
+    if (data) {
+      console.log(" \ud83d\udce6 Security Orders API Response:", JSON.stringify(data, null, 2));
+    }
+    if (isError) {
+      console.error(" \u274c Security Orders API Error");
+    }
+  }, [data, isError, auth]);
 
   const handleLogout = async () => {
     try {
