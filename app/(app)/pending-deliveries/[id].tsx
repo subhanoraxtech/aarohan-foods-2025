@@ -425,12 +425,14 @@ const DeliveryScreen = () => {
           modalType: "success",
         });
         setShowSuccessModal(true);
-      } catch (err) {
+      } catch (err: any) {
         console.error("Error confirming delivery:", err);
+
+        const errorMessage = err?.data?.message || "Failed to update delivery status. Please try again.";
 
         setSuccessModalConfig({
           title: "Update Failed",
-          subtitle: "Failed to update delivery status. Please try again.",
+          subtitle: errorMessage,
           buttonTitle: "OK",
           buttonColor: theme.colors.red1,
           onClose: () => setShowSuccessModal(false),
