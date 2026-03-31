@@ -41,7 +41,7 @@ async function storeUserData(data: AuthResponseData) {
   await AsyncStorage.setItem("refreshToken", data.refreshToken);
 }
 
-async function clearUserData() {
+export async function clearUserData() {
   await AsyncStorage.removeItem("user");
   await AsyncStorage.removeItem("accessToken");
   await AsyncStorage.removeItem("refreshToken");

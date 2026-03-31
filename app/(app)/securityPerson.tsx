@@ -7,9 +7,11 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import Header from "@/components/common/Header";
 import Icon from "@/components/common/Icon";
+import { useDispatch } from "react-redux";
 import { useAuth } from "@/hooks/useAuth";
 import { useOrdersForSecurity } from "@/hooks/useOrders";
-import { useLogout } from "@/hooks/useAuthQuery";
+import { useLogout, clearUserData } from "@/hooks/useAuthQuery";
+import { logoutUser } from "@/store/slice/user.slice";
 import { getExpoPushTokenSilently } from "@/utils/pushNotification";
 import { useLoading } from "@/contexts/LoadingContext";
 import { theme } from "@/theme";
@@ -55,6 +57,7 @@ function getStatusStyle(status: string) {
 
 export default function SecurityPersonScreen() {
   const router = useRouter();
+  const dispatch = useDispatch();
   const { setLoading } = useLoading();
   const logout = useLogout();
   const auth = useAuth();
@@ -63,13 +66,18 @@ export default function SecurityPersonScreen() {
   const handleLogout = async () => {
     try {
       setLoading(true, "Logging out...");
-      const expoToken = await getExpoPushTokenSilently();
-      if (expoToken) {
-        await logout.mutateAsync({ expoToken: String(expoToken) });
-      }
+      
+      // For security ONLY: Don't call the logout API, just clear local state
+      // 1. Clear AsyncStorage
+      await clearUserData();
+      
+      // 2. Clear Redux state
+      dispatch(logoutUser());
+      
+      // 3. Navigate to login
       router.replace('/(auth)/login');
     } catch (error) {
-      console.error("Logout error:", error);
+      console.error("Local logout error:", error);
     } finally {
       setLoading(false);
     }
