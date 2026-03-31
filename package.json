@@ -20,8 +20,7 @@
     "@react-navigation/elements": "^2.6.3",
     "@react-navigation/native": "^7.1.8",
     "@reduxjs/toolkit": "^2.8.2",
-    "@tamagui/babel-plugin": "^1.132.20",
-    "@tamagui/config": "^1.132.20",
+    "@tanstack/react-query": "^5.0.0",
     "expo": "~54.0.12",
     "expo-blur": "~15.0.7",
     "expo-constants": "~18.0.9",
@@ -61,14 +60,11 @@
     "react-native-worklets": "0.5.1",
     "react-redux": "^9.2.0",
     "redux-persist": "^6.0.0",
-    "tamagui": "^1.132.20",
     "yup": "^1.7.0"
   },
-
   "resolutions": {
-  "react-native-web": "0.21.1"
-},
-
+    "react-native-web": "0.21.1"
+  },
   "devDependencies": {
     "@babel/core": "^7.25.2",
     "@types/react": "~19.1.10",

@@ -54,8 +54,12 @@ export async function registerForPushNotificationsAsync() {
     }
 
     return token;
-  } catch (error) {
-    console.error("Failed to get push token:", error);
+  } catch (error: any) {
+    if (error.message?.includes("503") || error.message?.includes("SERVICE_UNAVAILABLE")) {
+      console.warn("Expo notification service is temporarily unavailable (503). Skipping token registration for now.");
+    } else {
+      console.error("Failed to get push token:", error);
+    }
   }
 }
 
@@ -71,8 +75,17 @@ export async function getExpoPushTokenSilently(): Promise<
 
   if (!projectId) return;
 
-  const { data: expoToken } =
-    await Notifications.getExpoPushTokenAsync({ projectId });
+  try {
+    const { data: expoToken } =
+      await Notifications.getExpoPushTokenAsync({ projectId });
 
-  return { expoToken, projectId };
+    return { expoToken, projectId };
+  } catch (error: any) {
+    if (error.message?.includes("503") || error.message?.includes("SERVICE_UNAVAILABLE")) {
+      console.warn("Silent push token fetch failed: Expo service unavailable (503).");
+    } else {
+      console.warn("Silent push token fetch failed:", error.message);
+    }
+    return undefined;
+  }
 }

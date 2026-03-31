@@ -1,295 +1,163 @@
 import React, { useCallback, useState } from "react";
-import { FlatList, Pressable, RefreshControl } from "react-native";
-import { YStack, XStack, Text, View, Card, Spinner } from "tamagui";
+import { FlatList, Pressable, RefreshControl, StyleSheet } from "react-native";
+import { View } from "@/components/ui/View";
+import { Text } from "@/components/ui/Text";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
 import Icon from "@/components/common/Icon";
 import Header from "@/components/common/Header";
-import Button from "@/components/common/Button";
 import moment from "moment";
 import "moment-timezone";
 import { router, useFocusEffect } from "expo-router";
 
-import { useGetAllBundlesQuery } from "@/services/bundle/bundles.service";
+import { useBundles } from "@/hooks/useBundles";
 import { BundleType } from "@/types/bundleTypes";
-import { BUNDLE_STATUS, Role } from "@/types/enums";
-import { useAuth } from "@/hooks/useAuth";
-import { DeliveryAgent, Supplier } from "@/types/User";
+import { theme } from "@/theme";
+import { ListSkeleton } from "@/components/skeletons";
 
 const PendingCard = ({
   item,
   onPress,
-  userRole,
 }: {
   item: BundleType;
   onPress: () => void;
-  userRole?: string;
 }) => {
-  const formattedDateTime = item.bundleDate
-    ? moment.tz(item.bundleDate, "Asia/Kolkata").format("DD MMM, YYYY")
+  const formattedDateTime = item.deliveryDate
+    ? moment.tz(item.deliveryDate, "Asia/Kolkata").format("DD MMM, YYYY")
     : "N/A";
 
-    const formatStatus = (status: string) => {
-      return status
-        .split('-')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' ');
-    };
+  const formatStatus = (status: string) => {
+    return status
+      .split('-')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  };
 
   const bundleNumber = item.bundleNumber;
   const quantity = item.totalOrders || 0;
-  const pickupLocation = item.servicedPremisesId.pincode || "N/A";
-  const premisesName = item.servicedPremisesId.apartmentName || "Unknown Premises";
+  const pickupLocation = item.servicedPremisesId?.pincode || "N/A";
+  const premisesName = item.servicedPremisesId?.apartmentName || "Unknown Premises";
   const status = formatStatus(item.status || "N/A");
-
-
-  
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "APPROVED":
-        return "#1EA556";
-      case "PENDING":
-        return "#FE8C00";
-      case "REJECTED":
-        return "#E74C3C";
-      case "ASSIGNED":
-        return "#FE8C00";
-      default:
-        return "#878787";
-    }
-  };
 
   return (
     <Pressable onPress={onPress}>
-      <Card
-        backgroundColor="$background"
-        borderRadius="$7"
-        padding="$0"
-        marginHorizontal="$3"
-        marginBottom="$4"
-        borderColor="$grey7"
-        borderWidth={1}
-        elevate
-        overflow="hidden"
-        accessible
-        accessibilityLabel={`${premisesName}, Quantity: ${quantity}`}
-      >
-        <YStack padding="$4" gap="$3">
+      <Card variant="elevated" style={styles.card}>
+        <View p="lg" gap="md">
           {/* Header Section */}
-          <XStack justifyContent="space-between" alignItems="center">
-            <View
-              backgroundColor="$orange"
-              borderRadius="$8"
-              paddingHorizontal="$4"
-              paddingVertical="$2"
-            >
-              <Text
-                fontSize="$6"
-                fontWeight="700"
-                color="$background"
-                fontFamily="$heading"
-              >
+          <View row justify="space-between" align="center">
+            <View bg="orange" px="md" py="sm" radius="md">
+              <Text variant="body" weight="bold" color="white">
                 #{String(bundleNumber).padStart(2, "0")}
               </Text>
             </View>
 
-            <View
-              backgroundColor="$orange"
-              borderRadius="$10"
-              padding="$2"
-              width={36}
-              height={36}
-              alignItems="center"
-              justifyContent="center"
-            >
+            <View bg="orange" p="sm" radius="lg" center style={styles.arrowButton}>
               <Icon name="chevron-right" type="feather" size={20} color="white" />
             </View>
-          </XStack>
+          </View>
 
           {/* Premises Name */}
-          <YStack gap="$1">
-            <Text
-              fontSize="$7"
-              fontWeight="700"
-              color="$black1"
-              fontFamily="$heading"
-              numberOfLines={2}
-              lineHeight="$7"
-            >
-              {premisesName}
-            </Text>
-          </YStack>
+          <Text variant="h3" weight="bold" numberOfLines={2}>
+            {premisesName}
+          </Text>
 
           {/* Info Cards Grid */}
-          <YStack gap="$3">
-            <XStack gap="$3">
-              <View
-                flex={1}
-                backgroundColor="$grey6"
-                borderRadius="$6"
-                padding="$3"
-              >
-                <XStack alignItems="center" gap="$2">
-                  <View
-                    backgroundColor="$background"
-                    borderRadius="$5"
-                    padding="$2"
-                    width={36}
-                    height={36}
-                    alignItems="center"
-                    justifyContent="center"
-                  >
-                    <Icon name="package" type="feather" size={16} color="#FE8C00" />
+          <View gap="md">
+            <View row gap="md">
+              {/* Quantity Card */}
+              <View flex bg="grey6" radius="md" p="md">
+                <View row align="center" gap="sm">
+                  <View bg="white" p="sm" radius="md" style={styles.iconContainer}>
+                    <Icon name="package" type="feather" size={16} color={theme.colors.orange} />
                   </View>
-                  <YStack flex={1}>
-                    <Text fontSize="$2" color="$gray10" fontFamily="$body" fontWeight="500">
+                  <View flex>
+                    <Text variant="caption" color="gray10">
                       Quantity
                     </Text>
-                    <Text fontSize="$5" fontWeight="700" color="$black1" fontFamily="$heading">
+                    <Text variant="h3" weight="bold">
                       {quantity}
                     </Text>
-                  </YStack>
-                </XStack>
-
-                
+                  </View>
+                </View>
               </View>
 
-              <View
-                flex={1}
-                backgroundColor="$grey6"
-                borderRadius="$6"
-                padding="$3"
-              >
-                <XStack alignItems="center" gap="$2">
-                  <View
-                    backgroundColor="$background"
-                    borderRadius="$5"
-                    padding="$2"
-                    width={36}
-                    height={36}
-                    alignItems="center"
-                    justifyContent="center"
-                  >
-                    <Icon name="map-pin" type="feather" size={16} color="#FE8C00" />
+              {/* Pincode Card */}
+              <View flex bg="grey6" radius="md" p="md">
+                <View row align="center" gap="sm">
+                  <View bg="white" p="sm" radius="md" style={styles.iconContainer}>
+                    <Icon name="map-pin" type="feather" size={16} color={theme.colors.orange} />
                   </View>
-                  <YStack flex={1}>
-                    <Text fontSize="$2" color="$gray10" fontFamily="$body" fontWeight="500">
+                  <View flex>
+                    <Text variant="caption" color="gray10">
                       Pincode
                     </Text>
-                    <Text fontSize="$5" fontWeight="700" color="$black1" fontFamily="$heading">
+                    <Text variant="h3" weight="bold">
                       {pickupLocation}
                     </Text>
-                  </YStack>
-                </XStack>
-              </View>
-            </XStack>
-
-            <View
-  backgroundColor="$grey6"
-  borderRadius="$6"
-  padding="$3"
->
-  <XStack alignItems="center" gap="$2">
-    <View
-      backgroundColor="$background"
-      borderRadius="$5"
-      padding="$2"
-      width={36}
-      height={36}
-      alignItems="center"
-      justifyContent="center"
-    >
-      <Icon name="home" type="feather" size={16} color="#FE8C00" />
-    </View>
-    <YStack flex={1}>
-      <Text
-        fontSize="$2"
-        color="$gray10"
-        fontFamily="$body"
-        fontWeight="500"
-      >
-        Apartment Code
-      </Text>
-      <Text
-        fontSize="$5"
-        fontWeight="700"
-        color="$black1"
-        fontFamily="$heading"
-      >
-        {item.servicedPremisesId?.apartmentcode || "N/A"}
-      </Text>
-    </YStack>
-  </XStack>
-</View>
-
-            <View
-              backgroundColor="$grey6"
-              borderRadius="$6"
-              padding="$3"
-            >
-              <XStack alignItems="center" gap="$3">
-                <View
-                  backgroundColor="$background"
-                  borderRadius="$5"
-                  padding="$2"
-                  width={36}
-                  height={36}
-                  alignItems="center"
-                  justifyContent="center"
-                >
-                  <Icon name="calendar" type="feather" size={16} color="#FE8C00" />
+                  </View>
                 </View>
-                <YStack flex={1}>
-                  <Text fontSize="$2" color="$gray10" fontFamily="$body" fontWeight="500">
+              </View>
+            </View>
+
+            {/* Apartment Code Card */}
+            <View bg="grey6" radius="md" p="md">
+              <View row align="center" gap="sm">
+                <View bg="white" p="sm" radius="md" style={styles.iconContainer}>
+                  <Icon name="home" type="feather" size={16} color={theme.colors.orange} />
+                </View>
+                <View flex>
+                  <Text variant="caption" color="gray10">
+                    Apartment Code
+                  </Text>
+                  <Text variant="h3" weight="bold">
+                    {item.servicedPremisesId?.apartmentcode || "N/A"}
+                  </Text>
+                </View>
+              </View>
+            </View>
+
+            {/* Delivery Date Card */}
+            <View bg="grey6" radius="md" p="md">
+              <View row align="center" gap="sm">
+                <View bg="white" p="sm" radius="md" style={styles.iconContainer}>
+                  <Icon name="calendar" type="feather" size={16} color={theme.colors.orange} />
+                </View>
+                <View flex>
+                  <Text variant="caption" color="gray10">
                     Delivery Date
                   </Text>
-                  <Text fontSize="$5" fontWeight="700" color="$black1" fontFamily="$heading">
+                  <Text variant="h3" weight="bold">
                     {formattedDateTime}
                   </Text>
-                </YStack>
-              </XStack>
+                </View>
+              </View>
             </View>
-          </YStack>
+          </View>
 
-              {/* Status Badge */}
-              <XStack gap="$2" flexWrap="wrap">
-            <View
-              backgroundColor="$grey6"
-              borderRadius="$6"
-              paddingHorizontal="$3"
-              paddingVertical="$2"
-            >
-              <Text fontSize="$2" color="$gray10" fontFamily="$body" fontWeight="600">
-                Bundle Status: {status}
-              </Text>
-            </View>
-          </XStack>
-
-
-        </YStack>
+          {/* Status Badge */}
+          <View bg="grey6" px="md" py="sm" radius="md" align="flex-start">
+            <Text variant="caption" weight="semibold" color="gray10">
+              Bundle Status: {status}
+            </Text>
+          </View>
+        </View>
       </Card>
     </Pressable>
   );
 };
 
-const PendingDeliveriesScreen = () => {
-  const auth = useAuth();
-  const today = moment().format("YYYY-MM-DD");
+export default function PendingDeliveriesScreen() {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const {
     data: bundlesData,
     isLoading: isBundleLoading,
-    error: bundleError,
+    isError: bundleError,
     refetch,
-  } = useGetAllBundlesQuery({
-    payload: {
-      page: 1 as any,
-      limit: 50 as any,
-      status: BUNDLE_STATUS.ASSIGNED,
-    },
+  } = useBundles({
+    page: 1,
+    limit: 50,
   });
-
-  console.log("bundlesData",bundlesData)
 
   // Refetch bundles whenever the screen comes into focus
   useFocusEffect(
@@ -307,13 +175,9 @@ const PendingDeliveriesScreen = () => {
     }
   }, [refetch]);
 
-  const pendingDeliveries =
-    bundlesData?.bundles?.filter(
-      (bundle: BundleType) => bundle.status === BUNDLE_STATUS.ASSIGNED
-    ) || [];
+  const pendingDeliveries = bundlesData?.bundles || [];
 
   const handleDeliveryPress = (id: string) => {
-    console.log("this is bundle id", id);
     router.navigate(`/(app)/pending-deliveries/${id}`);
   };
 
@@ -321,147 +185,133 @@ const PendingDeliveriesScreen = () => {
     <PendingCard
       item={item}
       onPress={() => handleDeliveryPress(item._id || "")}
-      userRole={auth?.user?.role}
     />
   );
 
   if (isBundleLoading) {
     return (
-      <YStack flex={1} backgroundColor="$grey6">
+      <View flex bg="grey6">
         <Header title="Pending Deliveries" />
-        <YStack flex={1} alignItems="center" justifyContent="center" padding="$6">
-          <View
-            backgroundColor="$background"
-            padding="$6"
-            borderRadius="$8"
-            alignItems="center"
-            gap="$4"
-          >
-            <Icon type="feather" name="clock" size={48} color="#FE8C00" />
-            <YStack alignItems="center" gap="$2">
-              <Text fontSize="$6" fontWeight="700" color="$black1" fontFamily="$heading">
-                Loading Deliveries
-              </Text>
-              <Text fontSize="$4" color="$gray10" textAlign="center" fontFamily="$body">
-                Please wait...
-              </Text>
-            </YStack>
-          </View>
-        </YStack>
-      </YStack>
+        <View flex>
+          <ListSkeleton count={3} showHeader={false} />
+        </View>
+      </View>
     );
   }
 
   if (bundleError) {
     return (
-      <YStack flex={1} backgroundColor="$grey6">
+      <View flex bg="grey6">
         <Header title="Pending Deliveries" />
-        <YStack flex={1} padding="$4" justifyContent="center">
-          <Card
-            backgroundColor="$background"
-            borderRadius="$7"
-            padding="$6"
-            alignItems="center"
-            gap="$4"
-          >
-            <View
-              backgroundColor="$grey6"
-              padding="$4"
-              borderRadius="$8"
-              alignItems="center"
-              justifyContent="center"
-              width={64}
-              height={64}
-            >
-              <Icon type="feather" name="alert-circle" size={32} color="#E74C3C" />
+        <View flex p="lg" justify="center">
+          <Card variant="outlined" style={styles.errorCard}>
+            <View bg="grey6" p="xl" radius="lg" style={styles.errorIcon}>
+              <Icon type="feather" name="alert-circle" size={32} color={theme.colors.red1} />
             </View>
-            <YStack alignItems="center" gap="$2">
-              <Text fontSize="$6" color="$black1" fontWeight="700" fontFamily="$heading">
-                Connection Error
-              </Text>
-              <Text fontSize="$4" color="$gray10" textAlign="center" fontFamily="$body">
-                Failed to load pending deliveries. Please check your connection.
-              </Text>
-            </YStack>
-            <Button
-              backgroundColor="$orange"
-              borderRadius="$7"
-              size="$4"
-              onPress={refetch}
-              marginTop="$2"
-            >
+            <Text variant="h3" weight="bold" align="center">
+              Connection Error
+            </Text>
+            <Text variant="body" align="center" color="gray10">
+              Failed to load pending deliveries. Please check your connection.
+            </Text>
+            <Button variant="primary" onPress={() => refetch()} style={styles.retryButton}>
               Try Again
             </Button>
           </Card>
-        </YStack>
-      </YStack>
+        </View>
+      </View>
     );
   }
 
   return (
-    <YStack flex={1} backgroundColor="$grey6">
+    <View flex bg="grey6">
       <Header title="Pending Deliveries" />
 
-      <YStack flex={1}>
+      <View flex>
         {pendingDeliveries.length > 0 ? (
           <FlatList
             data={pendingDeliveries}
             renderItem={renderItem}
             keyExtractor={(item) => item._id || ""}
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={{
-              paddingTop: 16,
-              paddingBottom: 40,
-            }}
+            contentContainerStyle={styles.listContent}
             refreshControl={
               <RefreshControl
                 refreshing={isRefreshing}
                 onRefresh={onRefresh}
-                colors={["#FE8C00"]}
-                tintColor="#FE8C00"
+                colors={[theme.colors.orange]}
+                tintColor={theme.colors.orange}
               />
             }
           />
         ) : (
-          <YStack flex={1} padding="$4" justifyContent="center">
-            <Card
-              backgroundColor="$background"
-              borderRadius="$7"
-              padding="$6"
-              alignItems="center"
-              gap="$4"
-            >
-              <View
-                backgroundColor="$grey6"
-                padding="$4"
-                borderRadius="$8"
-                alignItems="center"
-                justifyContent="center"
-                width={80}
-                height={80}
-              >
-                <Icon type="feather" name="clock" size={40} color="#878787" />
+          <View flex p="lg" justify="center">
+            <Card variant="elevated" style={styles.emptyCard}>
+              <View bg="grey6" p="xl" radius="lg" style={styles.emptyIcon}>
+                <Icon type="feather" name="clock" size={40} color={theme.colors.gray10} />
               </View>
-              <YStack alignItems="center" gap="$2">
-                <Text fontSize="$6" fontWeight="700" color="$black1" fontFamily="$heading">
-                  No Pending Deliveries
-                </Text>
-                <Text
-                  fontSize="$4"
-                  color="$gray10"
-                  textAlign="center"
-                  maxWidth={280}
-                  fontFamily="$body"
-                >
-                  All your deliveries have been processed. Check back later for new pending items.
-                </Text>
-              </YStack>
+              <Text variant="h3" weight="bold" align="center">
+                No Pending Deliveries
+              </Text>
+              <Text variant="body" color="gray10" align="center">
+                All your deliveries have been processed. Check back later for new pending items.
+              </Text>
             </Card>
-          </YStack>
+          </View>
         )}
-      </YStack>
-    </YStack>
+      </View>
+    </View>
   );
-};
+}
 
-export default PendingDeliveriesScreen;
+const styles = StyleSheet.create({
+  card: {
+    marginHorizontal: theme.spacing.lg,
+    marginBottom: theme.spacing.lg,
+    padding: 0,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: theme.colors.grey7,
+  },
+  arrowButton: {
+    width: 36,
+    height: 36,
+  },
+  iconContainer: {
+    width: 36,
+    height: 36,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  listContent: {
+    paddingTop: theme.spacing.lg,
+    paddingBottom: theme.spacing.xl,
+  },
+  errorCard: {
+    padding: theme.spacing.xl,
+    alignItems: "center",
+    gap: theme.spacing.md,
+    borderColor: theme.colors.red1,
+  },
+  errorIcon: {
+    width: 64,
+    height: 64,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  retryButton: {
+    marginTop: theme.spacing.md,
+    minWidth: 120,
+  },
+  emptyCard: {
+    padding: theme.spacing.xl,
+    alignItems: "center",
+    gap: theme.spacing.lg,
+  },
+  emptyIcon: {
+    width: 80,
+    height: 80,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+});

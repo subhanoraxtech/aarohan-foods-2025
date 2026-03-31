@@ -1,22 +1,25 @@
 import React, { ReactNode, useRef } from "react";
 import {
-  SizableText,
-  Input as TamaguiInput,
-  InputProps as TamaguiInputProps,
+  TextInput,
   Text,
   View,
-  XStack,
-  YStack,
-} from "tamagui";
+  StyleSheet,
+  Pressable,
+  TextInputProps,
+  ViewStyle,
+  StyleProp,
+  TextStyle,
+} from "react-native";
+import { theme } from "@/theme";
 
-interface InputWithIconProps extends TamaguiInputProps {
+interface TextFieldProps extends TextInputProps {
   icon?: ReactNode;
   label?: string;
   error?: boolean;
   helperText?: string;
   gutterBottom?: boolean;
-  prefix?: string; // New prop for country code
-  style?: any;
+  prefix?: string;
+  containerStyle?: StyleProp<ViewStyle>;
 }
 
 const TextField = ({
@@ -27,76 +30,128 @@ const TextField = ({
   helperText,
   gutterBottom = false,
   prefix,
-  style,
+  containerStyle,
   ...props
-}: InputWithIconProps) => {
-  const inputRef = useRef<any>(null);
+}: TextFieldProps) => {
+  const inputRef = useRef<TextInput>(null);
 
   const handleFocus = () => {
-    if (inputRef.current?.focus) {
-      inputRef.current.focus();
-    }
+    inputRef.current?.focus();
   };
 
   return (
-    <View mb={gutterBottom ? "$2.5" : "$0"} style={style}>
+    <View style={[styles.container, gutterBottom && styles.gutterBottom, containerStyle]}>
       {label && (
-        <Text fontSize={14} fontWeight="$5" color="$black1" pb={"$2"}>
+        <Text style={styles.label}>
           {label}
         </Text>
       )}
-      <XStack
+      <Pressable
         onPress={handleFocus}
-        items="center"
-        borderWidth={1}
-        borderColor={error ? "$red1" : "$gray8"}
-        borderRadius={16}
-        paddingHorizontal="$4"
-        height={56}
-        justifyContent="space-between"
-        space="$2"
+        style={[
+          styles.inputWrapper,
+          { borderColor: error ? theme.colors.red1 : theme.colors.grey8 }
+        ]}
       >
         {prefix && (
-          <XStack
-            height="100%"
-            alignItems="center"
-            borderRightWidth={1}
-            borderRightColor="$gray8"
-            paddingRight="$2"
-          >
-            <Text fontSize={16} fontWeight="500" color="$gray3">
+          <View style={styles.prefixContainer}>
+            <Text style={styles.prefixText}>
               {prefix}
             </Text>
-          </XStack>
+          </View>
         )}
-        <YStack flex={1}>
-          <TamaguiInput
+        <View style={styles.inputContainer}>
+          <TextInput
             ref={inputRef}
             placeholder={placeholder}
-            unstyled
-            fontSize={16}
-            fontWeight="$5"
-            color="$gray3"
-            bg="transparent"
-            p={0}
-            m={0}
+            placeholderTextColor={theme.colors.grey2}
+            style={styles.input}
             {...props}
           />
-        </YStack>
-        {icon && icon}
-      </XStack>
+        </View>
+        {icon && (
+          <View style={styles.iconContainer}>
+            {icon}
+          </View>
+        )}
+      </Pressable>
 
       {helperText && (
-        <SizableText
-          color={error ? "$red1" : "white"}
-          fontWeight="$5"
-          margin={"$1"}
+        <Text
+          style={[
+            styles.helperText,
+            { color: error ? theme.colors.red1 : theme.colors.grey2 }
+          ]}
         >
           {helperText}
-        </SizableText>
+        </Text>
       )}
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    width: "100%",
+  },
+  gutterBottom: {
+    marginBottom: 10,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: theme.colors.black1,
+    marginBottom: 8,
+    fontFamily: theme.typography.fontFamily.medium,
+  },
+  inputWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    height: 56,
+    backgroundColor: theme.colors.white,
+  },
+  prefixContainer: {
+    height: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRightWidth: 1,
+    borderRightColor: theme.colors.grey8,
+    paddingRight: 8,
+    marginRight: 8,
+  },
+  prefixText: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: theme.colors.grey3,
+    fontFamily: theme.typography.fontFamily.medium,
+  },
+  inputContainer: {
+    flex: 1,
+    height: "100%",
+    justifyContent: "center",
+  },
+  input: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: theme.colors.grey3,
+    padding: 0,
+    margin: 0,
+    height: "100%",
+    fontFamily: theme.typography.fontFamily.medium,
+  } as TextStyle,
+  iconContainer: {
+    marginLeft: 8,
+  },
+  helperText: {
+    fontSize: 12,
+    fontWeight: "500",
+    marginTop: 4,
+    marginLeft: 4,
+    fontFamily: theme.typography.fontFamily.medium,
+  },
+});
 
 export default TextField;

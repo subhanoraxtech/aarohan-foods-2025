@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useFonts } from "expo-font";
 import { Provider } from "react-redux";
-import { TamaguiProvider } from "tamagui";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Slot } from "expo-router";
@@ -9,12 +8,12 @@ import { Slot } from "expo-router";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import * as SplashScreen from "expo-splash-screen";
 
-import tamaguiConfig from "../tamagui.config";
 import { store } from "@/store";
 import { useNotifications } from "@/hooks/useNotifications";
 import { LoadingProvider } from "@/contexts/LoadingContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { StatusBar } from "expo-status-bar";
+import { theme } from "@/theme";
 
 
 SplashScreen.preventAutoHideAsync();
@@ -55,23 +54,21 @@ export default function RootLayout() {
 
   return (
     <Provider store={store}>
-      <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
-        <GestureHandlerRootView style={{ flex: 1 }}>
-          <BottomSheetModalProvider>
-            <SafeAreaView
- style={{ flex: 1, backgroundColor: "white" }}
- edges={["top", "bottom", "left", "right"]}
-            >
-              <AuthProvider>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <BottomSheetModalProvider>
+          <SafeAreaView
+            style={{ flex: 1, backgroundColor: theme.colors.background }}
+            edges={["top", "bottom", "left", "right"]}
+          >
+            <AuthProvider>
               <LoadingProvider>
                 <Slot />
-                <StatusBar style="dark"  />
+                <StatusBar style="dark" />
               </LoadingProvider>
-              </AuthProvider>
-            </SafeAreaView>
-          </BottomSheetModalProvider>
-        </GestureHandlerRootView>
-      </TamaguiProvider>
+            </AuthProvider>
+          </SafeAreaView>
+        </BottomSheetModalProvider>
+      </GestureHandlerRootView>
     </Provider>
   );
 }

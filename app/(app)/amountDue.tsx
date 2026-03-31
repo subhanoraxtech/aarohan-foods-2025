@@ -1,269 +1,233 @@
-
-import React, { useEffect } from 'react';
-import { YStack, Text, XStack, ScrollView, Card, Separator } from 'tamagui';
-import Header from '../../components/common/Header';
-import Icon from '../../components/common/Icon';
-import { useGetStatsQuery } from '@/services/stats/stats.service';
+import React from "react";
+import { ScrollView, StyleSheet } from "react-native";
+import { View } from "@/components/ui/View";
+import { Text } from "@/components/ui/Text";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import Header from "@/components/common/Header";
+import Icon from "@/components/common/Icon";
+import { useStats } from "@/hooks/useStats";
+import { theme } from "@/theme";
+import { Skeleton } from "@/components/skeletons";
 
 export default function AmountDue() {
-  const { data, error, isLoading, isSuccess, isError } = useGetStatsQuery({
-    payload: {
-    
-    }
-  });
-
-  useEffect(() => {
-    console.log("data", data);
-  }, [data]);
+  const { data, isLoading, isError, refetch } = useStats();
 
   if (isLoading) {
     return (
-      <YStack flex={1} backgroundColor="$background">
+      <View flex style={styles.container}>
         <Header title="Amount Due" />
-        <ScrollView flex={1}>
-          <YStack 
-            space="$4" 
-            p="$4" 
-            style={{ 
-              alignItems: 'center', 
-              justifyContent: 'center',
-              minHeight: 300 
-            }}
-          >
-            <Icon type="material" name="hourglass-empty" size={48} color="#FF5722" />
-            <Text fontSize="$5" color="$gray10">Loading amount due...</Text>
-          </YStack>
+        <ScrollView style={styles.scrollView}>
+          <View style={styles.loadingContainer}>
+            <Skeleton width="100%" height={200} borderRadius={theme.borderRadius.lg} />
+            <Skeleton width="100%" height={100} borderRadius={theme.borderRadius.lg} />
+            <Skeleton width="100%" height={100} borderRadius={theme.borderRadius.lg} />
+          </View>
         </ScrollView>
-      </YStack>
+      </View>
     );
   }
 
-  // Show error state
   if (isError) {
     return (
-      <YStack flex={1} backgroundColor="$background">
+      <View flex style={styles.container}>
         <Header title="Amount Due" />
-        <ScrollView flex={1}>
-          <YStack space="$4" p="$4">
-            <Card 
-              elevate 
-              bordered 
-              backgroundColor="$grey6" 
-              borderColor="$red1"
-              borderRadius="$4"
-            >
-              <Card.Header padded>
-                <XStack space="$3" alignItems="center">
-                  <Icon type="material" name="error" size={24} color="#E74C3C" />
-                  <YStack flex={1}>
-                    <Text fontSize="$5" color="$red1" fontWeight="bold">
-                      Unable to load data
-                    </Text>
-                    <Text fontSize="$3" color="$gray10">
-                      Please try again later
-                    </Text>
-                  </YStack>
-                </XStack>
-              </Card.Header>
+        <ScrollView style={styles.scrollView}>
+          <View p="lg">
+            <Card variant="outlined" style={[styles.card, styles.errorCard]}>
+              <View row gap="md" align="center">
+                <Icon type="material" name="error" size={24} color={theme.colors.red1} />
+                <View flex>
+                  <Text variant="h3" color="red1" weight="bold">
+                    Unable to load data
+                  </Text>
+                  <Text variant="body-sm" color="gray10">
+                    Please try again later
+                  </Text>
+                </View>
+              </View>
+              <Button variant="primary" onPress={() => refetch()} style={styles.retryButton}>
+                Try Again
+              </Button>
             </Card>
-          </YStack>
+          </View>
         </ScrollView>
-      </YStack>
+      </View>
     );
   }
 
   return (
-    <YStack flex={1} backgroundColor="$background">
+    <View flex style={styles.container}>
       <Header title="Amount Due" />
-      <ScrollView flex={1}>
-        <YStack space="$4" p="$4">
-          
-         
-          <Card 
-            elevate 
-            bordered 
-            backgroundColor="$grey6" 
-            borderColor="$red1"
-            borderRadius="$6"
-            shadowColor="$red1"
-            shadowOffset={{ width: 0, height: 4 }}
-            shadowOpacity={0.15}
-            shadowRadius={8}
-          >
-            <Card.Header padded>
-              <YStack space="$2" alignItems="center">
-                <XStack space="$2" alignItems="center">
-                  <Icon type="material" name="account-balance-wallet" size={28} color="#E74C3C" />
-                  <Text fontSize="$5" fontWeight="600" color="$red1">
-                    Total Outstanding
-                  </Text>
-                </XStack>
-                <Text fontSize="$10" fontWeight="900" color="$red1">
-                  ₹{data?.amountDue?.toLocaleString() || 0}
+      <ScrollView style={styles.scrollView}>
+        <View p="lg" gap="lg">
+          {/* Hero Amount Due Card */}
+          <Card variant="elevated" style={[styles.card, styles.heroCard]}>
+            <View center gap="sm">
+              <View row gap="sm" align="center">
+                <Icon type="material" name="account-balance-wallet" size={28} color={theme.colors.red1} />
+                <Text variant="h3" weight="semibold" color="red1">
+                  Total Outstanding
                 </Text>
-                {data?.dueCount > 0 && (
-                  <Text fontSize="$3" color="$gray10" textAlign="center">
-                    Across {data.dueCount} pending {data.dueCount === 1 ? 'order' : 'orders'}
-                  </Text>
-                )}
-              </YStack>
-            </Card.Header>
+              </View>
+              <Text variant="h1" weight="bold" color="red1" style={styles.amount}>
+                ₹{data?.amountDue?.toLocaleString() || 0}
+              </Text>
+              {(data?.dueCount ?? 0) > 0 && (
+                <Text variant="body-sm" color="gray10" align="center">
+                  Across {data?.dueCount} pending {data?.dueCount === 1 ? 'order' : 'orders'}
+                </Text>
+              )}
+            </View>
           </Card>
 
-          {data?.dueCount > 0 && (
-            <Card
-              elevate
-              bordered
-              backgroundColor="$background"
-              borderColor="$grey7"
-              borderRadius="$4"
-              animation="bouncy"
-              scale={0.98}
-              hoverStyle={{ scale: 1 }}
-              pressStyle={{ scale: 0.96 }}
-            >
-              <Card.Header padded>
-                <XStack justifyContent="space-between" alignItems="center">
-                  <XStack space="$3" alignItems="center">
-                    <YStack 
-                      backgroundColor="$grey5" 
-                      padding="$2" 
-                      borderRadius="$3"
-                      alignItems="center"
-                      justifyContent="center"
-                      width={40}
-                      height={40}
-                    >
-                      <Icon type="material" name="pending-actions" size={20} color="#FE8C00" />
-                    </YStack>
-                    <YStack>
-                      <Text fontSize="$5" fontWeight="bold" color="$primary">
-                        Pending Orders
-                      </Text>
-                      <Text fontSize="$3" color="$gray10">
-                        Awaiting payment
-                      </Text>
-                    </YStack>
-                  </XStack>
-                  <YStack alignItems="flex-end">
-                    <Text fontSize="$7" fontWeight="bold" color="$red1">
-                      {data?.dueCount || 0}
+          {/* Pending Orders Count Card */}
+          {(data?.dueCount ?? 0) > 0 && (
+            <Card variant="elevated" style={styles.card}>
+              <View row justify="space-between" align="center">
+                <View row gap="md" align="center">
+                  <View bg="grey5" p="md" radius="md" style={styles.iconContainer}>
+                    <Icon type="material" name="pending-actions" size={20} color={theme.colors.orange} />
+                  </View>
+                  <View>
+                    <Text variant="h3" weight="bold">
+                      Pending Orders
                     </Text>
-                    <Text fontSize="$2" color="$gray10" textTransform="uppercase">
-                      {data?.dueCount === 1 ? 'ORDER' : 'ORDERS'}
+                    <Text variant="caption" color="gray10">
+                      Awaiting payment
                     </Text>
-                  </YStack>
-                </XStack>
-              </Card.Header>
-            </Card>
-          )}
-
-       
-          {data?.dueCount > 0 && data?.amountDue > 0 && (
-            <Card
-              elevate
-              bordered
-              backgroundColor="$background"
-              borderColor="$grey7"
-              borderRadius="$4"
-            >
-              <Card.Header padded>
-                <XStack justifyContent="space-between" alignItems="center">
-                  <XStack space="$3" alignItems="center">
-                    <YStack 
-                      backgroundColor="$grey5" 
-                      padding="$2" 
-                      borderRadius="$3"
-                      alignItems="center"
-                      justifyContent="center"
-                      width={40}
-                      height={40}
-                    >
-                      <Icon type="material" name="trending-up" size={20} color="#425466" />
-                    </YStack>
-                    <YStack>
-                      <Text fontSize="$5" fontWeight="bold" color="$primary">
-                        Average Per Order
-                      </Text>
-                      <Text fontSize="$3" color="$gray10">
-                        Outstanding amount
-                      </Text>
-                    </YStack>
-                  </XStack>
-                  <Text fontSize="$6" fontWeight="bold" color="$slate1">
-                    ₹{Math.round(data.amountDue / data.dueCount).toLocaleString()}
+                  </View>
+                </View>
+                <View align="flex-end">
+                  <Text variant="h2" weight="bold" color="red1">
+                    {data?.dueCount || 0}
                   </Text>
-                </XStack>
-              </Card.Header>
+                  <Text variant="caption" color="gray10" style={styles.uppercase}>
+                    {data?.dueCount === 1 ? 'ORDER' : 'ORDERS'}
+                  </Text>
+                </View>
+              </View>
             </Card>
           )}
 
-        
-          {data?.amountDue > 0 && (
-            <Card
-              elevate
-              bordered
-              backgroundColor="$grey9"
-              borderColor="$orange"
-              borderRadius="$4"
-            >
-              <Card.Header padded>
-                <XStack space="$3" alignItems="center">
-                  <Icon type="material" name="lightbulb" size={24} color="#FE8C00" />
-                  <YStack flex={1}>
-                    <Text fontSize="$4" fontWeight="600" color="$orange">
-                      Payment Reminder
+          {/* Average Per Order Card */}
+          {(data?.dueCount ?? 0) > 0 && (data?.amountDue ?? 0) > 0 && (
+            <Card variant="elevated" style={styles.card}>
+              <View row justify="space-between" align="center">
+                <View row gap="md" align="center">
+                  <View bg="grey5" p="md" radius="md" style={styles.iconContainer}>
+                    <Icon type="material" name="trending-up" size={20} color={theme.colors.slate1} />
+                  </View>
+                  <View>
+                    <Text variant="h3" weight="bold">
+                      Average Per Order
                     </Text>
-                    <Text fontSize="$3" color="$gray10">
-                      Don't forget to clear your outstanding dues to maintain good supplier relationships
+                    <Text variant="caption" color="gray10">
+                      Outstanding amount
                     </Text>
-                  </YStack>
-                </XStack>
-              </Card.Header>
+                  </View>
+                </View>
+                <Text variant="h3" weight="bold" color="slate1">
+                  ₹{Math.round((data?.amountDue ?? 0) / (data?.dueCount ?? 1)).toLocaleString()}
+                </Text>
+              </View>
             </Card>
           )}
 
-         
+          {/* Payment Reminder */}
+          {(data?.amountDue ?? 0) > 0 && (
+            <Card variant="elevated" style={[styles.card, styles.reminderCard]}>
+              <View row gap="md" align="center">
+                <Icon type="material" name="lightbulb" size={24} color={theme.colors.orange} />
+                <View flex>
+                  <Text variant="h3" weight="semibold" color="orange">
+                    Payment Reminder
+                  </Text>
+                  <Text variant="body-sm" color="gray10">
+                    Don&apos;t forget to clear your outstanding dues to maintain good supplier relationships
+                  </Text>
+                </View>
+              </View>
+            </Card>
+          )}
+
+          {/* All Clear State */}
           {data?.amountDue === 0 && data?.dueCount === 0 && (
-            <Card 
-              elevate 
-              bordered 
-              backgroundColor="$grey8" 
-              borderColor="$success1"
-              borderRadius="$6"
-              shadowColor="$success1"
-              shadowOffset={{ width: 0, height: 4 }}
-              shadowOpacity={0.15}
-              shadowRadius={8}
-            >
-              <Card.Header padded>
-                <YStack space="$3" alignItems="center">
-                  <YStack 
-                    backgroundColor="$grey6" 
-                    padding="$3" 
-                    borderRadius="$6"
-                    alignItems="center"
-                    justifyContent="center"
-                  >
-                    <Icon type="material" name="check-circle" size={32} color="#1B9E14" />
-                  </YStack>
-                  <YStack alignItems="center" space="$1">
-                    <Text fontSize="$6" fontWeight="bold" color="$success1">
-                      All Clear! 🎉
-                    </Text>
-                    <Text fontSize="$4" color="$success0" textAlign="center">
-                      No outstanding dues
-                    </Text>
-                    <Text fontSize="$3" color="$gray10" textAlign="center">
-                      All your payments are up to date
-                    </Text>
-                  </YStack>
-                </YStack>
-              </Card.Header>
+            <Card variant="elevated" style={[styles.card, styles.successCard]}>
+              <View center gap="md">
+                <View bg="grey6" p="lg" radius="lg" style={styles.emptyIconContainer}>
+                  <Icon type="material" name="check-circle" size={32} color={theme.colors.success1} />
+                </View>
+                <View center gap="sm">
+                  <Text variant="h2" weight="bold" color="success1">
+                    All Clear! 🎉
+                  </Text>
+                  <Text variant="body" color="success0" align="center">
+                    No outstanding dues
+                  </Text>
+                  <Text variant="caption" color="gray10" align="center">
+                    All your payments are up to date
+                  </Text>
+                </View>
+              </View>
             </Card>
           )}
-        </YStack>
+        </View>
       </ScrollView>
-    </YStack>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    backgroundColor: theme.colors.background,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  loadingContainer: {
+    padding: theme.spacing.lg,
+    gap: theme.spacing.lg,
+  },
+  card: {
+    padding: theme.spacing.lg,
+  },
+  errorCard: {
+    borderColor: theme.colors.red1,
+    gap: theme.spacing.md,
+  },
+  heroCard: {
+    backgroundColor: theme.colors.grey6,
+    borderColor: theme.colors.red1,
+    padding: theme.spacing.xl,
+  },
+  amount: {
+    fontSize: 48,
+    lineHeight: 56,
+  },
+  iconContainer: {
+    width: 40,
+    height: 40,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  uppercase: {
+    textTransform: "uppercase",
+  },
+  reminderCard: {
+    backgroundColor: theme.colors.grey9,
+    borderColor: theme.colors.orange,
+  },
+  successCard: {
+    backgroundColor: theme.colors.grey8,
+    borderColor: theme.colors.success1,
+    padding: theme.spacing.xl,
+  },
+  emptyIconContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  retryButton: {
+    marginTop: theme.spacing.md,
+  },
+});

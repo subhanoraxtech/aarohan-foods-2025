@@ -1,18 +1,20 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { YStack, Text, XStack, ScrollView, Card, View } from 'tamagui';
-import { RefreshControl } from 'react-native';
+import { View } from "@/components/ui/View";
+import { Text } from "@/components/ui/Text";
+import { Card } from "@/components/ui/Card";
+import { ScrollView, RefreshControl, StyleSheet } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import Header from '../../../components/common/Header';
 import Icon from '../../../components/common/Icon';
-import { useGetOrderHistoryQuery } from '@/services/order/order.service';
+import { useOrderHistory } from '@/hooks/useOrders';
 import moment from 'moment';
+import { theme } from "@/theme";
+import { Skeleton } from "@/components/skeletons";
 
 export default function SupplierOrderHistory() {
   const [isRefreshing, setIsRefreshing] = useState(false);
-  
-  const { data, isLoading, error, refetch } = useGetOrderHistoryQuery({
-    payload: { }
-  });
+
+  const { data, isLoading, error, refetch } = useOrderHistory();
 
   // Refetch order history whenever the screen comes into focus
   useFocusEffect(
@@ -36,74 +38,46 @@ export default function SupplierOrderHistory() {
 
   if (isLoading) {
     return (
-      <YStack flex={1} backgroundColor="$grey6">
+      <View flex bg="grey6">
         <Header title="Order History" />
-        <YStack flex={1} alignItems="center" justifyContent="center" padding="$6">
-          <View
-            backgroundColor="$background"
-            padding="$6"
-            borderRadius="$8"
-            alignItems="center"
-            gap="$4"
-          >
-            <Icon type="material" name="hourglass-empty" size={48} color="#1EA556" />
-            <YStack alignItems="center" gap="$2">
-              <Text fontSize="$6" fontWeight="700" color="$black1" fontFamily="$heading">
-                Loading History
-              </Text>
-              <Text fontSize="$4" color="$gray10" textAlign="center" fontFamily="$body">
-                Fetching your order records...
-              </Text>
-            </YStack>
+        <View flex center p="xl" gap="lg">
+          <View bg="white" p="xl" radius="lg" center gap="md">
+            <Skeleton width={60} height={60} borderRadius={30} />
+            <Skeleton width={150} height={24} />
+            <Skeleton width={200} height={16} />
           </View>
-        </YStack>
-      </YStack>
+        </View>
+      </View>
     );
   }
 
   if (error) {
     return (
-      <YStack flex={1} backgroundColor="$grey6">
+      <View flex bg="grey6">
         <Header title="Order History" />
-        <YStack flex={1} padding="$4" justifyContent="center">
-          <Card
-            backgroundColor="$background"
-            borderRadius="$7"
-            padding="$6"
-            alignItems="center"
-            gap="$4"
-          >
-            <View
-              backgroundColor="$grey6"
-              padding="$4"
-              borderRadius="$8"
-              alignItems="center"
-              justifyContent="center"
-              width={64}
-              height={64}
-            >
-              <Icon type="material" name="error-outline" size={32} color="#E74C3C" />
+        <View flex p="lg" justify="center">
+          <Card variant="outlined" style={styles.errorCard}>
+            <View bg="grey6" p="xl" radius="lg" style={styles.errorIcon}>
+              <Icon type="material" name="error-outline" size={32} color={theme.colors.red1} />
             </View>
-            <YStack alignItems="center" gap="$2">
-              <Text fontSize="$6" color="$black1" fontWeight="700" fontFamily="$heading">
-                Connection Error
-              </Text>
-              <Text fontSize="$4" color="$gray10" textAlign="center" fontFamily="$body">
-                Unable to load your order history. Please check your connection and try again.
-              </Text>
-            </YStack>
+            <Text variant="h3" weight="bold" align="center">
+              Connection Error
+            </Text>
+            <Text variant="body" align="center" color="gray10">
+              Unable to load your order history. Please check your connection and try again.
+            </Text>
           </Card>
-        </YStack>
-      </YStack>
+        </View>
+      </View>
     );
   }
 
   const orders = Array.isArray(data) ? data : [];
-  const completedOrders = orders.filter(order => 
+  const completedOrders = orders.filter(order =>
     order.status === 'delivered' || order.status === 'completed' || order.status === 'fulfilled'
   );
 
-  const getAddressDetails = (order) => {
+  const getAddressDetails = (order: any) => {
     const addresses = order.customerId?.address || [];
     const address = Array.isArray(addresses) && addresses.length > 0
       ? addresses.find(addr => addr.isActive) || addresses[0]
@@ -120,310 +94,250 @@ export default function SupplierOrderHistory() {
   };
 
   return (
-    <YStack flex={1} backgroundColor="$grey6">
+    <View flex bg="grey6">
       <Header title="Order History" />
-      <ScrollView 
-        flex={1} 
+      <ScrollView
+        style={{ flex: 1 }}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}
             onRefresh={onRefresh}
-            colors={["#1EA556"]}
-            tintColor="#1EA556"
+            colors={[theme.colors.orange]}
+            tintColor={theme.colors.orange}
           />
         }
       >
-        <YStack padding="$4" gap="$4">
-          
+        <View p="lg" gap="lg">
+
           {/* Summary Card */}
-          <Card
-            backgroundColor="$background"
-            borderRadius="$7"
-            padding="$0"
-            borderColor="$grey7"
-            borderWidth={1}
-            elevate
-            overflow="hidden"
-          >
-            <YStack padding="$4" gap="$3">
-              <XStack alignItems="center" gap="$3">
-                <View
-                  backgroundColor="$grey6"
-                  padding="$3"
-                  borderRadius="$6"
-                  alignItems="center"
-                  justifyContent="center"
-                  width={56}
-                  height={56}
-                >
-                  <Icon type="material" name="restaurant-menu" size={28} color="#1EA556" />
+          <Card variant="elevated" style={styles.summaryCard}>
+            <View p="lg" gap="md">
+              <View row align="center" gap="md">
+                <View bg="grey6" p="md" radius="md" style={styles.summaryIcon}>
+                  <Icon type="material" name="restaurant-menu" size={28} color={theme.colors.orange} />
                 </View>
-                <YStack flex={1} gap="$1">
-                  <Text fontSize="$2" fontWeight="600" color="$gray10" fontFamily="$body" textTransform="uppercase">
+                <View flex gap="xs">
+                  <Text variant="caption" weight="semibold" color="gray10" style={styles.uppercase}>
                     Total Completed
                   </Text>
-                  <Text fontSize="$8" fontWeight="700" color="$green10" fontFamily="$heading">
+                  <Text variant="h1" weight="bold" color="orange">
                     {completedOrders.length}
                   </Text>
-                  <Text fontSize="$3" color="$gray10" fontFamily="$body">
+                  <Text variant="caption" color="gray10">
                     Successfully fulfilled orders
                   </Text>
-                </YStack>
-              </XStack>
-            </YStack>
+                </View>
+              </View>
+            </View>
           </Card>
 
           {/* Section Header */}
-          <YStack gap="$1">
-            <Text fontSize="$6" fontWeight="700" color="$black1" fontFamily="$heading">
+          <View gap="xs">
+            <Text variant="h3" weight="bold">
               Order History
             </Text>
-            <Text fontSize="$3" color="$gray10" fontFamily="$body">
+            <Text variant="caption" color="gray10">
               Your completed orders and customer details
             </Text>
-          </YStack>
+          </View>
 
           {/* No orders message */}
           {completedOrders.length === 0 ? (
-            <Card
-              backgroundColor="$background"
-              borderRadius="$7"
-              padding="$6"
-              borderColor="$grey7"
-              borderWidth={1}
-              elevate
-            >
-              <YStack gap="$4" alignItems="center">
-                <View
-                  backgroundColor="$grey6"
-                  padding="$4"
-                  borderRadius="$8"
-                  alignItems="center"
-                  justifyContent="center"
-                  width={80}
-                  height={80}
-                >
-                  <Icon type="material" name="restaurant-menu" size={40} color="#878787" />
+            <Card variant="elevated" style={styles.emptyCard}>
+              <View center gap="lg" p="xl">
+                <View bg="grey6" p="lg" radius="lg" style={styles.emptyIcon}>
+                  <Icon type="material" name="restaurant-menu" size={40} color={theme.colors.gray10} />
                 </View>
-                <YStack alignItems="center" gap="$2">
-                  <Text fontSize="$6" fontWeight="700" color="$black1" fontFamily="$heading">
+                <View center gap="sm">
+                  <Text variant="h3" weight="bold">
                     No Orders Yet
                   </Text>
-                  <Text fontSize="$4" color="$gray10" textAlign="center" maxWidth={280} fontFamily="$body">
+                  <Text variant="body" color="gray10" align="center">
                     Your completed orders will appear here once customers start ordering
                   </Text>
-                </YStack>
-              </YStack>
+                </View>
+              </View>
             </Card>
           ) : (
             completedOrders.map((order) => {
               const addressDetails = getAddressDetails(order);
-              
+
               return (
-                <Card
-                  key={order._id}
-                  backgroundColor="$background"
-                  borderRadius="$7"
-                  padding="$0"
-                  borderColor="$grey7"
-                  borderWidth={1}
-                  elevate
-                  overflow="hidden"
-                  marginBottom="$2"
-                >
-                  <YStack padding="$4" gap="$3">
+                <Card key={order._id} variant="elevated" style={styles.orderCard}>
+                  <View p="lg" gap="md">
                     {/* Header Section */}
-                    <XStack justifyContent="space-between" alignItems="center">
-                      <View
-                        backgroundColor="$green10"
-                        borderRadius="$8"
-                        paddingHorizontal="$4"
-                        paddingVertical="$2"
-                      >
-                        <Text
-                          fontSize="$6"
-                          fontWeight="700"
-                          color="$background"
-                          fontFamily="$heading"
-                        >
+                    <View row justify="space-between" align="center">
+                      <View bg="orange" px="md" py="sm" radius="md">
+                        <Text variant="body" weight="bold" color="white">
                           #{String(order.bundle?.bundleNumber || 0).padStart(2, "0")}
                         </Text>
                       </View>
 
-                      <View
-                        backgroundColor="$grey6"
-                        paddingHorizontal="$3"
-                        paddingVertical="$2"
-                        borderRadius="$6"
-                      >
-                        <Text
-                          fontSize="$2"
-                          fontWeight="600"
-                          color="$green10"
-                          fontFamily="$body"
-                          textTransform="uppercase"
-                        >
+                      <View bg="grey6" px="md" py="sm" radius="md">
+                        <Text variant="caption" weight="semibold" color="success1" style={styles.uppercase}>
                           {order.status}
                         </Text>
                       </View>
-                    </XStack>
+                    </View>
 
                     {/* Menu & Order Info */}
-                    <YStack gap="$2">
-                      <XStack alignItems="center" gap="$2">
-                        <View
-                          backgroundColor="$grey6"
-                          borderRadius="$5"
-                          padding="$2"
-                          width={32}
-                          height={32}
-                          alignItems="center"
-                          justifyContent="center"
-                        >
-                          <Icon type="material" name="restaurant" size={16} color="#1EA556" />
-                        </View>
-                        <YStack flex={1}>
-                          <Text fontSize="$5" fontWeight="700" color="$black1" fontFamily="$heading" numberOfLines={1}>
-                            {order.menu?.name || 'Menu Item'}
-                          </Text>
-                          <Text fontSize="$3" color="$gray10" fontFamily="$body">
-                            Order #{order.orderNumber}
-                          </Text>
-                        </YStack>
-                      </XStack>
-                    </YStack>
+                    <View row align="center" gap="sm">
+                      <View bg="grey6" radius="md" p="sm" style={styles.smallIconContainer}>
+                        <Icon type="material" name="restaurant" size={16} color={theme.colors.orange} />
+                      </View>
+                      <View flex>
+                        <Text variant="h3" weight="bold" numberOfLines={1}>
+                          {order.menu?.name || 'Menu Item'}
+                        </Text>
+                        <Text variant="caption" color="gray10">
+                          Order #{order.orderNumber}
+                        </Text>
+                      </View>
+                    </View>
 
                     {/* Premises Info */}
-                    <View
-                      backgroundColor="$grey6"
-                      borderRadius="$6"
-                      padding="$3"
-                    >
-                      <YStack gap="$1">
-                        <Text fontSize="$2" color="$gray10" fontFamily="$body" fontWeight="500">
+                    <View bg="grey6" radius="md" p="md">
+                      <View gap="xs">
+                        <Text variant="caption" color="gray10" weight="medium">
                           Premises
                         </Text>
-                        <Text fontSize="$4" fontWeight="600" color="$black1" fontFamily="$body">
+                        <Text variant="body" weight="semibold">
                           {order.bundle?.premisesName || addressDetails.apartmentName}
                         </Text>
-                      </YStack>
+                      </View>
                     </View>
 
                     {/* Quantity & Amount Grid */}
-                    <XStack gap="$3">
-                      <View
-                        flex={1}
-                        backgroundColor="$grey6"
-                        borderRadius="$6"
-                        padding="$3"
-                      >
-                        <YStack gap="$1">
-                          <Text fontSize="$2" color="$gray10" fontFamily="$body" fontWeight="500">
+                    <View row gap="md">
+                      <View flex bg="grey6" radius="md" p="md">
+                        <View gap="xs">
+                          <Text variant="caption" color="gray10" weight="medium">
                             Quantity
                           </Text>
-                          <Text fontSize="$5" fontWeight="700" color="$black1" fontFamily="$heading">
+                          <Text variant="h3" weight="bold">
                             {order.quantity}
                           </Text>
-                        </YStack>
+                        </View>
                       </View>
-                      
-                      <View
-                        flex={1}
-                        backgroundColor="$grey6"
-                        borderRadius="$6"
-                        padding="$3"
-                      >
-                        <YStack gap="$1">
-                          <Text fontSize="$2" color="$gray10" fontFamily="$body" fontWeight="500">
+
+                      <View flex bg="grey6" radius="md" p="md">
+                        <View gap="xs">
+                          <Text variant="caption" color="gray10" weight="medium">
                             Amount
                           </Text>
-                          <Text fontSize="$5" fontWeight="700" color="$green10" fontFamily="$heading">
+                          <Text variant="h3" weight="bold" color="success1">
                             ₹{order.totalAmount}
                           </Text>
-                        </YStack>
+                        </View>
                       </View>
-                    </XStack>
+                    </View>
 
                     {/* Delivery Address */}
-                    <View
-                      backgroundColor="$grey6"
-                      borderRadius="$6"
-                      padding="$3"
-                    >
-                      <YStack gap="$2">
-                        <Text fontSize="$3" fontWeight="600" color="$black1" fontFamily="$heading">
+                    <View bg="grey6" radius="md" p="md">
+                      <View gap="sm">
+                        <Text variant="body" weight="semibold">
                           Delivery Address
                         </Text>
-                        
-                        <XStack gap="$2" flexWrap="wrap">
-                          <View
-                            backgroundColor="$background"
-                            borderRadius="$4"
-                            paddingHorizontal="$2"
-                            paddingVertical="$1"
-                          >
-                            <Text fontSize="$2" fontWeight="600" color="$black1" fontFamily="$body">
+
+                        <View row gap="sm" wrap>
+                          <View bg="white" px="sm" py="xs" radius="sm">
+                            <Text variant="caption" weight="semibold">
                               Apt {addressDetails.apartmentNumber}
                             </Text>
                           </View>
-                          <View
-                            backgroundColor="$background"
-                            borderRadius="$4"
-                            paddingHorizontal="$2"
-                            paddingVertical="$1"
-                          >
-                            <Text fontSize="$2" fontWeight="600" color="$black1" fontFamily="$body">
+                          <View bg="white" px="sm" py="xs" radius="sm">
+                            <Text variant="caption" weight="semibold">
                               Block {addressDetails.blockNumber}
                             </Text>
                           </View>
-                        </XStack>
+                        </View>
 
-                        <Text fontSize="$3" color="$gray10" fontFamily="$body">
+                        <Text variant="body-sm" color="gray10">
                           {addressDetails.areaName}
                         </Text>
-                        
-                        <Text fontSize="$3" color="$gray10" fontFamily="$body">
+
+                        <Text variant="body-sm" color="gray10">
                           {addressDetails.city} - {addressDetails.pincode}
                         </Text>
-                      </YStack>
+                      </View>
                     </View>
 
                     {/* Delivery Date */}
-                    <View
-                      backgroundColor="$grey6"
-                      borderRadius="$6"
-                      padding="$3"
-                    >
-                      <XStack alignItems="center" gap="$2">
-                        <View
-                          backgroundColor="$background"
-                          borderRadius="$5"
-                          padding="$2"
-                          width={28}
-                          height={28}
-                          alignItems="center"
-                          justifyContent="center"
-                        >
-                          <Icon type="material" name="calendar-today" size={12} color="#1EA556" />
+                    <View bg="grey6" radius="md" p="md">
+                      <View row align="center" gap="sm">
+                        <View bg="white" radius="md" p="sm" style={styles.calendarIcon}>
+                          <Icon type="material" name="calendar-today" size={14} color={theme.colors.orange} />
                         </View>
-                        <YStack flex={1}>
-                          <Text fontSize="$2" color="$gray10" fontFamily="$body" fontWeight="500">
+                        <View flex>
+                          <Text variant="caption" color="gray10" weight="medium">
                             Delivered On
                           </Text>
-                          <Text fontSize="$4" fontWeight="600" color="$black1" fontFamily="$body">
+                          <Text variant="body" weight="semibold">
                             {moment(order.deliveryDate).format('MMM DD, YYYY')}
                           </Text>
-                        </YStack>
-                      </XStack>
+                        </View>
+                      </View>
                     </View>
-                  </YStack>
+                  </View>
                 </Card>
               );
             })
           )}
-        </YStack>
+        </View>
       </ScrollView>
-    </YStack>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  summaryCard: {
+    overflow: "hidden",
+  },
+  summaryIcon: {
+    width: 56,
+    height: 56,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  uppercase: {
+    textTransform: "uppercase",
+  },
+  errorCard: {
+    padding: theme.spacing.xl,
+    alignItems: "center",
+    gap: theme.spacing.md,
+    borderColor: theme.colors.red1,
+  },
+  errorIcon: {
+    width: 64,
+    height: 64,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  emptyCard: {
+    alignItems: "center",
+  },
+  emptyIcon: {
+    width: 80,
+    height: 80,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  orderCard: {
+    overflow: "hidden",
+    marginBottom: theme.spacing.sm,
+  },
+  smallIconContainer: {
+    width: 32,
+    height: 32,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  calendarIcon: {
+    width: 28,
+    height: 28,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+});

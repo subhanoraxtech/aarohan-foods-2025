@@ -1,43 +1,34 @@
-import { useCallback, useEffect, useState, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useSelector } from "react-redux";
-import { RefreshControl } from "react-native";
+import {
+  RefreshControl,
+  StyleSheet,
+  ScrollView,
+  FlatList,
+} from "react-native";
 import moment from "moment";
 import "moment-timezone";
-import {
-  Text,
-  XStack,
-  YStack,
-  Circle,
-  View,
-  Card,
-  ScrollView,
-} from "tamagui";
 
-import Button from "@/components/common/Button";
-import FlatList from "@/components/common/FlatList";
-import Header from "@/components/common/Header";
+import { View } from "@/components/ui/View";
+import { Text } from "@/components/ui/Text";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
 import Icon from "@/components/common/Icon";
+import Header from "@/components/common/Header";
 import SuccessModal from "@/components/common/SuccesModal";
+import { ListSkeleton } from "@/components/skeletons/ListSkeleton";
 
-import { useGetBundleByIdMutation } from "@/services/bundle/bundles.service";
-import { useGetAllRequestsQuery } from "@/services/requestedBundle/requestedbundle.service";
-import { useCreateRequestMutation } from "@/services/request/request.service";
+import { useBundlesByIds, useBundleOrders } from "@/hooks/useBundles";
+import { useRequests, useCreateRequest } from "@/hooks/useRequests";
+import { useSettings } from "@/hooks/useSettings";
+import { useAuth } from "@/hooks/useAuth";
 
 import { BundleType } from "@/types/bundleTypes";
 import { BUNDLE_STATUS, Role, STATUS } from "@/types/enums";
-import { useAuth } from "@/hooks/useAuth";
-import { RootState } from "@/store";
+import { theme } from "@/theme";
 
-const BundlesCard = ({
-  item,
-  isSelected,
-  onSelect,
-  isExpired,
-  userRole,
-  requestStatus,
-  isRequestView,
-}: {
+// Bundle Card Component
+interface BundlesCardProps {
   item: BundleType;
   isSelected: boolean;
   onSelect: () => void;
@@ -45,7 +36,19 @@ const BundlesCard = ({
   userRole?: string;
   requestStatus?: string;
   isRequestView?: boolean;
-}) => {
+  hideActionButtons?: boolean;
+}
+
+function BundlesCard({
+  item,
+  isSelected,
+  onSelect,
+  isExpired,
+  userRole,
+  requestStatus,
+  isRequestView,
+  hideActionButtons,
+}: BundlesCardProps) {
   const formattedDateTime = item.deliveryDate
     ? moment.tz(item.deliveryDate, "Asia/Kolkata").format("DD MMM, YYYY")
     : "N/A";
@@ -54,257 +57,179 @@ const BundlesCard = ({
   const bundleNumber = item.bundleNumber || 0;
   const pickupLocation = item.servicedPremisesId?.pincode || "N/A";
   const premisesName = item.servicedPremisesId?.apartmentName || "Unknown Premises";
-  
+  const apartmentCode = item.servicedPremisesId?.apartmentcode || "N/A";
+
   const formatStatus = (status: string) => {
     return status
-      .split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
+      .split("-")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
   };
   const status = formatStatus(item.status || "N/A");
 
-
   return (
     <Card
-      {...({
-        backgroundColor: "$background",
-        borderRadius: 16, // Explicit radius for smoothness
-        padding: "$0",
-        marginHorizontal: "$3",
-        marginBottom: 16,
-      } as any)}
-      borderColor={isSelected ? "$green10" : requestStatus === STATUS.APPROVED ? "$green10" : requestStatus === STATUS.REJECTED ? "$red10" : "$grey7"}
-      borderWidth={isSelected || requestStatus ? 2 : 1}
-      elevate
-      opacity={isExpired ? 0.5 : 1}
-      onPress={isExpired || isRequestView ? undefined : onSelect}
-      overflow="hidden"
-      accessible
-      accessibilityLabel={`${premisesName}, Quantity: ${quantity}`}
+      variant={isSelected || requestStatus ? "outlined" : "elevated"}
+      style={[
+        styles.bundleCard,
+        (isSelected || requestStatus) && styles.bundleCardSelected,
+        requestStatus === STATUS.APPROVED && styles.bundleCardApproved,
+        requestStatus === STATUS.REJECTED && styles.bundleCardRejected,
+        isExpired && styles.bundleCardExpired,
+      ]}
     >
-      <YStack padding="$4" gap="$3">
-        <XStack justifyContent="space-between" alignItems="center">
-          <XStack alignItems="center" gap="$3">
-            <View
-              {...({
-                backgroundColor: isExpired ? "$gray8" : isSelected ? "$green10" : "$orange",
-                borderRadius: 20,
-                paddingHorizontal: "$4",
-                paddingVertical: "$2",
-              } as any)}
+      <View gap="md">
+        <View row justify="space-between" align="center">
+          <View
+            bg={isExpired ? "grey8" : isSelected ? "success0" : "orange"}
+            px="md"
+            py="sm"
+            radius="full"
+          >
+            <Text
+              variant="body-sm"
+              weight="bold"
+              color="white"
             >
-              <Text
-                fontSize="$6"
-                fontWeight="700"
-                color="$background"
-                fontFamily="$heading"
-              >
-                #{String(bundleNumber).padStart(2, "0")}
-              </Text>
-            </View>
-          </XStack>
+              #{String(bundleNumber).padStart(2, "0")}
+            </Text>
+          </View>
 
-          {!isExpired && !requestStatus && !isRequestView && (
-            <View
-              {...({
-                backgroundColor: isSelected ? "$green10" : "$grey6",
-                borderRadius: 20,
-                padding: "$2",
-                width: 36,
-                height: 36,
-                alignItems: "center",
-                justifyContent: "center",
-              } as any)}
+          {!isExpired && !requestStatus && !isRequestView && !hideActionButtons && (
+            <Button
+              variant={isSelected ? "primary" : "secondary"}
+              size="icon"
+              onPress={onSelect}
+              style={styles.selectButton}
             >
               {isSelected ? (
                 <Icon name="check" type="feather" size={20} color="white" />
               ) : (
-                <View
-                  width={20}
-                  height={20}
-                  {...({ borderRadius: 10 } as any)}
-                  borderColor="$grey2"
-                  borderWidth={2}
-                  bg="transparent"
-                />
+                <View style={styles.emptyCheckbox} />
               )}
-            </View>
+            </Button>
           )}
-        </XStack>
 
-        <YStack gap="$1">
-          <Text
-            fontSize="$7"
-            fontWeight="700"
-            color="$black1"
-            fontFamily="$heading"
-            numberOfLines={2}
-            lineHeight="$7"
-          >
-            {premisesName}
-          </Text>
-        </YStack>
+        </View>
 
-        <YStack gap="$3">
-          <XStack gap="$3">
-            <View
-              flex={1}
-              {...({ backgroundColor: "$grey6", borderRadius: 12, padding: "$3" } as any)}
-            >
-              <XStack {...({ alignItems: "center", gap: "$2" } as any)}>
-                <View
-                  {...({
-                    backgroundColor: "$background",
-                    borderRadius: 10,
-                    padding: "$2",
-                    width: 36,
-                    height: 36,
-                    alignItems: "center",
-                    justifyContent: "center",
-                  } as any)}
-                >
-                  <Icon name="package" type="feather" size={16} color="#FE8C00" />
-                </View>
-                <YStack flex={1}>
-                  <Text fontSize="$2" color="$gray10" fontFamily="$body" fontWeight="500">
-                    Quantity
-                  </Text>
-                  <Text fontSize="$5" fontWeight="700" color="$black1" fontFamily="$heading">
-                    {quantity}
-                  </Text>
-                </YStack>
-              </XStack>
-            </View>
+        <Text variant="h3" weight="bold" numberOfLines={2}>
+          {premisesName}
+        </Text>
 
-            <View
-              flex={1}
-              {...({ backgroundColor: "$grey6", borderRadius: 12, padding: "$3" } as any)}
-            >
-              <XStack {...({ alignItems: "center", gap: "$2" } as any)}>
-                <View
-                  {...({
-                    backgroundColor: "$background",
-                    borderRadius: 10,
-                    padding: "$2",
-                    width: 36,
-                    height: 36,
-                    alignItems: "center",
-                    justifyContent: "center",
-                  } as any)}
-                >
-                  <Icon name="map-pin" type="feather" size={16} color="#FE8C00" />
-                </View>
-                <YStack flex={1}>
-                  <Text fontSize="$2" color="$gray10" fontFamily="$body" fontWeight="500">
-                    Pincode
-                  </Text>
-                  <Text fontSize="$5" fontWeight="700" color="$black1" fontFamily="$heading">
-                    {pickupLocation}
-                  </Text>
-                </YStack>
-              </XStack>
-            </View>
-
-            
-          </XStack>
-
-          <View
-  {...({ backgroundColor: "$grey6", borderRadius: 12, padding: "$3" } as any)}
->
-  <XStack {...({ alignItems: "center", gap: "$2" } as any)}>
-    <View
-      {...({
-        backgroundColor: "$background",
-        borderRadius: 10,
-        padding: "$2",
-        width: 36,
-        height: 36,
-        alignItems: "center",
-        justifyContent: "center",
-      } as any)}
-    >
-      <Icon name="home" type="feather" size={16} color="#FE8C00" />
-    </View>
-    <YStack flex={1}>
-      <Text
-        fontSize="$2"
-        color="$gray10"
-        fontFamily="$body"
-        fontWeight="500"
-      >
-        Apartment Code
-      </Text>
-      <Text
-        fontSize="$5"
-        fontWeight="700"
-        color="$black1"
-        fontFamily="$heading"
-      >
-        {item.servicedPremisesId?.apartmentcode || "N/A"}
-      </Text>
-    </YStack>
-  </XStack>
-</View>
-
-
-          <View
-            {...({ backgroundColor: "$grey6", borderRadius: 12, padding: "$3" } as any)}
-          >
-            <XStack {...({ alignItems: "center", gap: "$3" } as any)}>
-              <View
-                {...({
-                  backgroundColor: "$background",
-                  borderRadius: 10,
-                  padding: "$2",
-                  width: 36,
-                  height: 36,
-                  alignItems: "center",
-                  justifyContent: "center",
-                } as any)}
-              >
-                <Icon name="calendar" type="feather" size={16} color="#FE8C00" />
-              </View>
-              <YStack flex={1}>
-                <Text fontSize="$2" color="$gray10" fontFamily="$body" fontWeight="500">
-                  Delivery Date
-                </Text>
-                <Text fontSize="$5" fontWeight="700" color="$black1" fontFamily="$heading">
-                  {formattedDateTime}
-                </Text>
-              </YStack>
-            </XStack>
+        <View gap="md">
+          <View row gap="md">
+            <StatBox
+              icon="package"
+              label="Quantity"
+              value={quantity.toString()}
+            />
+            <StatBox
+              icon="map-pin"
+              label="Pincode"
+              value={pickupLocation}
+            />
           </View>
-        </YStack>
 
-        <XStack gap="$2" flexWrap="wrap">
-          <View
-            {...({ backgroundColor: "$grey6", borderRadius: 12, paddingHorizontal: "$3", paddingVertical: "$2" } as any)}
-          >
-            <Text fontSize="$2" color="$gray10" fontFamily="$body" fontWeight="600">
+          <InfoBox icon="home" label="Apartment Code" value={apartmentCode} />
+          <InfoBox icon="calendar" label="Delivery Date" value={formattedDateTime} />
+        </View>
+
+        <View row gap="sm" wrap>
+          <View bg="grey6" px="md" py="sm" radius="md">
+            <Text variant="caption" weight="semibold">
               Bundle Status: {status}
             </Text>
           </View>
+
           {requestStatus && (
             <View
-              {...({
-                backgroundColor: requestStatus === STATUS.APPROVED ? "$green10" : "$red10",
-                borderRadius: 12,
-                paddingHorizontal: "$3",
-                paddingVertical: "$2",
-              } as any)}
+              bg={requestStatus === STATUS.APPROVED ? "success0" : "red1"}
+              px="md"
+              py="sm"
+              radius="md"
             >
-              <Text fontSize="$2" color="$background" fontFamily="$body" fontWeight="600">
-                Request Status: {requestStatus.charAt(0).toUpperCase() + requestStatus.slice(1)}
+              <Text variant="caption" weight="semibold" color="white">
+                Request Status:{" "}
+                {requestStatus.charAt(0).toUpperCase() + requestStatus.slice(1)}
               </Text>
             </View>
           )}
-        </XStack>
-      </YStack>
+        </View>
+      </View>
     </Card>
   );
-};
+}
 
-const FixedAcceptButton = ({
+// Stat Box Component
+function StatBox({
+  icon,
+  label,
+  value,
+}: {
+  icon: string;
+  label: string;
+  value: string;
+}) {
+  return (
+    <View flex bg="grey6" radius="md" p="md">
+      <View row align="center" gap="sm">
+        <View
+          bg="white"
+          radius="sm"
+          p="sm"
+          style={styles.statIconContainer}
+        >
+          <Icon name={icon} type="feather" size={16} color={theme.colors.orange} />
+        </View>
+        <View flex>
+          <Text variant="caption" color="gray10">
+            {label}
+          </Text>
+          <Text variant="body" weight="bold">
+            {value}
+          </Text>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+// Info Box Component
+function InfoBox({
+  icon,
+  label,
+  value,
+}: {
+  icon: string;
+  label: string;
+  value: string;
+}) {
+  return (
+    <View bg="grey6" radius="md" p="md">
+      <View row align="center" gap="md">
+        <View
+          bg="white"
+          radius="sm"
+          p="sm"
+          style={styles.statIconContainer}
+        >
+          <Icon name={icon} type="feather" size={16} color={theme.colors.orange} />
+        </View>
+        <View flex>
+          <Text variant="caption" color="gray10">
+            {label}
+          </Text>
+          <Text variant="body" weight="bold">
+            {value}
+          </Text>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+// Fixed Accept Button
+function FixedAcceptButton({
   onAccept,
   disabled,
   selectedCount,
@@ -312,47 +237,35 @@ const FixedAcceptButton = ({
   onAccept: () => void;
   disabled: boolean;
   selectedCount: number;
-}) => {
+}) {
   return (
-    <YStack
-      position="absolute"
-      bottom={0}
-      left={0}
-      right={0}
-      {...({ backgroundColor: "$background", padding: "$4" } as any)}
-      style={{ borderTopLeftRadius: 32, borderTopRightRadius: 32 }}
-      elevation="$4"
-      borderTopWidth={1}
-      borderTopColor="$grey7"
+    <View
+      style={styles.fixedButtonContainer}
+      bg="white"
+      p="lg"
     >
       <Button
-        {...({
-          backgroundColor: disabled ? "$gray8" : "$green10",
-          borderRadius: 30,
-          fontWeight: "700",
-        } as any)}
-        color="white"
-        size="$5"
+        variant={disabled ? "secondary" : "primary"}
+        size="lg"
         onPress={onAccept}
         disabled={disabled}
-        fontWeight="700"
       >
         Accept Job{selectedCount > 0 ? ` (${selectedCount})` : ""}
       </Button>
-    </YStack>
+    </View>
   );
-};
+}
 
-const BundleScreen = () => {
+// Main Screen Component
+export default function BundleScreen() {
   const router = useRouter();
-  const { type, id, status } = useLocalSearchParams<{ type: string; id: string; status: string }>();
-  const idArray = useMemo(() => {
-    if (!id) return [];
-    if (Array.isArray(id)) return id;
-    return id.split(",");
-  }, [id]);
-  const auth = useAuth();
+  const { type, id, status: queryStatus } = useLocalSearchParams<{
+    type: string;
+    id: string;
+    status: string;
+  }>();
 
+  // State
   const [selectedBundles, setSelectedBundles] = useState<string[]>([]);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showLimitModal, setShowLimitModal] = useState(false);
@@ -363,96 +276,94 @@ const BundleScreen = () => {
   }>({ type: "success", message: "" });
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  console.log("=== BUNDLE SCREEN DEBUG ===", { id, type, status, idArray });
+  // Parse ID array
+  const idArray = id
+    ? Array.isArray(id)
+      ? id
+      : id.split(",")
+    : [];
 
-  const settings = useSelector((state: RootState) => state.settings);
+  const auth = useAuth();
+  const { data: settings } = useSettings();
 
-  // Conditionally execute the appropriate query based on type
-  const isBundleView = type === "bundle_available" || status === "approved";
+  const isBundleView =
+    type === "bundle_available" || queryStatus === "approved";
 
-  const [
-    getBundleById,
-    { data: bundleData, isLoading: isBundleLoading, error: bundleError },
-  ] = useGetBundleByIdMutation();
+  const { data: bundleData, isLoading: isBundleLoading, isError: bundleIsError, refetch: refetchBundles } = useBundlesByIds({
+    _id: idArray,
+    status: (queryStatus as string) || BUNDLE_STATUS.PENDING,
+  });
 
-  useEffect(() => {
-    if (isBundleView && idArray.length > 0) {
-      getBundleById({
-        payload: {
-          _id: idArray,
-          status: (status as string) || BUNDLE_STATUS.PENDING,
-        },
-      });
-    }
-  }, [isBundleView, idArray, status, getBundleById]);
+  const getHeaderTitle = () => {
+    if (queryStatus === "approved") return "Approved Bundle";
+    if (type === "bundle_available") return "Available Bundle";
+    if (type?.includes("rejected")) return "Rejected Request";
+    if (isBundleView) return "Bundle Details";
+    return "Request Details";
+  };
 
-  const refetchBundles = useCallback(async () => {
-    if (isBundleView && idArray.length > 0) {
-      await getBundleById({
-        payload: {
-          _id: idArray,
-          status: (status as string) || BUNDLE_STATUS.PENDING,
-        },
-      }).unwrap();
-    }
-  }, [isBundleView, idArray, status, getBundleById]);
-
-
+  const headerTitle = getHeaderTitle();
 
   const {
     data: requestData,
     isLoading: isRequestLoading,
     refetch: refetchRequests,
-  } = useGetAllRequestsQuery(
+  } = useRequests(
     {
-      payload: {
-        page: 1,
-        limit: 50,
-        type: type as string,
-        id: id as string,
-        status: status as string,
-      },
+      page: 1,
+      limit: 50,
+      type: type as string,
+      id: id as string,
+      status: queryStatus as string,
     },
-    { skip: isBundleView }
+    // Skip if it's bundle view
+    !isBundleView
   );
 
-  const [createRequest] = useCreateRequestMutation();
+  const createRequest = useCreateRequest();
 
-  const bundles: BundleType[] = useMemo(() => {
-    if (isBundleView) {
-      return bundleData?.bundles || [];
-    }
-    
-    // For specific request view, find the request matching the ID and extract the bundle
-    const request = requestData?.requests?.find((req: any) => req._id === id);
-    if (request && request.bundleId) {
-      return [{
-        ...request.bundleId,
-        servicedPremisesId: request.bundleId.servicedPremisesId || request.servicedPremisesId || {},
-      }];
-    }
-    return [];
-  }, [isBundleView, bundleData, requestData, id]);
+  // Derived data
+  const bundles: BundleType[] = isBundleView
+    ? bundleData?.bundles || []
+    : (() => {
+        const request = requestData?.requests?.find((req: any) => req._id === id);
+        if (request && request.bundleId) {
+          return [
+            {
+              ...request.bundleId,
+              servicedPremisesId:
+                request.bundleId.servicedPremisesId ||
+                request.servicedPremisesId ||
+                {},
+            },
+          ];
+        }
+        return [];
+      })();
 
   const today = moment.tz("Asia/Kolkata").startOf("day");
 
-  const getRoleBasedSettings = useCallback(() => {
-    const currentSettings = settings.data;
+  // Role based settings
+  const roleSettings = (() => {
     const userRole = auth?.user?.role;
 
     if (userRole === Role.SUPPLIER) {
       return {
-        maxSelection: currentSettings?.maxOrdersPerSupplier || 50,
-        maxQuantity: currentSettings?.maxOrderPerBundle || 24,
+        maxSelection: settings?.maxOrdersPerSupplier || 50,
+        maxQuantity: settings?.maxOrderPerBundle || 24,
         settingType: "orders",
-        limitMessage: `You can only select up to ${currentSettings?.maxOrdersPerSupplier || 50} orders and ${currentSettings?.maxOrderPerBundle || 24} plates per bundle.`,
+        limitMessage: `You can only select up to ${
+          settings?.maxOrdersPerSupplier || 50
+        } orders and ${settings?.maxOrderPerBundle || 24} plates per bundle.`,
       };
     } else if (userRole === Role.DELIVERY_AGENT) {
       return {
-        maxSelection: currentSettings?.maxBundlesPerAgent || 2,
+        maxSelection: settings?.maxBundlesPerAgent || 2,
         maxQuantity: null,
         settingType: "bundles",
-        limitMessage: `You can only select up to ${currentSettings?.maxBundlesPerAgent || 2} bundles at a time.`,
+        limitMessage: `You can only select up to ${
+          settings?.maxBundlesPerAgent || 2
+        } bundles at a time.`,
       };
     }
 
@@ -462,9 +373,10 @@ const BundleScreen = () => {
       settingType: "items",
       limitMessage: "Selection limit reached.",
     };
-  }, [settings.data, auth?.user?.role]);
+  })();
 
-  const onRefresh = useCallback(async () => {
+  // Event Handlers - no callbacks, direct functions
+  async function handleRefresh() {
     setIsRefreshing(true);
     try {
       if (isBundleView) {
@@ -490,82 +402,81 @@ const BundleScreen = () => {
     } finally {
       setIsRefreshing(false);
     }
-  }, [refetchBundles, refetchRequests, isBundleView]);
+  }
 
-  const handleSelectBundles = useCallback(
-    (bundleId: string, isExpired: boolean) => {
-      if (isExpired) return;
+  function handleSelectBundle(bundleId: string, isExpired: boolean) {
+    if (isExpired) return;
 
-      setSelectedBundles((prev) => {
-        if (prev.includes(bundleId)) {
-          return prev.filter((id) => id !== bundleId);
-        } else {
-          const roleSettings = getRoleBasedSettings();
+    setSelectedBundles((prev) => {
+      if (prev.includes(bundleId)) {
+        return prev.filter((id) => id !== bundleId);
+      } else {
+        if (prev.length >= roleSettings.maxSelection) {
+          setShowLimitModal(true);
+          return prev;
+        }
 
-          if (prev.length >= roleSettings.maxSelection) {
+        if (auth?.user?.role === Role.SUPPLIER && roleSettings.maxQuantity) {
+          const selectedBundle = bundles.find((b) => b._id === bundleId);
+          const currentTotalQuantity = prev.reduce((total, id) => {
+            const bundle = bundles.find((b) => b._id === id);
+            return total + (bundle?.totalOrders ?? 0);
+          }, 0);
+
+          if (
+            selectedBundle &&
+            currentTotalQuantity + (selectedBundle?.totalOrders ?? 0) >
+              roleSettings.maxQuantity
+          ) {
             setShowLimitModal(true);
             return prev;
           }
-
-          if (auth?.user?.role === Role.SUPPLIER && roleSettings.maxQuantity) {
-            const selectedBundle = bundles.find((b) => b._id === bundleId);
-            const currentTotalQuantity = prev.reduce((total, bundleId) => {
-              const bundle = bundles.find((b) => b._id === bundleId);
-              return total + (bundle?.totalOrders ?? 0);
-            }, 0);
-
-            if (
-              selectedBundle &&
-              currentTotalQuantity + selectedBundle.totalOrders >
-                roleSettings.maxQuantity
-            ) {
-              setShowLimitModal(true);
-              return prev;
-            }
-          }
-
-          return [...prev, bundleId];
         }
-      });
-    },
-    [bundles, getRoleBasedSettings, auth?.user?.role]
-  );
 
-  const handleAcceptJob = useCallback(async () => {
+        return [...prev, bundleId];
+      }
+    });
+  }
+
+  async function handleAcceptJob() {
     if (selectedBundles.length === 0) return;
 
     try {
-      await createRequest({ bundleIds: selectedBundles }).unwrap();
+      await createRequest.mutateAsync({ bundleIds: selectedBundles });
       setShowSuccessModal(true);
     } catch (error: any) {
       setRefreshModalConfig({
-        type: 'error',
-        message: error?.data?.message || "Failed to submit request. Please try again.",
+        type: "error",
+        message:
+          error?.data?.message || "Failed to submit request. Please try again.",
       });
       setShowRefreshModal(true);
     }
-  }, [selectedBundles, createRequest]);
+  }
 
-  const handleSuccessModalClose = useCallback(() => {
+  function handleSuccessModalClose() {
     setShowSuccessModal(false);
     setSelectedBundles([]);
     router.navigate("/(app)");
-  }, [router]);
+  }
 
-  const handleLimitModalClose = useCallback(() => {
+  function handleLimitModalClose() {
     setShowLimitModal(false);
-  }, []);
+  }
 
-  const handleRefreshModalClose = useCallback(() => {
+  function handleRefreshModalClose() {
     setShowRefreshModal(false);
-  }, []);
+  }
 
+  // Render helpers
   const availableBundles = bundles.map((bundle) => ({
     ...bundle,
-    requestStatus: !isBundleView && requestData?.requests?.find((req: any) => req.bundleId._id === bundle._id)?.status,
+    requestStatus: !isBundleView
+      ? requestData?.requests?.find((req: any) => req.bundleId._id === bundle._id)?.status
+      : undefined,
   }));
 
-  const renderBundleCard = ({ item }: { item: BundleType & { requestStatus?: string } }) => {
+  function renderBundleCard({ item }: { item: BundleType & { requestStatus?: string } }) {
     const isExpired =
       item.deliveryDate &&
       moment.tz(item.deliveryDate, "Asia/Kolkata").isBefore(today, "day");
@@ -573,17 +484,19 @@ const BundleScreen = () => {
     return (
       <BundlesCard
         item={item}
-        isSelected={selectedBundles.includes(item._id)}
-        onSelect={() => handleSelectBundles(item._id, !!isExpired)}
+        isSelected={selectedBundles.includes(item._id as string)}
+        onSelect={() => handleSelectBundle(item._id as string, !!isExpired)}
         isExpired={!!isExpired}
         userRole={auth?.user?.role}
-        requestStatus={item.requestStatus}
+        requestStatus={queryStatus === "approved" ? "approved" : item.requestStatus}
         isRequestView={!isBundleView}
+        hideActionButtons={queryStatus === "approved" || item.requestStatus === "approved" || item.requestStatus === "rejected"}
       />
     );
-  };
+  }
 
-  const getTotalDisplay = useCallback(() => {
+  // Derived UI state
+  const totalDisplay = (() => {
     if (auth?.user?.role === Role.SUPPLIER) {
       const totalQuantity = selectedBundles.reduce((total, bundleId) => {
         const bundle = bundles.find((b) => b._id === bundleId);
@@ -597,7 +510,7 @@ const BundleScreen = () => {
       }, 0);
       return `${totalDeliveries} deliveries selected`;
     }
-  }, [selectedBundles, bundles, auth?.user?.role]);
+  })();
 
   const allExpired =
     bundles.length > 0 &&
@@ -607,180 +520,149 @@ const BundleScreen = () => {
         moment.tz(b.deliveryDate, "Asia/Kolkata").isBefore(today, "day")
     );
 
-  const shouldShowAcceptButton = !isBundleView ? false : !isBundleLoading && !bundleError && availableBundles.length > 0 && !allExpired;
+  const shouldShowAcceptButton =
+    type === "bundle_available" &&
+    !isBundleLoading &&
+    !bundleIsError &&
+    availableBundles.length > 0 &&
+    !allExpired;
 
-  return (
-    <YStack flex={1} {...({ backgroundColor: "$grey6" } as any)}>
-      <Header title={isBundleView ? "Available Bundles" : "Requests"} />
+  // Loading state
+  if ((isBundleView ? isBundleLoading : isRequestLoading) && !isRefreshing) {
+    return (
+      <View flex bg="grey6">
+        <Header title={headerTitle} />
+        <ListSkeleton count={3} />
+      </View>
+    );
+  }
 
-      {(isBundleView ? isBundleLoading : isRequestLoading) && !isRefreshing ? (
-        <YStack
-          flex={1}
-          {...({ alignItems: "center", justifyContent: "center", padding: "$6" } as any)}
-        >
-          <View
-            {...({
-              backgroundColor: "$background",
-              padding: "$6",
-              borderRadius: 20,
-              alignItems: "center",
-              gap: "$4",
-            } as any)}
-          >
-            <Icon type="feather" name="package" size={48} color="#FE8C00" />
-            <YStack alignItems="center" gap="$2">
-              <Text fontSize="$6" fontWeight="700" color="$black1" fontFamily="$heading">
-                Loading {isBundleView ? "Bundles" : "Requests"}
-              </Text>
-              <Text fontSize="$4" color="$gray10" style={{ textAlign: "center" }} fontFamily="$body">
-                Please wait...
-              </Text>
-            </YStack>
-          </View>
-        </YStack>
-      ) : (isBundleView ? bundleError : false) && !isRefreshing ? (
-        <YStack flex={1} {...({ padding: "$4", justifyContent: "center" } as any)}>
-          <Card
-            {...({
-              backgroundColor: "$background",
-              borderRadius: 16,
-              padding: "$6",
-              alignItems: "center",
-              gap: "$4",
-            } as any)}
-          >
+  if (isBundleView && bundleIsError && !isRefreshing) {
+    return (
+      <View flex bg="grey6">
+        <Header title={headerTitle} />
+        <View flex center p="lg">
+          <Card variant="elevated" style={styles.errorCard}>
             <View
-              {...({
-                backgroundColor: "$grey6",
-                padding: "$4",
-                borderRadius: 20,
-                alignItems: "center",
-                justifyContent: "center",
-                width: 64,
-                height: 64,
-              } as any)}
+              bg="grey6"
+              p="lg"
+              radius="lg"
+              style={styles.errorIconContainer}
             >
-              <Icon type="feather" name="alert-circle" size={32} color="#E74C3C" />
+              <Icon
+                type="feather"
+                name="alert-circle"
+                size={32}
+                color={theme.colors.red1}
+              />
             </View>
-            <YStack alignItems="center" gap="$2">
-              <Text fontSize="$6" color="$black1" fontWeight="700" fontFamily="$heading">
-                Connection Error
-              </Text>
-              <Text fontSize="$4" color="$gray10" style={{ textAlign: "center" }} fontFamily="$body">
-                Failed to load bundles. Please check your connection.
-              </Text>
-            </YStack>
+            <Text variant="h3" weight="bold" align="center">
+              Connection Error
+            </Text>
+            <Text variant="body" align="center" color="gray10">
+              Failed to load bundles. Please check your connection.
+            </Text>
             <Button
-              {...({ backgroundColor: "$orange", borderRadius: 16 } as any)}
-              size="$4"
-              onPress={refetchBundles}
-              marginTop="$2"
+              variant="primary"
+              onPress={() => refetchBundles()}
+              style={styles.retryButton}
             >
               Try Again
             </Button>
           </Card>
-        </YStack>
-      ) : availableBundles.length === 0 && !isRefreshing ? (
+        </View>
+      </View>
+    );
+  }
+
+  if (availableBundles.length === 0 && !isRefreshing) {
+    return (
+      <View flex bg="grey6">
+        <Header title={headerTitle} />
         <ScrollView
-          flex={1}
+          style={{ flex: 1 }}
           refreshControl={
             <RefreshControl
               refreshing={isRefreshing}
-              onRefresh={onRefresh}
-              colors={["#FE8C00"]}
-              tintColor="#FE8C00"
+              onRefresh={handleRefresh}
+              colors={[theme.colors.orange]}
+              tintColor={theme.colors.orange}
             />
           }
         >
-          <YStack
-            flex={1}
-            {...({ padding: "$4", justifyContent: "center", minHeight: 500 } as any)}
-          >
-            <Card
-              {...({
-                backgroundColor: "$background",
-                borderRadius: 16,
-                padding: "$6",
-                alignItems: "center",
-                gap: "$4",
-              } as any)}
-            >
+          <View flex center p="lg" style={styles.emptyContainer}>
+            <Card variant="elevated" style={styles.emptyCard}>
               <View
-                {...({
-                  backgroundColor: "$grey6",
-                  padding: "$4",
-                  borderRadius: 20,
-                  alignItems: "center",
-                  justifyContent: "center",
-                  width: 80,
-                  height: 80,
-                } as any)}
+                bg="grey6"
+                p="lg"
+                radius="lg"
+                style={styles.emptyIconContainer}
               >
-                <Icon type="feather" name="inbox" size={40} color="#878787" />
-              </View>
-              <YStack alignItems="center" gap="$2">
-                <Text fontSize="$6" fontWeight="700" color="$black1" fontFamily="$heading">
-                  No {isBundleView ? "Bundles" : "Requests"} Available
-                </Text>
-                <Text fontSize="$4" color="$gray10" style={{ textAlign: "center", maxWidth: 280 }} fontFamily="$body">
-                  Pull down to refresh or check back later
-                </Text>
-              </YStack>
-            </Card>
-          </YStack>
-        </ScrollView>
-      ) : (
-        <>
-          {selectedBundles.length > 0 && isBundleView && (
-            <XStack
-              {...({
-                padding: "$4",
-                alignItems: "center",
-                justifyContent: "center",
-                backgroundColor: "$background",
-              } as any)}
-              borderBottomWidth={1}
-              borderBottomColor="$grey7"
-            >
-              <View
-                {...({
-                  backgroundColor: "$grey6",
-                  borderRadius: 12,
-                  paddingHorizontal: "$4",
-                  paddingVertical: "$2",
-                } as any)}
-                borderWidth={1}
-                borderColor="$green10"
-              >
-                <Text fontSize="$4" fontWeight="700" color="$green10" fontFamily="$heading">
-                  {getTotalDisplay()}
-                </Text>
-              </View>
-            </XStack>
-          )}
-
-          <YStack flex={1}>
-            <FlatList
-              data={availableBundles}
-              renderItem={renderBundleCard}
-              keyExtractor={(item, index) => item._id || index.toString()}
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={{
-                paddingTop: 16,
-                paddingBottom: shouldShowAcceptButton ? 120 : 16,
-              }}
-              refreshControl={
-                <RefreshControl
-                  refreshing={isRefreshing}
-                  onRefresh={onRefresh}
-                  colors={["#FE8C00"]}
-                  tintColor="#FE8C00"
+                <Icon
+                  type="feather"
+                  name="inbox"
+                  size={40}
+                  color={theme.colors.gray10}
                 />
-              }
-            />
-          </YStack>
-        </>
+              </View>
+              <Text variant="h3" weight="bold" align="center">
+                No {isBundleView ? "Bundles" : "Requests"} Available
+              </Text>
+              <Text variant="body" align="center" color="gray10">
+                Pull down to refresh or check back later
+              </Text>
+            </Card>
+          </View>
+        </ScrollView>
+      </View>
+    );
+  }
+
+  // Main content
+  return (
+    <View flex bg="grey6">
+      <Header title={headerTitle} />
+
+      {selectedBundles.length > 0 && isBundleView && (
+        <View
+          row
+          center
+          p="lg"
+          bg="white"
+          style={styles.selectionBanner}
+        >
+          <View
+            bg="grey6"
+            px="lg"
+            py="sm"
+            radius="md"
+            style={styles.selectionBadge}
+          >
+            <Text variant="body" weight="bold" color="success0">
+              {totalDisplay}
+            </Text>
+          </View>
+        </View>
       )}
+
+      <FlatList
+        data={availableBundles}
+        renderItem={renderBundleCard}
+        keyExtractor={(item, index) => item._id || index.toString()}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingTop: theme.spacing.md,
+          paddingBottom: shouldShowAcceptButton ? 120 : theme.spacing.md,
+        }}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            colors={[theme.colors.orange]}
+            tintColor={theme.colors.orange}
+          />
+        }
+      />
 
       {shouldShowAcceptButton && (
         <FixedAcceptButton
@@ -795,16 +677,16 @@ const BundleScreen = () => {
         onClose={handleSuccessModalClose}
         subTitle="Your request is submitted. Please wait for approval. You will receive a notification once approved."
         buttonTitle="OK"
-        buttonColor="$orange"
+        buttonColor="orange"
       />
 
       <SuccessModal
         isOpen={showLimitModal}
         onClose={handleLimitModalClose}
         modalTitle="Selection Limit"
-        subTitle={getRoleBasedSettings().limitMessage}
+        subTitle={roleSettings.limitMessage}
         buttonTitle="OK"
-        buttonColor="$orange"
+        buttonColor="orange"
       />
 
       <SuccessModal
@@ -814,8 +696,97 @@ const BundleScreen = () => {
         subTitle={refreshModalConfig.message}
         buttonTitle="OK"
       />
-    </YStack>
+    </View>
   );
-};
+}
 
-export default BundleScreen;
+const styles = StyleSheet.create({
+  bundleCard: {
+    marginHorizontal: theme.spacing.lg,
+    marginBottom: theme.spacing.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.grey7,
+  },
+  bundleCardSelected: {
+    borderWidth: 2,
+    borderColor: theme.colors.success0,
+  },
+  bundleCardApproved: {
+    borderWidth: 2,
+    borderColor: theme.colors.success0,
+  },
+  bundleCardRejected: {
+    borderWidth: 2,
+    borderColor: theme.colors.red1,
+  },
+  bundleCardExpired: {
+    opacity: 0.5,
+  },
+  selectButton: {
+    borderRadius: theme.borderRadius.full,
+    width: 36,
+    height: 36,
+  },
+  emptyCheckbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: theme.colors.grey2,
+    backgroundColor: "transparent",
+  },
+  statIconContainer: {
+    width: 36,
+    height: 36,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  fixedButtonContainer: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.grey7,
+    ...theme.shadows.lg,
+  },
+  selectionBanner: {
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.grey7,
+  },
+  selectionBadge: {
+    borderWidth: 1,
+    borderColor: theme.colors.success0,
+  },
+  errorCard: {
+    padding: theme.spacing.xl,
+    alignItems: "center",
+    gap: theme.spacing.md,
+  },
+  errorIconContainer: {
+    width: 64,
+    height: 64,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  retryButton: {
+    borderRadius: theme.borderRadius.md,
+    marginTop: theme.spacing.sm,
+  },
+  emptyContainer: {
+    minHeight: 500,
+  },
+  emptyCard: {
+    padding: theme.spacing.xl,
+    alignItems: "center",
+    gap: theme.spacing.md,
+  },
+  emptyIconContainer: {
+    width: 80,
+    height: 80,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+});

@@ -1,12 +1,12 @@
 import React, { useCallback, useRef, useMemo } from "react";
-import { XStack, YStack, Text } from "tamagui";
-import { TouchableOpacity } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import Icon from "./Icon";
 import {
   BottomSheetModal,
   BottomSheetScrollView,
   BottomSheetBackdrop,
 } from "@gorhom/bottom-sheet";
+import { theme } from "@/theme";
 
 interface SelectFieldProps {
   apartmentList: any[] | [];
@@ -56,20 +56,12 @@ export default function SelectField({
   return (
     <>
       <TouchableOpacity onPress={handlePresentModalPress}>
-        <XStack
-          alignItems="center"
-          justifyContent="space-between"
-          padding="$3"
-          borderRadius={8}
-          borderWidth={1}
-          borderColor="$grey5"
-          backgroundColor="white"
-          minHeight={48}
-        >
+        <View style={styles.selector}>
           <Text
-            fontSize={14}
-            fontWeight="400"
-            color={value ? "$black1" : "$grey2"}
+            style={[
+              styles.selectorText,
+              { color: value ? theme.colors.black1 : theme.colors.grey2 }
+            ]}
           >
             {getDisplayValue()}
           </Text>
@@ -79,161 +71,221 @@ export default function SelectField({
             size={20}
             color="black"
           />
-        </XStack>
+        </View>
       </TouchableOpacity>
 
       <BottomSheetModal
         ref={bottomSheetModalRef}
-        index={1} // Opens at 70% height (first snap point)
+        index={0} // Opens at 70% height (first snap point)
         snapPoints={snapPoints}
         enablePanDownToClose
         backdropComponent={renderBackdrop}
-        backgroundStyle={{
-          backgroundColor: "white",
-          borderTopLeftRadius: 20,
-          borderTopRightRadius: 20,
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: -2 },
-          shadowOpacity: 0.25,
-          shadowRadius: 10,
-          elevation: 10,
-        }}
-        handleIndicatorStyle={{
-          backgroundColor: "#D1D5DB",
-          width: 40,
-          height: 4,
-        }}
+        backgroundStyle={styles.modalBackground}
+        handleIndicatorStyle={styles.handleIndicator}
       >
         <BottomSheetScrollView
-          style={{ flex: 1, paddingHorizontal: 20 }}
+          style={styles.scrollView}
           showsVerticalScrollIndicator={false}
         >
-          <YStack gap="$2" paddingVertical="$4">
-            <YStack alignItems="center" marginBottom="$4">
-              <Text fontSize={20} fontWeight="700" color="$black1">
+          <View style={styles.modalContent}>
+            <View style={styles.header}>
+              <Text style={styles.headerTitle}>
                 Select Apartment
               </Text>
-              <Text
-                fontSize={14}
-                fontWeight="400"
-                color="$gray10"
-                marginTop="$1"
-              >
+              <Text style={styles.headerSubtitle}>
                 Choose your apartment from the list
               </Text>
-            </YStack>
+            </View>
 
             {apartmentList.map((item) => (
               <TouchableOpacity
                 key={item._id}
                 onPress={() => handleSelectItem(item.apartmentName)}
-                style={{ marginBottom: 8 }}
+                style={styles.itemWrapper}
               >
-                <XStack
-                  alignItems="center"
-                  justifyContent="space-between"
-                  padding="$4"
-                  borderRadius={12}
-                  backgroundColor={
-                    value === item.apartmentName ? "$orange" : "#F9FAFB"
-                  }
-                  borderWidth={2}
-                  borderColor={
-                    value === item.apartmentName ? "$orange" : "transparent"
-                  }
-                  shadowColor={
-                    value === item.apartmentName ? "$orange" : "transparent"
-                  }
-                  shadowOffset={{ width: 0, height: 2 }}
-                  shadowOpacity={value === item.apartmentName ? 0.1 : 0}
-                  shadowRadius={4}
-                  elevation={value === item.apartmentName ? 3 : 0}
+                <View
+                  style={[
+                    styles.item,
+                    {
+                      backgroundColor: value === item.apartmentName ? theme.colors.orange : "#F9FAFB",
+                      borderColor: value === item.apartmentName ? theme.colors.orange : "transparent",
+                    },
+                    value === item.apartmentName && styles.activeShadow
+                  ]}
                 >
-                  <YStack flex={1}>
+                  <View style={styles.itemTextContainer}>
                     <Text
-                      fontSize={16}
-                      fontWeight="600"
-                      color={value === item.apartmentName ? "white" : "$black1"}
+                      style={[
+                        styles.itemText,
+                        { color: value === item.apartmentName ? "white" : theme.colors.black1 }
+                      ]}
                     >
                       {item.apartmentName}
                     </Text>
-                  </YStack>
+                  </View>
                   {value === item.apartmentName && (
-                    <XStack
-                      backgroundColor="rgba(255,255,255,0.2)"
-                      borderRadius={20}
-                      padding="$2"
-                      alignItems="center"
-                      justifyContent="center"
-                    >
+                    <View style={styles.checkIconWrapper}>
                       <Icon
                         name="check"
                         type="feather"
                         size={18}
                         color="white"
                       />
-                    </XStack>
+                    </View>
                   )}
-                </XStack>
+                </View>
               </TouchableOpacity>
             ))}
 
             <TouchableOpacity
               onPress={() => handleSelectItem("not-listed")}
-              style={{ marginTop: 12, marginBottom: 20 }}
+              style={styles.notListedWrapper}
             >
-              <XStack
-                alignItems="center"
-                justifyContent="space-between"
-                padding="$4"
-                borderRadius={12}
-                backgroundColor={value === "not-listed" ? "$orange" : "#F9FAFB"}
-                borderWidth={2}
-                borderColor={value === "not-listed" ? "$orange" : "#E5E7EB"}
-                borderStyle={value === "not-listed" ? "solid" : "dashed"}
-                shadowColor={value === "not-listed" ? "$orange" : "transparent"}
-                shadowOffset={{ width: 0, height: 2 }}
-                shadowOpacity={value === "not-listed" ? 0.1 : 0}
-                shadowRadius={4}
-                elevation={value === "not-listed" ? 3 : 0}
+              <View
+                style={[
+                  styles.item,
+                  {
+                    backgroundColor: value === "not-listed" ? theme.colors.orange : "#F9FAFB",
+                    borderColor: value === "not-listed" ? theme.colors.orange : "#E5E7EB",
+                    borderStyle: value === "not-listed" ? "solid" : "dashed",
+                    borderWidth: 2,
+                  },
+                  value === "not-listed" && styles.activeShadow
+                ]}
               >
-                <YStack flex={1}>
+                <View style={styles.itemTextContainer}>
                   <Text
-                    fontSize={16}
-                    fontWeight="600"
-                    color={value === "not-listed" ? "white" : "$black1"}
+                    style={[
+                      styles.itemText,
+                      { color: value === "not-listed" ? "white" : theme.colors.black1 }
+                    ]}
                   >
                     Apartment Not Listed
                   </Text>
                   <Text
-                    fontSize={12}
-                    fontWeight="400"
-                    color={
-                      value === "not-listed"
-                        ? "rgba(255,255,255,0.8)"
-                        : "$gray10"
-                    }
-                    marginTop="$1"
+                    style={[
+                      styles.itemSubtitle,
+                      {
+                        color: value === "not-listed"
+                          ? "rgba(255,255,255,0.8)"
+                          : theme.colors.gray10
+                      }
+                    ]}
                   >
                     Can't find your apartment? Select this option
                   </Text>
-                </YStack>
+                </View>
                 {value === "not-listed" && (
-                  <XStack
-                    backgroundColor="rgba(255,255,255,0.2)"
-                    borderRadius={20}
-                    padding="$2"
-                    alignItems="center"
-                    justifyContent="center"
-                  >
+                  <View style={styles.checkIconWrapper}>
                     <Icon name="check" type="feather" size={18} color="white" />
-                  </XStack>
+                  </View>
                 )}
-              </XStack>
+              </View>
             </TouchableOpacity>
-          </YStack>
+          </View>
         </BottomSheetScrollView>
       </BottomSheetModal>
     </>
   );
 }
+
+const styles = StyleSheet.create({
+  selector: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: theme.colors.grey5,
+    backgroundColor: "white",
+    minHeight: 48,
+  },
+  selectorText: {
+    fontSize: 14,
+    fontWeight: "400",
+    fontFamily: theme.typography.fontFamily.regular,
+  },
+  modalBackground: {
+    backgroundColor: "white",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 10,
+  },
+  handleIndicator: {
+    backgroundColor: "#D1D5DB",
+    width: 40,
+    height: 4,
+  },
+  scrollView: {
+    flex: 1,
+    paddingHorizontal: 20,
+  },
+  modalContent: {
+    paddingVertical: 16,
+  },
+  header: {
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: theme.colors.black1,
+    fontFamily: theme.typography.fontFamily.bold,
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    fontWeight: "400",
+    color: theme.colors.gray10,
+    fontFamily: theme.typography.fontFamily.regular,
+    marginTop: 4,
+  },
+  itemWrapper: {
+    marginBottom: 8,
+  },
+  item: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 2,
+  },
+  activeShadow: {
+    shadowColor: theme.colors.orange,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  itemTextContainer: {
+    flex: 1,
+  },
+  itemText: {
+    fontSize: 16,
+    fontWeight: "600",
+    fontFamily: theme.typography.fontFamily.semibold,
+  },
+  itemSubtitle: {
+    fontSize: 12,
+    fontWeight: "400",
+    fontFamily: theme.typography.fontFamily.regular,
+    marginTop: 4,
+  },
+  checkIconWrapper: {
+    backgroundColor: "rgba(255,255,255,0.2)",
+    borderRadius: 20,
+    padding: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  notListedWrapper: {
+    marginTop: 12,
+    marginBottom: 20,
+  },
+});

@@ -1,13 +1,12 @@
-//  React Imports
 import React from "react";
-
-//  Tamagui Imports
-import { Button, Dialog, Text, useTheme, XStack, YStack } from "tamagui";
-
-//  Custom Components Imports
+import { Modal, StyleSheet, TouchableWithoutFeedback } from "react-native";
+import { View } from "@/components/ui/View";
+import { Text } from "@/components/ui/Text";
+import { Button } from "@/components/ui/Button";
+import { theme } from "@/theme";
 import Icon, { IconType } from "./Icon";
 
-export type NotificationModalType = 'success' | 'error' | 'info' | 'warning';
+export type NotificationModalType = "success" | "error" | "info" | "warning";
 
 interface NotificationModalProps {
   isOpen: boolean;
@@ -26,65 +25,68 @@ interface NotificationModalProps {
 const NotificationModal = ({
   isOpen,
   onClose,
-  modalType = 'success',
+  modalType = "success",
   modalTitle,
   subTitle,
-  buttonTitle = 'OK',
+  buttonTitle = "OK",
   buttonColor,
   iconName,
   iconType,
   iconColor,
   iconBackgroundColor,
 }: NotificationModalProps) => {
-  const theme = useTheme();
-
   // Default configurations for each modal type
   const getDefaultConfig = () => {
     switch (modalType) {
-      case 'success':
+      case "success":
         return {
-          title: modalTitle || 'Success',
-          icon: iconName || 'check',
-          iconType: iconType || 'feather' as IconType,
-          iconColor: iconColor || theme.green10.val,
-          iconBg: iconBackgroundColor || '$green5',
-          btnColor: buttonColor || '$green10',
+          title: modalTitle || "Success",
+          icon: iconName || "check",
+          iconType: iconType || ("feather" as IconType),
+          iconColor: iconColor || theme.colors.success0,
+          iconBg: iconBackgroundColor || "#E8F5E9",
+          btnColor: buttonColor || theme.colors.success0,
+          textColor: theme.colors.success0,
         };
-      case 'error':
+      case "error":
         return {
-          title: modalTitle || 'Error',
-          icon: iconName || 'x',
-          iconType: iconType || 'feather' as IconType,
-          iconColor: iconColor || theme.red10.val,
-          iconBg: iconBackgroundColor || '$red5',
-          btnColor: buttonColor || '$red10',
+          title: modalTitle || "Error",
+          icon: iconName || "x",
+          iconType: iconType || ("feather" as IconType),
+          iconColor: iconColor || theme.colors.red1,
+          iconBg: iconBackgroundColor || "#FDEDEC",
+          btnColor: buttonColor || theme.colors.red1,
+          textColor: theme.colors.red1,
         };
-      case 'warning':
+      case "warning":
         return {
-          title: modalTitle || 'Warning',
-          icon: iconName || 'alert-triangle',
-          iconType: iconType || 'feather' as IconType,
-          iconColor: iconColor || theme.orange.val,
-          iconBg: iconBackgroundColor || '$orange5',
-          btnColor: buttonColor || '$orange',
+          title: modalTitle || "Warning",
+          icon: iconName || "alert-triangle",
+          iconType: iconType || ("feather" as IconType),
+          iconColor: iconColor || theme.colors.orange,
+          iconBg: iconBackgroundColor || "#FFF3E0",
+          btnColor: buttonColor || theme.colors.orange,
+          textColor: theme.colors.orange,
         };
-      case 'info':
+      case "info":
         return {
-          title: modalTitle || 'Info',
-          icon: iconName || 'info',
-          iconType: iconType || 'feather' as IconType,
-          iconColor: iconColor || theme.blue10.val,
-          iconBg: iconBackgroundColor || '$blue5',
-          btnColor: buttonColor || '$blue10',
+          title: modalTitle || "Info",
+          icon: iconName || "info",
+          iconType: iconType || ("feather" as IconType),
+          iconColor: iconColor || theme.colors.info,
+          iconBg: iconBackgroundColor || "#E1F5FE",
+          btnColor: buttonColor || theme.colors.info,
+          textColor: theme.colors.info,
         };
       default:
         return {
-          title: modalTitle || 'Notification',
-          icon: iconName || 'bell',
-          iconType: iconType || 'feather' as IconType,
-          iconColor: iconColor || theme.gray10.val,
-          iconBg: iconBackgroundColor || '$gray5',
-          btnColor: buttonColor || '$gray10',
+          title: modalTitle || "Notification",
+          icon: iconName || "bell",
+          iconType: iconType || ("feather" as IconType),
+          iconColor: iconColor || theme.colors.gray10,
+          iconBg: iconBackgroundColor || "#F5F5F5",
+          btnColor: buttonColor || theme.colors.gray10,
+          textColor: theme.colors.gray10,
         };
     }
   };
@@ -92,94 +94,90 @@ const NotificationModal = ({
   const config = getDefaultConfig();
 
   return (
-    <Dialog modal open={isOpen}>
-      <Dialog.Portal>
-        <Dialog.Overlay
-          bg="$overlay"
-          animateOnly={["transform", "opacity"]}
-          animation={[
-            "quicker",
-            {
-              opacity: {
-                overshootClamping: true,
-              },
-            },
-          ]}
-          enterStyle={{ opacity: 0, scale: 0.95 }}
-          exitStyle={{ opacity: 0 }}
-        />
-        <Dialog.Content
-          bordered
-          bg="white"
-          mx={"$6"}
-          {...({ borderRadius: 16 } as any)}
-          elevate
-          key="content"
-          animateOnly={["transform", "opacity"]}
-          animation={[
-            "quicker",
-            {
-              opacity: {
-                overshootClamping: true,
-              },
-            },
-          ]}
-          enterStyle={{ x: 0, y: -20, opacity: 0 }}
-          exitStyle={{ x: 0, y: 10, opacity: 0, scale: 0.95 }}
-          gap="$4"
-        >
-          <YStack justify={"center"} items={"center"}>
-            <Text fontSize={24} fontWeight="700" color={"$black1"}>
-              {config.title}
-            </Text>
-          </YStack>
-          
-          <XStack justify={"center"} items={"center"}>
-            <XStack
-              justify={"center"}
-              items={"center"}
-              px={"$2"}
-              py={"$2"}
-              {...({ borderRadius: 32 } as any)}
-              bg={config.iconBg as any}
+    <Modal
+      visible={isOpen}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+    >
+      <TouchableWithoutFeedback onPress={onClose}>
+        <View style={styles.overlay} bg="rgba(0,0,0,0.5)">
+          <TouchableWithoutFeedback>
+            <View
+              bg="white"
+              p="xl"
+              radius="lg"
+              style={styles.content}
+              gap="lg"
             >
-              <Icon
-                name={config.icon}
-                type={config.iconType}
-                size={40}
-                color={config.iconColor}
-              />
-            </XStack>
-          </XStack>
+              <View center>
+                <Text variant="h3" weight="bold" color="text">
+                  {config.title}
+                </Text>
+              </View>
 
-          {subTitle && (
-            <Text
-              fontSize={16}
-              fontWeight="400"
-              color="$slate1"
-              px={"$5"}
-              {...({ textAlign: "center" } as any)}
-            >
-              {subTitle}
-            </Text>
-          )}
+              <View center>
+                <View
+                  center
+                  p="md"
+                  radius="full"
+                  style={[styles.iconContainer, { backgroundColor: config.iconBg }]}
+                >
+                  <Icon
+                    name={config.icon}
+                    type={config.iconType}
+                    size={40}
+                    color={config.iconColor}
+                  />
+                </View>
+              </View>
 
-          <Dialog.Close asChild>
-            <Button 
-              {...({ backgroundColor: config.btnColor } as any)}
-              color="white"
-              onPress={onClose}
-            >
-              {buttonTitle}
-            </Button>
-          </Dialog.Close>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog>
+              {subTitle && (
+                <Text
+                  variant="body"
+                  align="center"
+                  color="gray10"
+                  px="md"
+                >
+                  {subTitle}
+                </Text>
+              )}
+
+              <Button
+                variant="primary"
+                onPress={onClose}
+                style={[styles.button, { backgroundColor: config.btnColor }]}
+              >
+                {buttonTitle}
+              </Button>
+            </View>
+          </TouchableWithoutFeedback>
+        </View>
+      </TouchableWithoutFeedback>
+    </Modal>
   );
 };
 
-export default NotificationModal;
+const styles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
+  },
+  content: {
+    width: "100%",
+    maxWidth: 400,
+    ...theme.shadows.lg,
+  },
+  iconContainer: {
+    width: 80,
+    height: 80,
+  },
+  button: {
+    width: "100%",
+  },
+});
 
-// Export as SuccessModal for backward compatibility
+export default NotificationModal;
 export { NotificationModal as SuccessModal };

@@ -1,13 +1,9 @@
 import React from "react";
-import {
-  Button,
-  Dialog,
-  Text,
-  useTheme,
-  XStack,
-  YStack,
-  Spinner,
-} from "tamagui";
+import { Modal, StyleSheet, TouchableWithoutFeedback } from "react-native";
+import { View } from "@/components/ui/View";
+import { Text } from "@/components/ui/Text";
+import { Button } from "@/components/ui/Button";
+import { theme } from "@/theme";
 import Icon from "./Icon";
 
 interface ConfirmationDeleteModalProps {
@@ -27,100 +23,100 @@ const ConfirmationDeleteModal = ({
   loading = false,
   deleteMessage = "Are you sure you want to delete this item? This action cannot be undone.",
 }: ConfirmationDeleteModalProps) => {
-  const theme = useTheme();
-
   return (
-    <Dialog modal open={isOpen}>
-      <Dialog.Portal>
-        <Dialog.Overlay
-          bg="$overlay"
-          animateOnly={["transform", "opacity"]}
-          animation={[
-            "quicker",
-            {
-              opacity: {
-                overshootClamping: true,
-              },
-            },
-          ]}
-          enterStyle={{ opacity: 0, scale: 0.95 }}
-          exitStyle={{ opacity: 0 }}
-        />
-        <Dialog.Content
-          bordered
-          bg="white"
-          mx={"$6"}
-          borderRadius={16}
-          elevate
-          key="content"
-          animateOnly={["transform", "opacity"]}
-          animation={[
-            "quicker",
-            {
-              opacity: {
-                overshootClamping: true,
-              },
-            },
-          ]}
-          enterStyle={{ x: 0, y: -20, opacity: 0 }}
-          exitStyle={{ x: 0, y: 10, opacity: 0, scale: 0.95 }}
-          gap="$4"
-        >
-          <YStack justify={"center"} items={"center"}>
-            <Text fontSize={24} fontWeight="700" color={"$black1"}>
-              {deleteTitle}
-            </Text>
-          </YStack>
-          <XStack justify={"center"} items={"center"}>
-            <XStack
-              justify={"center"}
-              items={"center"}
-              px={"$2"}
-              py={"$2"}
-              borderRadius={32}
-              bg={"$red5"}
+    <Modal
+      visible={isOpen}
+      transparent
+      animationType="fade"
+      onRequestClose={onCancel}
+    >
+      <TouchableWithoutFeedback onPress={onCancel}>
+        <View style={styles.overlay} bg="rgba(0,0,0,0.5)">
+          <TouchableWithoutFeedback>
+            <View
+              bg="white"
+              p="xl"
+              radius="lg"
+              style={styles.content}
+              gap="lg"
             >
-              <Icon
-                name="trash-2"
-                type="feather"
-                size={40}
-                color={theme.red10.val}
-              />
-            </XStack>
-          </XStack>
+              <View center>
+                <Text variant="h3" weight="bold" color="text">
+                  {deleteTitle}
+                </Text>
+              </View>
 
-          <Text
-            fontSize={16}
-            fontWeight="400"
-            color="$slate1"
-            px={"$5"}
-            textAlign="center"
-          >
-            {deleteMessage}
-          </Text>
+              <View center>
+                <View
+                  center
+                  p="md"
+                  radius="full"
+                  bg="red5"
+                  style={styles.iconContainer}
+                >
+                  <Icon
+                    name="trash-2"
+                    type="feather"
+                    size={40}
+                    color={theme.colors.red1}
+                  />
+                </View>
+              </View>
 
-          <XStack gap="$3" justifyContent="center">
-            <Dialog.Close asChild>
-              <Button onPress={onCancel} backgroundColor="$grey5">
-                No
-              </Button>
-            </Dialog.Close>
-            <Dialog.Close asChild>
-              <Button
-                onPress={onConfirm}
-                backgroundColor="$red10"
-                color="white"
-                disabled={loading}
-                opacity={loading ? 0.6 : 1}
+              <Text
+                variant="body"
+                align="center"
+                color="gray10"
+                px="md"
               >
-                {loading ? <Spinner size="small" color="white" /> : "Yes"}
-              </Button>
-            </Dialog.Close>
-          </XStack>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog>
+                {deleteMessage}
+              </Text>
+
+              <View row gap="md" justify="center">
+                <Button
+                  variant="secondary"
+                  onPress={onCancel}
+                  style={styles.button}
+                >
+                  No
+                </Button>
+                <Button
+                  variant="primary"
+                  onPress={onConfirm}
+                  loading={loading}
+                  style={[styles.button, { backgroundColor: theme.colors.red1 }]}
+                >
+                  Yes
+                </Button>
+              </View>
+            </View>
+          </TouchableWithoutFeedback>
+        </View>
+      </TouchableWithoutFeedback>
+    </Modal>
   );
 };
+
+const styles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
+  },
+  content: {
+    width: "100%",
+    maxWidth: 400,
+    ...theme.shadows.lg,
+  },
+  iconContainer: {
+    width: 80,
+    height: 80,
+  },
+  button: {
+    flex: 1,
+    minWidth: 100,
+  },
+});
 
 export default ConfirmationDeleteModal;

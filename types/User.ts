@@ -68,12 +68,16 @@ export interface User {
   _id?: string
   email?: string
   phone?: string
+  username?: string // Added for validation
+  address?: string // Added for validation
   password?: string
   isActive?: boolean
   role: 'admin' | 'delivery_agent' | 'supplier' | 'customer' | 'security'
   supplierId?: Supplier
   deliveryAgentId?: DeliveryAgent
   banReason?: string
+  accessToken?: string // Added for auth context
+  refreshToken?: string
   createdAt?: string
   updatedAt?: string
 }

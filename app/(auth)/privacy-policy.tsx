@@ -2,324 +2,392 @@ import React from "react";
 import {
   ScrollView,
   SafeAreaView,
-  TouchableOpacity,
   StatusBar,
+  View,
+  Text,
+  StyleSheet,
 } from "react-native";
-import { YStack, H2, H3, Paragraph, XStack, Text } from "tamagui";
 import { useRouter } from "expo-router";
-import Icon from "@/components/common/Icon";
 import Header from "@/components/common/Header";
 import { useColorScheme } from "@/hooks/useColorScheme";
+import { theme } from "@/theme";
 
 export default function PrivacyPolicyScreen() {
-  const router = useRouter();
   const colorScheme = useColorScheme();
 
-  const handleBack = () => {
-    router.back();
-  };
-
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#FAFAF9" }}>
+    <SafeAreaView style={styles.safeArea}>
       <StatusBar 
         barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'} 
         backgroundColor={colorScheme === 'dark' ? '#000000' : '#FAFAF9'} 
       />
       
-      {/* Header */}
-      {/* <XStack
-        paddingHorizontal="$4"
-        paddingVertical="$3"
-        alignItems="center"
-        borderBottomWidth={1}
-        borderBottomColor="$grey7"
-        backgroundColor="$background"
-      >
-        <TouchableOpacity onPress={handleBack}>
-          <Icon name="chevron-left" size={24} color="#040404" />
-        </TouchableOpacity>
-        <H2 flex={1} textAlign="center" fontSize={18} fontWeight="600" marginRight="$8" color="$black1">
-          Privacy Policy
-        </H2>
-      </XStack> */}
-
-<Header title="Privacy Policy" />
+      <Header title="Privacy Policy" />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 40 }}
-        style={{ backgroundColor: "#FAFAF9" }}
+        contentContainerStyle={styles.scrollContent}
+        style={styles.scrollView}
       >
-        <YStack padding="$4" gap="$4" backgroundColor="$background">
+        <View style={styles.container}>
           {/* Effective Date */}
-          <YStack gap="$2">
-            <Text fontSize="$3" color="$gray10" fontWeight="500">
+          <View style={styles.section}>
+            <Text style={styles.metadataText}>
               Effective Date: 18-July-2025
             </Text>
-            <Text fontSize="$3" color="$gray10" fontWeight="500">
+            <Text style={styles.metadataText}>
               Last Updated: 18-Jul-2025
             </Text>
-          </YStack>
+          </View>
 
           {/* Introduction */}
-          <YStack gap="$3">
-            <Paragraph fontSize="$4" lineHeight={24} color="$black1">
+          <View style={styles.section}>
+            <Text style={styles.paragraph}>
               Aarohan Foods ("we," "our," or "us"), operating under the brand name BREAKFAST BENGALURU, 
               values your privacy and is committed to protecting your personal information. This Privacy 
               Policy describes how we collect, use, share, and protect your information when you use our 
               services, including our website, mobile applications, or third-party platforms like Zomato 
               and Swiggy.
-            </Paragraph>
-            <Paragraph fontSize="$4" lineHeight={24} color="$black1">
+            </Text>
+            <Text style={styles.paragraph}>
               We adhere to the Information Technology Act, 2000, and the Information Technology (Reasonable 
               Security Practices and Procedures and Sensitive Personal Data or Information) Rules, 2011. 
               By accessing or using our services, you agree to the terms and practices described in this policy.
-            </Paragraph>
-          </YStack>
+            </Text>
+          </View>
 
           {/* Section 1: Scope */}
-          <YStack gap="$3">
-            <H3 fontSize={20} fontWeight="700" color="$orange">
+          <View style={styles.section}>
+            <Text style={styles.h3}>
               1. Scope of the Policy
-            </H3>
-            <Paragraph fontSize="$4" lineHeight={24} color="$black1">
+            </Text>
+            <Text style={styles.paragraph}>
               This Privacy Policy governs the collection, use, storage, sharing, and protection of personal 
               data obtained by Aarohan Foods. It applies to all individuals interacting with our services, 
               including customers, users, and visitors, regardless of how they engage with us.
-            </Paragraph>
-            <Paragraph fontSize="$4" lineHeight={24} color="$black1">
+            </Text>
+            <Text style={styles.paragraph}>
               The scope of this policy covers:
-            </Paragraph>
-            <YStack gap="$2" paddingLeft="$4">
-              <Paragraph fontSize="$4" lineHeight={24} color="$slate1">
+            </Text>
+            <View style={styles.list}>
+              <Text style={styles.listItem}>
                 • Placing orders for food and beverages
-              </Paragraph>
-              <Paragraph fontSize="$4" lineHeight={24} color="$slate1">
+              </Text>
+              <Text style={styles.listItem}>
                 • Customer support interactions
-              </Paragraph>
-              <Paragraph fontSize="$4" lineHeight={24} color="$slate1">
+              </Text>
+              <Text style={styles.listItem}>
                 • Website visits and subscription to marketing communications
-              </Paragraph>
-              <Paragraph fontSize="$4" lineHeight={24} color="$slate1">
+              </Text>
+              <Text style={styles.listItem}>
                 • Using third-party services to place orders
-              </Paragraph>
-            </YStack>
-          </YStack>
+              </Text>
+            </View>
+          </View>
 
           {/* Section 2: Information We Collect */}
-          <YStack gap="$3">
-            <H3 fontSize={20} fontWeight="700" color="$orange">
+          <View style={styles.section}>
+            <Text style={styles.h3}>
               2. Information We Collect
-            </H3>
+            </Text>
             
-            <YStack gap="$2">
-              <Text fontSize={16} fontWeight="600" color="$black1">
+            <View style={styles.subSection}>
+              <Text style={styles.subHeader}>
                 2.1 Personal Information
               </Text>
-              <Paragraph fontSize="$4" lineHeight={24} color="$black1">
+              <Text style={styles.paragraph}>
                 We collect the following personal information:
-              </Paragraph>
-              <YStack gap="$2" paddingLeft="$4">
-                <Paragraph fontSize="$4" lineHeight={24} color="$slate1">
+              </Text>
+              <View style={styles.list}>
+                <Text style={styles.listItem}>
                   • Full Name
-                </Paragraph>
-                <Paragraph fontSize="$4" lineHeight={24} color="$slate1">
+                </Text>
+                <Text style={styles.listItem}>
                   • Contact Details (phone number and email)
-                </Paragraph>
-                <Paragraph fontSize="$4" lineHeight={24} color="$slate1">
+                </Text>
+                <Text style={styles.listItem}>
                   • Delivery Address
-                </Paragraph>
-                <Paragraph fontSize="$4" lineHeight={24} color="$slate1">
+                </Text>
+                <Text style={styles.listItem}>
                   • Payment Information (UPI details)
-                </Paragraph>
-                <Paragraph fontSize="$4" lineHeight={24} color="$slate1">
+                </Text>
+                <Text style={styles.listItem}>
                   • Order History
-                </Paragraph>
-              </YStack>
-            </YStack>
+                </Text>
+              </View>
+            </View>
 
-            <YStack gap="$2">
-              <Text fontSize={16} fontWeight="600" color="$black1">
+            <View style={styles.subSection}>
+              <Text style={styles.subHeader}>
                 2.2 Sensitive Personal Data
               </Text>
-              <Paragraph fontSize="$4" lineHeight={24} color="$black1">
+              <Text style={styles.paragraph}>
                 We may collect sensitive information including financial information, health data 
                 (allergies, dietary restrictions), and OTPs for authentication. OTPs expire within 5 to 10 minutes.
-              </Paragraph>
-            </YStack>
+              </Text>
+            </View>
 
-            <YStack gap="$2">
-              <Text fontSize={16} fontWeight="600" color="$black1">
+            <View style={styles.subSection}>
+              <Text style={styles.subHeader}>
                 2.3 Automatically Collected Information
               </Text>
-              <Paragraph fontSize="$4" lineHeight={24} color="$black1">
+              <Text style={styles.paragraph}>
                 We automatically collect device information, IP address, browser type, and cookies 
                 to enhance user experience.
-              </Paragraph>
-            </YStack>
-          </YStack>
+              </Text>
+            </View>
+          </View>
 
           {/* Section 3: Purpose of Collection */}
-          <YStack gap="$3">
-            <H3 fontSize={20} fontWeight="700" color="$orange">
+          <View style={styles.section}>
+            <Text style={styles.h3}>
               3. Purpose of Collection
-            </H3>
-            <Paragraph fontSize="$4" lineHeight={24} color="$black1">
+            </Text>
+            <Text style={styles.paragraph}>
               We use your information to:
-            </Paragraph>
-            <YStack gap="$2" paddingLeft="$4">
-              <Paragraph fontSize="$4" lineHeight={24} color="$slate1">
+            </Text>
+            <View style={styles.list}>
+              <Text style={styles.listItem}>
                 • Provide and fulfill our services
-              </Paragraph>
-              <Paragraph fontSize="$4" lineHeight={24} color="$slate1">
+              </Text>
+              <Text style={styles.listItem}>
                 • Process payments securely through UPI
-              </Paragraph>
-              <Paragraph fontSize="$4" lineHeight={24} color="$slate1">
+              </Text>
+              <Text style={styles.listItem}>
                 • Improve our services and provide personalized recommendations
-              </Paragraph>
-              <Paragraph fontSize="$4" lineHeight={24} color="$slate1">
+              </Text>
+              <Text style={styles.listItem}>
                 • Send marketing communications (with your consent)
-              </Paragraph>
-              <Paragraph fontSize="$4" lineHeight={24} color="$slate1">
+              </Text>
+              <Text style={styles.listItem}>
                 • Comply with legal requirements
-              </Paragraph>
-            </YStack>
-          </YStack>
+              </Text>
+            </View>
+          </View>
 
           {/* Section 4: Cookies */}
-          <YStack gap="$3">
-            <H3 fontSize={20} fontWeight="700" color="$orange">
+          <View style={styles.section}>
+            <Text style={styles.h3}>
               4. Cookies and Tracking Technologies
-            </H3>
-            <Paragraph fontSize="$4" lineHeight={24} color="$black1">
+            </Text>
+            <Text style={styles.paragraph}>
               We use cookies to enhance your experience, track website performance, and deliver 
               personalized services. You can manage cookie preferences through your browser settings.
-            </Paragraph>
-            <YStack gap="$2" paddingLeft="$4">
-              <Paragraph fontSize="$4" lineHeight={24} color="$slate1">
+            </Text>
+            <View style={styles.list}>
+              <Text style={styles.listItem}>
                 • Essential Cookies: Required for website functionality
-              </Paragraph>
-              <Paragraph fontSize="$4" lineHeight={24} color="$slate1">
+              </Text>
+              <Text style={styles.listItem}>
                 • Performance Cookies: Track website usage and analytics
-              </Paragraph>
-              <Paragraph fontSize="$4" lineHeight={24} color="$slate1">
+              </Text>
+              <Text style={styles.listItem}>
                 • Functionality Cookies: Remember your preferences
-              </Paragraph>
-              <Paragraph fontSize="$4" lineHeight={24} color="$slate1">
+              </Text>
+              <Text style={styles.listItem}>
                 • Advertising Cookies: Show relevant ads based on your behavior
-              </Paragraph>
-            </YStack>
-          </YStack>
+              </Text>
+            </View>
+          </View>
 
           {/* Section 5: Data Retention */}
-          <YStack gap="$3">
-            <H3 fontSize={20} fontWeight="700" color="$orange">
+          <View style={styles.section}>
+            <Text style={styles.h3}>
               5. Data Retention and Security
-            </H3>
-            <Paragraph fontSize="$4" lineHeight={24} color="$black1">
+            </Text>
+            <Text style={styles.paragraph}>
               We retain personal information only as long as necessary to fulfill the purposes outlined 
               in this policy or as required by law. We employ industry-standard security measures including 
               encryption, firewalls, and access controls to protect your data.
-            </Paragraph>
-            <Paragraph fontSize="$4" lineHeight={24} color="$black1">
+            </Text>
+            <Text style={styles.paragraph}>
               However, no method of transmission over the internet is 100% secure. In case of any data 
               breach, we will notify affected users promptly in accordance with applicable laws.
-            </Paragraph>
-          </YStack>
+            </Text>
+          </View>
 
           {/* Section 6: Your Rights */}
-          <YStack gap="$3">
-            <H3 fontSize={20} fontWeight="700" color="$orange">
+          <View style={styles.section}>
+            <Text style={styles.h3}>
               6. Your Rights
-            </H3>
-            <Paragraph fontSize="$4" lineHeight={24} color="$black1">
+            </Text>
+            <Text style={styles.paragraph}>
               Under Indian data protection laws and GDPR, you have the following rights:
-            </Paragraph>
-            <YStack gap="$2" paddingLeft="$4">
-              <Paragraph fontSize="$4" lineHeight={24} color="$slate1">
+            </Text>
+            <View style={styles.list}>
+              <Text style={styles.listItem}>
                 • Right to Access your personal data
-              </Paragraph>
-              <Paragraph fontSize="$4" lineHeight={24} color="$slate1">
+              </Text>
+              <Text style={styles.listItem}>
                 • Right to Correction (Rectification)
-              </Paragraph>
-              <Paragraph fontSize="$4" lineHeight={24} color="$slate1">
+              </Text>
+              <Text style={styles.listItem}>
                 • Right to Withdraw Consent
-              </Paragraph>
-              <Paragraph fontSize="$4" lineHeight={24} color="$slate1">
+              </Text>
+              <Text style={styles.listItem}>
                 • Right to Deletion (Right to be Forgotten)
-              </Paragraph>
-              <Paragraph fontSize="$4" lineHeight={24} color="$slate1">
+              </Text>
+              <Text style={styles.listItem}>
                 • Right to Object to Processing
-              </Paragraph>
-            </YStack>
-          </YStack>
+              </Text>
+            </View>
+          </View>
 
           {/* Section 7: Data Transfer */}
-          <YStack gap="$3">
-            <H3 fontSize={20} fontWeight="700" color="$orange">
+          <View style={styles.section}>
+            <Text style={styles.h3}>
               7. Data Transfer
-            </H3>
-            <Paragraph fontSize="$4" lineHeight={24} color="$black1">
+            </Text>
+            <Text style={styles.paragraph}>
               Your personal data is stored and processed on servers located in India. We may transfer 
               your data internationally with appropriate safeguards including Standard Contractual Clauses (SCCs).
-            </Paragraph>
-          </YStack>
+            </Text>
+          </View>
 
           {/* Section 8: Children's Privacy */}
-          <YStack gap="$3">
-            <H3 fontSize={20} fontWeight="700" color="$orange">
+          <View style={styles.section}>
+            <Text style={styles.h3}>
               8. Children's Privacy
-            </H3>
-            <Paragraph fontSize="$4" lineHeight={24} color="$black1">
+            </Text>
+            <Text style={styles.paragraph}>
               Our services are not intended for children under 18. We do not knowingly collect personal 
               information from minors without parental consent. If we become aware of such collection, 
               we will take immediate steps to delete the information.
-            </Paragraph>
-          </YStack>
+            </Text>
+          </View>
 
           {/* Section 9: Changes to Policy */}
-          <YStack gap="$3">
-            <H3 fontSize={20} fontWeight="700" color="$orange">
+          <View style={styles.section}>
+            <Text style={styles.h3}>
               9. Changes to This Policy
-            </H3>
-            <Paragraph fontSize="$4" lineHeight={24} color="$black1">
+            </Text>
+            <Text style={styles.paragraph}>
               We may update this Privacy Policy from time to time. Any changes will be posted on our 
               website with an updated "Last Updated" date. We encourage you to review this policy periodically.
-            </Paragraph>
-          </YStack>
+            </Text>
+          </View>
 
           {/* Section 10: Grievance Officer */}
-          <YStack gap="$3">
-            <H3 fontSize={20} fontWeight="700" color="$orange">
+          <View style={styles.section}>
+            <Text style={styles.h3}>
               10. Grievance Redressal
-            </H3>
-            <Paragraph fontSize="$4" lineHeight={24} color="$black1">
+            </Text>
+            <Text style={styles.paragraph}>
               We have appointed a Grievance Officer to address any concerns regarding personal data handling.
-            </Paragraph>
-            <YStack gap="$1" paddingLeft="$4">
-              <Text fontSize="$4" fontWeight="500" color="$orange">
+            </Text>
+            <View style={styles.contactPoint}>
+              <Text style={styles.contactEmail}>
                 Email: brkfstbengalurur@gmail.com
               </Text>
-              <Paragraph fontSize="$3" color="$slate1">
+              <Text style={styles.contactHelper}>
                 The Grievance Officer will acknowledge your complaint within 48 hours.
-              </Paragraph>
-            </YStack>
-          </YStack>
+              </Text>
+            </View>
+          </View>
 
           {/* Contact Section */}
-          <YStack gap="$3" backgroundColor="$grey8" padding="$4" borderRadius="$4">
-            <H3 fontSize={18} fontWeight="600" color="$orange">
+          <View style={styles.highlightSection}>
+            <Text style={styles.highlightHeader}>
               11. Contact Us
-            </H3>
-            <Paragraph fontSize="$4" lineHeight={24} color="$black1">
+            </Text>
+            <Text style={styles.paragraph}>
               If you have any questions about this Privacy Policy, please contact us at:
-            </Paragraph>
-            <Text fontSize="$4" fontWeight="500" color="$orange">
+            </Text>
+            <Text style={styles.contactEmail}>
               brkfstbengalurur@gmail.com
             </Text>
-          </YStack>
-        </YStack>
+          </View>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+  },
+  scrollView: {
+    backgroundColor: theme.colors.background,
+  },
+  scrollContent: {
+    paddingBottom: 40,
+  },
+  container: {
+    padding: 16,
+  },
+  section: {
+    marginBottom: 24,
+  },
+  subSection: {
+    marginTop: 12,
+  },
+  metadataText: {
+    fontSize: 12,
+    color: theme.colors.gray10,
+    fontWeight: "500",
+    fontFamily: theme.typography.fontFamily.medium,
+    marginBottom: 4,
+  },
+  h3: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: theme.colors.orange,
+    fontFamily: theme.typography.fontFamily.bold,
+    marginBottom: 12,
+  },
+  subHeader: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: theme.colors.black1,
+    fontFamily: theme.typography.fontFamily.semibold,
+    marginBottom: 8,
+  },
+  paragraph: {
+    fontSize: 16,
+    lineHeight: 24,
+    color: theme.colors.black1,
+    fontFamily: theme.typography.fontFamily.regular,
+    marginBottom: 12,
+  },
+  list: {
+    paddingLeft: 16,
+  },
+  listItem: {
+    fontSize: 14,
+    lineHeight: 24,
+    color: theme.colors.slate1,
+    fontFamily: theme.typography.fontFamily.regular,
+    marginBottom: 4,
+  },
+  contactPoint: {
+    marginTop: 8,
+    paddingLeft: 16,
+  },
+  contactEmail: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: theme.colors.orange,
+    fontFamily: theme.typography.fontFamily.medium,
+  },
+  contactHelper: {
+    fontSize: 12,
+    color: theme.colors.slate1,
+    fontFamily: theme.typography.fontFamily.regular,
+    marginTop: 4,
+  },
+  highlightSection: {
+    backgroundColor: theme.colors.grey8,
+    padding: 16,
+    borderRadius: 16,
+    marginTop: 16,
+  },
+  highlightHeader: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: theme.colors.orange,
+    fontFamily: theme.typography.fontFamily.semibold,
+    marginBottom: 8,
+  },
+});

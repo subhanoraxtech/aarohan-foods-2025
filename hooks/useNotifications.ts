@@ -3,6 +3,8 @@ import { useEffect } from "react";
 import * as Notifications from "expo-notifications";
 import { useRouter } from "expo-router";
 import { registerForPushNotificationsAsync } from "@/utils/pushNotification";
+import { useUpdateUserMutation } from "@/services/user.service";
+import { useAuth } from "./useAuth";
 
 // Configure notification handler to show notifications in foreground
 Notifications.setNotificationHandler({
@@ -17,29 +19,40 @@ Notifications.setNotificationHandler({
 
 export function useNotifications() {
   const router = useRouter();
+  const { isAuthenticated } = useAuth();
+  const [updateUser] = useUpdateUserMutation();
 
   useEffect(() => {
-    registerForPushNotificationsAsync();
+    async function setupNotifications() {
+      const token = await registerForPushNotificationsAsync();
+      
+      // Sync token with backend if user is logged in
+      if (token && isAuthenticated) {
+        try {
+          await updateUser({ expoToken: token }).unwrap();
+          console.log("\uD83D\uDD04 Push token synced with backend");
+        } catch (error) {
+          console.error("\u274C Failed to sync push token:", error);
+        }
+      }
+    }
+
+    setupNotifications();
 
     const foregroundSub = Notifications.addNotificationReceivedListener(
       (notification) => {
-        console.log("🔔 Foreground Notification:", notification);
-        const { data } = notification.request.content;
-console.log(" foregroundSub notification data", data);
-        // Navigate immediately when notification arrives
-        if (data?.notificationId || data?._id) {
-          router.push("/(app)/notifications");
-        }
+        console.log("\uD83D\uDD14 Foreground Notification Received:", notification);
+        // Note: Automatic navigation was removed to allow users to see the notification popup
       }
     );
 
     const responseSub = Notifications.addNotificationResponseReceivedListener(
       (response) => {
-        console.log("🕹️ Notification Tapped:", response);
+        console.log("\uD83D\uDD79\uFE0F Notification Tapped:", response);
         const { data } = response.notification.request.content;
-console.log(" responseSub notification data", data);
-        // Navigate to notifications screen when notification is tapped
-        if (data?.notificationId) {
+        
+        // Navigate when notification is tapped
+        if (data?.notificationId || data?._id) {
           router.push("/(app)/notifications");
         }
       }
@@ -50,7 +63,7 @@ console.log(" responseSub notification data", data);
       foregroundSub.remove();
       responseSub.remove();
     };
-  }, [router]);
+  }, [router, isAuthenticated, updateUser]);
 
   return null;
 }

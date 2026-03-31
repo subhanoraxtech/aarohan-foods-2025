@@ -1,9 +1,13 @@
 import React from "react";
-import { Button, Dialog, Text, YStack } from "tamagui";
+import { Modal, StyleSheet, TouchableWithoutFeedback } from "react-native";
+import { View } from "@/components/ui/View";
+import { Text } from "@/components/ui/Text";
+import { Button } from "@/components/ui/Button";
+import { theme } from "@/theme";
 
 interface SelectRoleModalProps {
   isOpen: boolean;
-  onClose: (selectedRole?: 'supplier' | 'delivery_agent') => void;
+  onClose: (selectedRole?: "supplier" | "delivery_agent") => void;
 }
 
 const SelectRoleModal = ({
@@ -11,81 +15,77 @@ const SelectRoleModal = ({
   onClose,
 }: SelectRoleModalProps) => {
   return (
-    <Dialog modal open={isOpen}>
-      <Dialog.Portal>
-        <Dialog.Overlay
-          bg="$overlay"
-          animateOnly={["transform", "opacity"]}
-          animation={[
-            "quicker",
-            {
-              opacity: {
-                overshootClamping: true,
-              },
-            },
-          ]}
-          enterStyle={{ opacity: 0, scale: 0.95 }}
-          exitStyle={{ opacity: 0 }}
-        />
-        <Dialog.Content
-          bordered
-          bg="white"
-          mx="$6"
-          br="$4"
-          elevate
-          key="content"
-          animateOnly={["transform", "opacity"]}
-          animation={[
-            "quicker",
-            {
-              opacity: {
-                overshootClamping: true,
-              },
-            },
-          ]}
-          enterStyle={{ x: 0, y: -20, opacity: 0 }}
-          exitStyle={{ x: 0, y: 10, opacity: 0, scale: 0.95 }}
-          gap="$4"
-          p="$4"
-        >
-          <YStack space m="$2">
-            <Text fontSize={24} fontWeight="700" color="$black1" style={{ textAlign: 'center' }}>
-              Select Your Role
-            </Text>
-          </YStack>
-
-          <Text
-            fontSize={16}
-            fontWeight="400"
-            color="$slate1"
-            style={{ textAlign: 'center' }}
-          >
-            Please select your role to continue
-          </Text>
-
-          <YStack space="$4">
-            <Button
-              bg="$orange1"
-              color="white"
-              onPress={() => onClose('supplier')}
-              size="$5"
+    <Modal
+      visible={isOpen}
+      transparent
+      animationType="fade"
+      onRequestClose={() => onClose()}
+    >
+      <TouchableWithoutFeedback onPress={() => onClose()}>
+        <View style={styles.overlay} bg="rgba(0,0,0,0.5)">
+          <TouchableWithoutFeedback>
+            <View
+              bg="white"
+              p="xl"
+              radius="lg"
+              style={styles.content}
+              gap="lg"
             >
-              Continue as Supplier
-            </Button>
+              <View center>
+                <Text variant="h3" weight="bold" color="text" align="center">
+                  Select Your Role
+                </Text>
+              </View>
 
-            <Button
-              bg="$blue1"
-              color="white"
-              onPress={() => onClose('delivery_agent')}
-              size="$5"
-            >
-              Continue as Delivery Agent
-            </Button>
-          </YStack>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog>
+              <Text
+                variant="body"
+                align="center"
+                color="gray10"
+                px="md"
+              >
+                Please select your role to continue
+              </Text>
+
+              <View gap="md">
+                <Button
+                  variant="primary"
+                  onPress={() => onClose("supplier")}
+                  style={styles.button}
+                >
+                  Continue as Supplier
+                </Button>
+
+                <Button
+                  variant="primary"
+                  onPress={() => onClose("delivery_agent")}
+                  style={[styles.button, { backgroundColor: theme.colors.info }]}
+                >
+                  Continue as Delivery Agent
+                </Button>
+              </View>
+            </View>
+          </TouchableWithoutFeedback>
+        </View>
+      </TouchableWithoutFeedback>
+    </Modal>
   );
 };
+
+const styles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
+  },
+  content: {
+    width: "100%",
+    maxWidth: 400,
+    ...theme.shadows.lg,
+  },
+  button: {
+    width: "100%",
+  },
+});
 
 export default SelectRoleModal;

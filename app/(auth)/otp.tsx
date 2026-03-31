@@ -1,80 +1,65 @@
 import React, { useEffect, useState } from "react";
-import {
-  Vibration,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform
-} from "react-native";
-import { useDispatch } from "react-redux";
+import { Vibration, ScrollView, KeyboardAvoidingView, Platform, StyleSheet } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { H2, Paragraph, Text, useTheme, XStack, YStack } from "tamagui";
-
-import Header from "@/components/common/Header";
-import Button from "@/components/common/Button";
-import Icon from "@/components/common/Icon";
-import NotificationModal, { NotificationModalType } from "@/components/common/SuccesModal";
 import { OtpInput } from "react-native-otp-entry";
+import { useDispatch } from "react-redux";
 
+import { View } from "@/components/ui/View";
+import { Text } from "@/components/ui/Text";
+import { Button } from "@/components/ui/Button";
+import Icon from "@/components/common/Icon";
+import Header from "@/components/common/Header";
+import SuccessModal from "@/components/common/SuccesModal";
+
+import { useVerifyOtpMutation, useResendOtpMutation } from "@/services/auth.service";
 import { setUserData } from "@/store/slice/user.slice";
 import { getExpoPushTokenSilently } from "@/utils/pushNotification";
-
-import {
-  useVerifyOtpMutation,
-  useResendOtpMutation,
-} from "@/services/auth.service";
+import { theme } from "@/theme";
 
 export default function OtpScreen() {
   const { phone, otpExpires } = useLocalSearchParams();
-  const [otp, setOtp] = useState("");
-  const [errorMsg, setErrorMsg] = useState("");
-  const [timeLeft, setTimeLeft] = useState(0);
-  const [expiresAt, setExpiresAt] = useState(() => Number(otpExpires));
-  const [modalConfig, setModalConfig] = useState<{
-    isOpen: boolean;
-    type: NotificationModalType;
-    title?: string;
-    subtitle?: string;
-  }>({
-    isOpen: false,
-    type: 'error',
-    title: '',
-    subtitle: '',
-  });
-
-  const theme = useTheme();
   const router = useRouter();
   const dispatch = useDispatch();
 
-  const [verifyOtpMutation, { isLoading: loading }] = useVerifyOtpMutation();
-  const [resendOtpMutation, { isLoading: resendLoading }] = useResendOtpMutation();
+  const [verifyOtp, { isLoading: verifyLoading }] = useVerifyOtpMutation();
+  const [resendOtp, { isLoading: resendLoading }] = useResendOtpMutation();
 
-  // Timer logic
+  const [otp, setOtp] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
+  const [timeLeft, setTimeLeft] = useState(() => {
+    const expires = Array.isArray(otpExpires) ? otpExpires[0] : otpExpires;
+    if (expires) {
+      return Math.max(Math.floor((Number(expires) - Date.now()) / 1000), 0);
+    }
+    return 120;
+  });
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorModalMessage, setErrorModalMessage] = useState("");
+
+  const phoneNumber = Array.isArray(phone) ? phone[0] : phone;
+
   useEffect(() => {
     const intervalId = setInterval(() => {
-      const now = Date.now();
-      const diff = Math.max(Math.floor((expiresAt - now) / 1000), 0);
-      setTimeLeft(diff);
+      setTimeLeft((prev) => Math.max(prev - 1, 0));
     }, 1000);
 
     return () => clearInterval(intervalId);
-  }, [expiresAt]);
+  }, []);
 
-  const formatTime = (seconds: number) => {
+  function formatTime(seconds: number) {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
-    return `${String(minutes).padStart(2, "0")}:${String(
-      remainingSeconds
-    ).padStart(2, "0")}`;
-  };
+    return `${String(minutes).padStart(2, "0")}:${String(remainingSeconds).padStart(2, "0")}`;
+  }
 
-  const handleOtpChange = (text: string) => {
+  function handleOtpChange(text: string) {
     if (/^\d*$/.test(text) && text.length <= 4) {
       setOtp(text);
       if (errorMsg) setErrorMsg("");
     }
-  };
+  }
 
-  const handleOtpVerification = async () => {
+  async function handleOtpVerification() {
     if (otp.length < 4) {
       Vibration.vibrate([100, 100, 100]);
       setErrorMsg("Please enter the complete 4-digit OTP.");
@@ -84,66 +69,33 @@ export default function OtpScreen() {
     setErrorMsg("");
 
     try {
-      // Extract phone - handle array case from useLocalSearchParams
-      const phoneNumber = Array.isArray(phone) ? phone[0] : phone;
-
-      console.log("=== OTP VERIFICATION START ===");
-      console.log("Phone:", phoneNumber);
-
       if (!phoneNumber) {
-        console.error("Phone number is missing!");
         setErrorMsg("Phone number is missing. Please try again.");
         return;
       }
 
-      // Get expo token with retries
-      console.log("Getting expo token...");
       const pushInfo = await getExpoPushTokenSilently();
 
-      if (pushInfo) {
-        console.log("✓ Expo token retrieved successfully");
-      } else {
-        console.log("⚠️ Failed to retrieve expo token, proceeding without it");
-      }
-
-      const payload = {
+      const payload: any = {
         phone: phoneNumber,
         otp: otp,
-        ...(pushInfo
-          ? {
-            expoToken: pushInfo.expoToken,
-            projectId: pushInfo.projectId,
-          }
-          : {}),
       };
 
-      console.log("=== CALLING API ===");
-      console.log("Payload:", {
-        phone: payload.phone,
-        otp: payload.otp,
-        expoToken: pushInfo ? "present" : "missing",
-      });
+      if (pushInfo?.expoToken) {
+        payload.expoToken = pushInfo.expoToken;
+        payload.projectId = pushInfo.projectId;
+      }
 
-      const response = await verifyOtpMutation(payload).unwrap();
-
-      console.log("=== API SUCCESS ===");
-      console.log("User authenticated successfully");
+      const response = await verifyOtp(payload).unwrap();
 
       if (response?.success) {
-        setTimeLeft(0);
         dispatch(setUserData(response.data));
-
-        // Small delay to ensure state updates
-        setTimeout(() => {
-          router.replace("/(app)");
-        }, 100);
+        router.replace("/(app)");
+      } else {
+        setErrorModalMessage("Authentication failed. Please try again.");
+        setShowErrorModal(true);
       }
     } catch (error: any) {
-      console.error("=== OTP VERIFICATION ERROR ===");
-      console.error("Error:", error);
-      console.error("Error data:", error?.data);
-      console.error("Error status:", error?.status);
-
       Vibration.vibrate([200, 200, 200]);
 
       let message = "Invalid OTP. Please try again.";
@@ -152,25 +104,18 @@ export default function OtpScreen() {
         message = error.data.message;
       } else if (error?.message) {
         message = error.message;
-      } else if (error?.status === "FETCH_ERROR") {
-        message = "Network error. Please check your connection.";
-      } else if (error?.status === 401) {
-        message = "Invalid or expired OTP.";
-      } else if (error?.status >= 500) {
-        message = "Server error. Please try again later.";
       }
 
-      setErrorMsg(message);
+      setErrorModalMessage(message);
+      setShowErrorModal(true);
     }
-  };
+  }
 
-  const handleResendOtp = async () => {
+  async function handleResendOtp() {
     if (timeLeft > 0 || resendLoading) {
       Vibration.vibrate(50);
       return;
     }
-
-    const phoneNumber = Array.isArray(phone) ? phone[0] : phone;
 
     if (!phoneNumber) {
       setErrorMsg("Phone number is missing. Please try again.");
@@ -180,170 +125,163 @@ export default function OtpScreen() {
     setErrorMsg("");
 
     try {
-      console.log("Resending OTP to:", phoneNumber);
+      const response = await resendOtp({ phone: phoneNumber }).unwrap();
 
-      const response = await resendOtpMutation({
-        phone: phoneNumber,
-      }).unwrap();
-
-      const newOtpExpires = response?.data?.otpExpires;
-      if (newOtpExpires) {
-        setExpiresAt(Number(newOtpExpires));
+      if (response?.otpExpires) {
+        const diff = Math.floor((Number(response.otpExpires) - Date.now()) / 1000);
+        setTimeLeft(Math.max(diff, 0));
       } else {
-        setExpiresAt(Date.now() + 120000); // 2 minutes default
+        setTimeLeft(120);
       }
-
       setOtp("");
-      console.log("OTP resent successfully");
     } catch (error: any) {
-      console.error("Resend OTP error:", error);
       Vibration.vibrate([200, 100, 200]);
-
       let message = "Failed to resend OTP. Please try again.";
 
       if (error?.data?.message) {
         message = error.data.message;
-      } else if (error?.status === "FETCH_ERROR") {
-        message = "Network error. Please check your connection.";
       }
 
-      setErrorMsg(message);
+      setErrorModalMessage(message);
+      setShowErrorModal(true);
     }
-  };
-
-  const handleModalClose = () => {
-    setModalConfig(prev => ({ ...prev, isOpen: false }));
-  };
+  }
 
   return (
-    <YStack flex={1} bg="$background">
+    <View flex bg={theme.colors.background}>
       <Header title="OTP" />
 
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={{ flex: 1 }}
+        style={styles.keyboardView}
         keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
       >
         <ScrollView
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 40 }}
+          contentContainerStyle={styles.scrollContent}
         >
-          <YStack flex={1} px="$5" pt="$4" space="$3">
-            <H2 fontWeight="bold">Phone Verification</H2>
-            <Paragraph color="$gray10" lineHeight={22}>
+          <View flex p="lg" pt="md" gap="md">
+            <Text variant="h2" weight="bold">
+              Phone Verification
+            </Text>
+            <Text variant="body" color="gray10" style={styles.description}>
               Enter the verification code we sent to:{"\n"}
-              <Text fontWeight="bold">{phone}</Text>
-            </Paragraph>
+              <Text weight="bold">{phoneNumber}</Text>
+            </Text>
 
             <OtpInput
               numberOfDigits={4}
               onTextChange={handleOtpChange}
-              focusColor={theme.orange.val}
+              focusColor={theme.colors.orange}
               theme={{
-                containerStyle: { paddingVertical: 20 },
-                pinCodeContainerStyle: {
-                  width: 65,
-                  height: 65,
-                  borderRadius: 8,
-                  borderWidth: 1,
-                  borderColor: theme.gray8.val,
-                  backgroundColor: theme.background.val,
-                },
-                pinCodeTextStyle: {
-                  fontSize: 36,
-                  fontWeight: "600",
-                  color: theme.color.val,
-                },
-                focusedPinCodeContainerStyle: {
-                  borderWidth: 2,
-                  borderColor: theme.orange.val,
-                  transform: [{ scale: 1.05 }],
-                },
+                containerStyle: styles.otpContainer,
+                pinCodeContainerStyle: styles.pinCodeContainer,
+                pinCodeTextStyle: styles.pinCodeText,
+                focusedPinCodeContainerStyle: styles.pinCodeFocused,
               }}
               autoFocus
-              textContentType="oneTimeCode"
             />
 
-            {errorMsg ? (
-              <Text color="$red10" fontSize="$4" textAlign="center" mb="$2">
+            {errorMsg && (
+              <Text variant="body" color="red1" align="center">
                 {errorMsg}
               </Text>
-            ) : null}
+            )}
 
-            <XStack justify="center" items="center" space="$2">
-              <Text color="$gray10">Didn't receive code?</Text>
+            <View row center gap="sm" mt="sm">
+              <Text variant="caption" color="gray10">
+                Didn't receive code?
+              </Text>
               <Button
-                bg="transparent"
-                chromeless
-                px="$1"
-                pressTheme
+                variant="ghost"
+                size="sm"
                 disabled={timeLeft > 0 || resendLoading}
                 onPress={handleResendOtp}
-                style={{
-                  opacity: timeLeft > 0 || resendLoading ? 0.4 : 1,
-                  pointerEvents: timeLeft > 0 || resendLoading ? "none" : "auto",
-                }}
               >
-                <Text
-                  color={timeLeft > 0 || resendLoading ? "$gray10" : "$orange"}
-                  fontWeight="bold"
-                >
-                  {resendLoading ? "Sending..." : "Resend"}
-                </Text>
+                {resendLoading ? "Sending..." : "Resend"}
               </Button>
-            </XStack>
+            </View>
 
-            <XStack justify="center" items="center" gap="$2" pt="$2">
-              <Icon name="clock" size={16} color={theme.gray10.val} />
-              <Text color="$gray10">
+            <View row center gap="sm" pt="sm">
+              <Icon name="clock" type="feather" size={16} color={theme.colors.gray10} />
+              <Text variant="caption" color="gray10">
                 {timeLeft > 0
                   ? `Resend available in ${formatTime(timeLeft)}`
                   : "You can resend now"}
               </Text>
-            </XStack>
+            </View>
 
-            <YStack
-              mt="$3"
-              mb="$4"
-              p="$3"
-              bg="$grey6"
-              borderRadius="$4"
-              borderWidth={1}
-              borderColor="$grey7"
-              alignItems="center"
+            <View
+              bg="grey6"
+              p="md"
+              radius="md"
+              style={styles.infoBox}
             >
-              <Text
-                color="$gray10"
-                fontSize="$3"
-                textAlign="center"
-                lineHeight={18}
-              >
+              <Text variant="caption" align="center">
                 A one-time OTP is sent to your WhatsApp
               </Text>
-            </YStack>
+            </View>
 
             <Button
+              variant="primary"
+              size="lg"
               onPress={handleOtpVerification}
-              loading={loading}
-              iconAfter={
-                <Icon name="arrow-right-long" color="white" type="font-awesome-6" />
-              }
+              loading={verifyLoading}
             >
               Continue
             </Button>
-          </YStack>
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
 
-      <NotificationModal
-        isOpen={modalConfig.isOpen}
-        onClose={handleModalClose}
-        modalType={modalConfig.type}
-        modalTitle={modalConfig.title}
-        subTitle={modalConfig.subtitle}
+      <SuccessModal
+        isOpen={showErrorModal}
+        onClose={() => setShowErrorModal(false)}
+        modalType="error"
+        subTitle={errorModalMessage}
         buttonTitle="OK"
       />
-    </YStack>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  keyboardView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 40,
+  },
+  description: {
+    lineHeight: 22,
+  },
+  otpContainer: {
+    paddingVertical: 20,
+  },
+  pinCodeContainer: {
+    width: 65,
+    height: 65,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: theme.colors.grey8,
+    backgroundColor: theme.colors.white,
+  },
+  pinCodeText: {
+    fontSize: 36,
+    fontWeight: "600",
+    color: theme.colors.text,
+  },
+  pinCodeFocused: {
+    borderWidth: 2,
+    borderColor: theme.colors.orange,
+    transform: [{ scale: 1.05 }],
+  },
+  infoBox: {
+    borderWidth: 1,
+    borderColor: theme.colors.grey7,
+    alignItems: "center",
+    marginTop: theme.spacing.md,
+    marginBottom: theme.spacing.md,
+  },
+});

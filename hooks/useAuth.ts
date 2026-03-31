@@ -1,6 +1,15 @@
-import { useSelector } from 'react-redux';
-import { RootState } from '@/store';
+import { useSelector } from "react-redux";
+import { RootState } from "@/store";
 
 export const useAuth = () => {
-  return useSelector((state: RootState) => state.user); 
+  const user = useSelector((state: RootState) => state.user?.user);
+  const accessToken = useSelector((state: RootState) => state.user?.accessToken);
+  const role = useSelector((state: RootState) => state.user?.role);
+
+  return {
+    user,
+    accessToken,
+    role,
+    isAuthenticated: !!accessToken,
+  };
 };

@@ -1,8 +1,8 @@
 import { useRouter } from "expo-router";
 import React from "react";
-import { Text, useTheme, XStack } from "tamagui";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { theme } from "@/theme";
 import Icon from "../common/Icon";
-import Button from "./Button";
 
 export interface HeaderProps {
   title?: string;
@@ -17,7 +17,6 @@ const Header = ({
   rightIcon,
   onBackPress,
 }: HeaderProps) => {
-  const theme = useTheme();
   const router = useRouter();
 
   const handleBack = () => {
@@ -29,38 +28,66 @@ const Header = ({
   };
 
   return (
-    <XStack
-      alignItems="center"
-      justifyContent="center"
-      py="$3"
-      position="relative"
-    >
+    <View style={styles.container}>
       {/* Back Button - positioned absolutely to the left */}
       {onBack && (
-        <XStack position="absolute" left="$3">
-          <Button
-            icon={<Icon name="angle-left" type="font-awesome" size={30} />}
-            bg="$grey1"
-            size="$3.5"
+        <View style={styles.backButtonContainer}>
+          <TouchableOpacity
+            style={styles.backButton}
             onPress={handleBack}
-          />
-        </XStack>
+          >
+            <Icon name="angle-left" type="font-awesome" size={28} color={theme.colors.gray3} />
+          </TouchableOpacity>
+        </View>
       )}
 
       {/* Title in center */}
       {title && (
-        <Text fontSize={20} fontWeight="$5" color="$gray3">
+        <Text style={styles.title}>
           {title}
         </Text>
       )}
 
       {rightIcon && (
-        <XStack position="absolute" r="$3">
+        <View style={styles.rightIconContainer}>
           {rightIcon}
-        </XStack>
+        </View>
       )}
-    </XStack>
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 12,
+    position: "relative",
+    width: "100%",
+  },
+  backButtonContainer: {
+    position: "absolute",
+    left: 12,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: theme.colors.grey1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: "500",
+    color: theme.colors.gray3,
+    fontFamily: theme.typography.fontFamily.medium,
+  },
+  rightIconContainer: {
+    position: "absolute",
+    right: 12,
+  },
+});
 
 export default Header;

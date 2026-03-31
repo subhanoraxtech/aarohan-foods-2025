@@ -1,17 +1,29 @@
-import Button from "@/components/common/Button";
-import FlatList from "@/components/common/FlatList";
-import Header from "@/components/common/Header";
+import React, { useCallback, useEffect, useState } from "react";
+import {
+  FlatList,
+  KeyboardAvoidingView,
+  Keyboard,
+  Platform,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+} from "react-native";
+import { View } from "@/components/ui/View";
+import { Text } from "@/components/ui/Text";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
 import Icon from "@/components/common/Icon";
-import TextField from "@/components/common/TextField";
+import Header from "@/components/common/Header";
+import SuccessModal from "@/components/common/SuccesModal";
 import moment from "moment";
 import "moment-timezone";
 import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
-import { RefreshControl, ScrollView, KeyboardAvoidingView, Platform } from "react-native";
-import { Spinner, Text, XStack, YStack, View, Card } from "tamagui";
-import SuccessModal from "@/components/common/SuccesModal";
-import { useGetOrdersByBundleIdQuery } from "@/services/bundle/bundles.service";
-import { useUpdateOrderMutation } from "@/services/order/order.service";
+
+import { useOrdersByBundleId } from "@/hooks/useOrders";
+import { useUpdateOrderRequest } from "@/hooks/useRequests";
+import { theme } from "@/theme";
+import { Skeleton } from "@/components/skeletons";
 
 interface Delivery {
   id: string;
@@ -24,10 +36,10 @@ interface Delivery {
   orderNumber: number;
   pincode: number;
   totalAmount: number;
-  status: 'pending' | 'delivered';
+  status: "pending" | "delivered";
   deliveryDate: string;
   menuName: string;
-  order_status: 'ready' | 'placed';
+  order_status: "ready" | "placed";
   quantity: number;
 }
 
@@ -44,361 +56,224 @@ const DeliveryCard = ({
   packageIds: string[];
   onPackageIdChange: (index: number, value: string) => void;
 }) => {
-  
   // Check if all required package IDs are entered
   const areAllPackageIdsEntered = (): boolean => {
     // If no package IDs are required, button should be enabled
     if (item.quantity <= 0) return true;
     // Count how many package IDs have been filled
-    const filledCount = packageIds.filter(id => id && id.trim() !== '').length;
+    const filledCount = packageIds.filter((id) => id && id.trim() !== "").length;
     // Button is enabled only when all required package IDs are filled
     return filledCount === item.quantity;
   };
-  
+
+  const isReadyToConfirm = !isUpdating && areAllPackageIdsEntered();
+
   return (
     <Card
-      backgroundColor="$background"
-      borderRadius="$7"
-      padding="$0"
-      marginHorizontal="$3"
-      marginBottom="$4"
-      borderColor="$grey7"
-      borderWidth={1}
-      elevate
-      overflow="hidden"
-      opacity={item.status === 'delivered' ? 0.6 : 1}
-      accessible
-      accessibilityLabel={`Order #${item.orderNumber} for ${item.customerName}, ${item.totalAmount}, ${item.status}`}
+      variant="elevated"
+      style={[styles.deliveryCard, item.status === "delivered" ? styles.deliveredCard : null]}
     >
-      <YStack padding="$4" gap="$3">
+      <View p="lg" gap="md">
         {/* Header Section */}
-        <XStack justifyContent="space-between" alignItems="center">
-          <View
-            backgroundColor="$orange"
-            borderRadius="$8"
-            paddingHorizontal="$4"
-            paddingVertical="$2"
-          >
-            <Text
-              fontSize="$6"
-              fontWeight="700"
-              color="$background"
-              fontFamily="$heading"
-            >
+        <View row justify="space-between" align="center">
+          <View bg="orange" px="md" py="sm" radius="md">
+            <Text variant="body" weight="bold" color="white">
               #{item.orderNumber}
             </Text>
           </View>
 
           <View
-            backgroundColor={item.order_status === 'ready' ? "$green10" : "$grey6"}
-            paddingHorizontal="$3"
-            paddingVertical="$2"
-            borderRadius="$6"
+            bg={item.order_status === "ready" ? "success1" : "grey6"}
+            px="md"
+            py="sm"
+            radius="md"
           >
             <Text
-              fontSize="$2"
-              fontWeight="600"
-              color={item.order_status === 'ready' ? "white" : "$gray10"}
-              fontFamily="$body"
-              textTransform="uppercase"
+              variant="caption"
+              weight="semibold"
+              color={item.order_status === "ready" ? "white" : "gray10"}
+              style={styles.uppercase}
             >
               {item.order_status}
             </Text>
           </View>
-        </XStack>
+        </View>
 
         {/* Customer Info */}
-        <YStack gap="$2">
-          <XStack alignItems="center" gap="$2">
-            <View
-              backgroundColor="$grey6"
-              borderRadius="$5"
-              padding="$2"
-              width={32}
-              height={32}
-              alignItems="center"
-              justifyContent="center"
-            >
-              <Icon name="user" type="feather" size={14} color="#FE8C00" />
+        <View gap="sm">
+          <View row align="center" gap="sm">
+            <View bg="grey6" p="sm" radius="md" style={styles.smallIconContainer}>
+              <Icon type="material" name="person" size={16} color={theme.colors.orange} />
             </View>
-            <YStack flex={1}>
-              <Text fontSize="$2" color="$gray10" fontFamily="$body" fontWeight="500">
+            <View style={{ flex: 1 }}>
+              <Text variant="caption" color="gray10">
                 Customer
               </Text>
-              <Text
-                fontSize="$4"
-                fontWeight="600"
-                color="$black1"
-                fontFamily="$heading"
-                numberOfLines={1}
-              >
+              <Text variant="body" weight="semibold" numberOfLines={1}>
                 {item.customerName}
               </Text>
-            </YStack>
-          </XStack>
-
-          <XStack alignItems="center" gap="$2">
-            <View
-              backgroundColor="$grey6"
-              borderRadius="$5"
-              padding="$2"
-              width={32}
-              height={32}
-              alignItems="center"
-              justifyContent="center"
-            >
-              <Icon name="phone" type="feather" size={14} color="#FE8C00" />
             </View>
-            <YStack flex={1}>
-              <Text fontSize="$2" color="$gray10" fontFamily="$body" fontWeight="500">
+          </View>
+
+          <View row align="center" gap="sm">
+            <View bg="grey6" p="sm" radius="md" style={styles.smallIconContainer}>
+              <Icon type="material" name="phone" size={16} color={theme.colors.orange} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text variant="caption" color="gray10">
                 Phone
               </Text>
-              <Text fontSize="$4" fontWeight="600" color="$black1" fontFamily="$body">
+              <Text variant="body" weight="semibold">
                 {item.phone}
               </Text>
-            </YStack>
-          </XStack>
-        </YStack>
+            </View>
+          </View>
+        </View>
 
         {/* Address Section */}
-        <View
-          backgroundColor="$grey6"
-          borderRadius="$6"
-          padding="$3"
-        >
-          <YStack gap="$2">
-            <XStack alignItems="center" gap="$2">
-              <View
-                backgroundColor="$background"
-                borderRadius="$5"
-                padding="$2"
-                width={28}
-                height={28}
-                alignItems="center"
-                justifyContent="center"
-              >
-                <Icon name="map-pin" type="feather" size={12} color="#FE8C00" />
+        <View bg="grey6" radius="md" p="md">
+          <View gap="xs">
+            <View row align="center" gap="sm">
+              <View bg="white" p="sm" radius="md" style={styles.iconSmall}>
+                <Icon type="material" name="location-on" size={14} color={theme.colors.orange} />
               </View>
-              <Text fontSize="$3" fontWeight="700" color="$black1" fontFamily="$heading">
+              <Text variant="body" weight="bold">
                 Delivery Address
               </Text>
-            </XStack>
-            
-            <Text fontSize="$3" color="$gray10" fontFamily="$body" lineHeight="$3">
+            </View>
+
+            <Text variant="body-sm" color="gray10">
               {item.apartmentName}, {item.areaName}
             </Text>
-            <XStack gap="$2">
-              <View
-                backgroundColor="$background"
-                borderRadius="$4"
-                paddingHorizontal="$2"
-                paddingVertical="$1"
-              >
-                <Text fontSize="$2" fontWeight="600" color="$black1" fontFamily="$body">
+            <View row gap="sm">
+              <View bg="white" px="sm" py="xs" radius="sm">
+                <Text variant="caption" weight="semibold">
                   Apt {item.apartmentNumber}
                 </Text>
               </View>
-              <View
-                backgroundColor="$background"
-                borderRadius="$4"
-                paddingHorizontal="$2"
-                paddingVertical="$1"
-              >
-                <Text fontSize="$2" fontWeight="600" color="$black1" fontFamily="$body">
+              <View bg="white" px="sm" py="xs" radius="sm">
+                <Text variant="caption" weight="semibold">
                   Block {item.blockNumber}
                 </Text>
               </View>
-            </XStack>
-          </YStack>
+            </View>
+          </View>
         </View>
 
         {/* Info Grid */}
-        <XStack gap="$3">
-          <View
-            flex={1}
-            backgroundColor="$grey6"
-            borderRadius="$6"
-            padding="$3"
-          >
-            <YStack gap="$1">
-              <Text fontSize="$2" color="$gray10" fontFamily="$body" fontWeight="500">
+        <View row gap="md">
+          <View style={{ flex: 1 }} bg="grey6" radius="md" p="md">
+            <View gap="xs">
+              <Text variant="caption" color="gray10">
                 Amount
               </Text>
-              <Text fontSize="$5" fontWeight="700" color="$black1" fontFamily="$heading">
+              <Text variant="h3" weight="bold">
                 ₹{item.totalAmount}
               </Text>
-            </YStack>
+            </View>
           </View>
-          
-          <View
-            flex={1}
-            backgroundColor="$grey6"
-            borderRadius="$6"
-            padding="$3"
-          >
-            <YStack gap="$1">
-              <Text fontSize="$2" color="$gray10" fontFamily="$body" fontWeight="500">
+
+          <View style={{ flex: 1 }} bg="grey6" radius="md" p="md">
+            <View gap="xs">
+              <Text variant="caption" color="gray10">
                 Pincode
               </Text>
-              <Text fontSize="$5" fontWeight="700" color="$black1" fontFamily="$heading">
+              <Text variant="h3" weight="bold">
                 {item.pincode}
               </Text>
-            </YStack>
+            </View>
           </View>
-        </XStack>
+        </View>
 
         {/* Menu Info */}
-        <View
-          backgroundColor="$grey6"
-          borderRadius="$6"
-          padding="$3"
-        >
-          <YStack gap="$1">
-            <Text fontSize="$2" color="$gray10" fontFamily="$body" fontWeight="500">
+        <View bg="grey6" radius="md" p="md">
+          <View gap="xs">
+            <Text variant="caption" color="gray10">
               Menu
             </Text>
-            <Text fontSize="$3" fontWeight="600" color="$black1" fontFamily="$body" numberOfLines={1}>
+            <Text variant="body" weight="semibold" numberOfLines={1}>
               {item.menuName}
             </Text>
-          </YStack>
+          </View>
         </View>
 
         {/* Package ID Input Fields */}
         {item.quantity > 0 && (
           <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
             keyboardVerticalOffset={100}
           >
             <View
-              backgroundColor="$background"
-              borderRadius="$6"
-              padding="$4"
-              borderColor="$orange"
+              bg="white"
+              radius="md"
+              p="lg"
               borderWidth={2}
-              gap="$3"
+              borderColor={theme.colors.orange}
+              gap="md"
             >
-              <YStack gap="$2">
-                <XStack alignItems="center" gap="$2">
-                  <View
-                    backgroundColor="$orange"
-                    borderRadius="$5"
-                    padding="$2"
-                    width={32}
-                    height={32}
-                    alignItems="center"
-                    justifyContent="center"
-                  >
-                    <Icon name="box" type="feather" size={16} color="white" />
+              <View gap="xs">
+                <View row align="center" gap="sm">
+                  <View bg="orange" p="sm" radius="md" style={styles.smallIconContainer}>
+                    <Icon type="material" name="local-shipping" size={16} color="white" />
                   </View>
-                  <YStack flex={1}>
-                    <Text fontSize="$4" fontWeight="700" color="$black1" fontFamily="$heading">
+                  <View style={{ flex: 1 }}>
+                    <Text variant="h3" weight="bold">
                       Package Numbers
                     </Text>
-                    <Text fontSize="$2" color="$gray10" fontFamily="$body">
-                      Enter {item.quantity} {item.quantity === 1 ? 'Package Number' : 'Package Numbers'} to confirm
+                    <Text variant="caption" color="gray10">
+                      Enter {item.quantity} {item.quantity === 1 ? "Package Number" : "Package Numbers"} to confirm
                     </Text>
-                  </YStack>
-                </XStack>
-              </YStack>
+                  </View>
+                </View>
+              </View>
 
-              <ScrollView 
+              <ScrollView
                 showsVerticalScrollIndicator={true}
                 nestedScrollEnabled={true}
                 style={{ maxHeight: 220 }}
-                keyboardShouldPersistTaps="handled"
+                keyboardShouldPersistTaps="always"
               >
-                <YStack gap="$3">
+                <View gap="md">
                   {Array.from({ length: item.quantity }).map((_, index) => (
-                    <View
+                    <Input
                       key={index}
-                      borderRadius="$6"
-                      borderColor="$orange"
-                      borderWidth={1}
-                      overflow="hidden"
-                    >
-                      <TextField
-                        placeholder={`Package Number ${index + 1}`}
-                        value={packageIds[index] || ''}
-                        onChangeText={(value) => onPackageIdChange(index, value)}
-                        placeholderTextColor="$gray10"
-                        backgroundColor="$grey6"
-                        borderRadius="$0"
-                        borderWidth={0}
-                        padding="$3"
-                        paddingLeft="$4"
-                        fontSize="$3"
-                        fontWeight="500"
-                        color="$black1"
-                      />
-                    </View>
+                      placeholder={`Package Number ${index + 1}`}
+                      value={packageIds[index] || ""}
+                      onChangeText={(value) => onPackageIdChange(index, value)}
+                      containerStyle={{ backgroundColor: theme.colors.grey6 }}
+                    />
                   ))}
-                </YStack>
+                </View>
               </ScrollView>
             </View>
           </KeyboardAvoidingView>
         )}
 
         {/* Action Section */}
-        {item.status === 'delivered' ? (
-          <XStack 
-            alignItems="center" 
-            justifyContent="center"
-            backgroundColor="$grey6"
-            borderRadius="$6"
-            padding="$3"
-          >
-            <Icon name="check-circle" type="feather" size={20} color="#1EA556" />
-            <Text
-              fontSize="$4"
-              fontWeight="700"
-              color="$green10"
-              fontFamily="$heading"
-              marginLeft="$2"
-            >
+        {item.status === "delivered" ? (
+          <View row center bg="grey6" radius="md" p="md" gap="sm">
+            <Icon type="material" name="check-circle" size={20} color={theme.colors.success1} />
+            <Text variant="body" weight="bold" color="success1">
               DELIVERED
             </Text>
-          </XStack>
-        ) : item.order_status === 'placed' ? (
+          </View>
+        ) : item.order_status === "placed" ? (
           <Button
-            backgroundColor={!isUpdating && areAllPackageIdsEntered() ? "$orange" : "$gray8"}
-            color={!isUpdating && areAllPackageIdsEntered() ? "white" : "$gray10"}
-            borderColor={!isUpdating && areAllPackageIdsEntered() ? "transparent" : "$gray7"}
-            borderWidth={!isUpdating && areAllPackageIdsEntered() ? 0 : 1}
-            borderRadius="$7"
-            size="$4"
+            variant={isReadyToConfirm ? "primary" : "ghost"}
             onPress={onConfirm}
-            disabled={isUpdating || !areAllPackageIdsEntered()}
+            disabled={!isReadyToConfirm}
           >
-            {isUpdating ? (
-              <XStack alignItems="center" gap="$2">
-                <Spinner size="small" color="white" />
-                <Text color="white" fontSize="$3" fontWeight="600">Confirming...</Text>
-              </XStack>
-            ) : (
-              <Text color="white" fontSize="$3" fontWeight="600">Confirm Delivery</Text>
-            )}
+            {isUpdating ? "Confirming..." : "Confirm Delivery"}
           </Button>
         ) : (
-          <XStack 
-            alignItems="center" 
-            justifyContent="center"
-            backgroundColor="$grey6"
-            borderRadius="$6"
-            padding="$3"
-          >
-            <Icon name="clock" type="feather" size={18} color="#878787" />
-            <Text
-              fontSize="$3"
-              fontWeight="600"
-              color="$gray10"
-              fontFamily="$body"
-              marginLeft="$2"
-            >
+          <View row center bg="grey6" radius="md" p="md" gap="sm">
+            <Icon type="material" name="schedule" size={18} color={theme.colors.gray10} />
+            <Text variant="body-sm" weight="semibold" color="gray10">
               Waiting for order to be ready
             </Text>
-          </XStack>
+          </View>
         )}
-      </YStack>
+      </View>
     </Card>
   );
 };
@@ -411,37 +286,22 @@ const FixedJobCompletedButton = ({
   hasPendingDeliveries: boolean;
 }) => {
   return (
-    <YStack
-      position="absolute"
-      bottom={0}
-      left={0}
-      right={0}
-      backgroundColor="$background"
-      padding="$4"
-      borderTopLeftRadius="$8"
-      borderTopRightRadius="$8"
-      elevation="$4"
-      borderTopWidth={1}
-      borderTopColor="$grey7"
-    >
+    <View style={styles.fixedButtonContainer}>
       <Button
-        backgroundColor={hasPendingDeliveries ? "$gray8" : "$green10"}
-        color="white"
-        borderRadius="$8"
-        size="$5"
+        variant={hasPendingDeliveries ? "ghost" : "primary"}
         onPress={onJobCompleted}
         disabled={hasPendingDeliveries}
-        fontWeight="700"
+        style={hasPendingDeliveries ? styles.disabledButton : undefined}
       >
         Job Completed
       </Button>
-    </YStack>
+    </View>
   );
 };
 
 const DeliveryScreen = () => {
   const router = useRouter();
-  const { id } = useLocalSearchParams<{ id: string }>(); 
+  const { id } = useLocalSearchParams<{ id: string }>();
 
   const [deliveries, setDeliveries] = useState<Delivery[]>([]);
   const [loading, setLoading] = useState(true);
@@ -450,24 +310,24 @@ const DeliveryScreen = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [packageIds, setPackageIds] = useState<{ [key: string]: string[] }>({});
 
-  console.log("this is id from prev screen :", id)
-
-  const {
-    data,
-    isLoading,
-    error: apiError,
-    refetch,
-  } = useGetOrdersByBundleIdQuery({ id: id });
-
-  const [updateOrder, { isLoading: isUpdatingOrder }] = useUpdateOrderMutation();
+  const { data, isLoading, error: apiError, refetch } = useOrdersByBundleId(id || "");
+  const updateOrderMutation = useUpdateOrderRequest();
 
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [successModalConfig, setSuccessModalConfig] = useState({
+  const [successModalConfig, setSuccessModalConfig] = useState<{
+    title: string;
+    subtitle: string;
+    buttonTitle: string;
+    buttonColor: string;
+    onClose: () => void;
+    modalType: "success" | "error" | "info" | "warning";
+  }>({
     title: "",
     subtitle: "",
     buttonTitle: "OK",
-    buttonColor: "$green10",
-    onClose: () => {}
+    buttonColor: theme.colors.success0,
+    onClose: () => {},
+    modalType: "success",
   });
 
   // Refetch orders whenever the screen comes into focus
@@ -488,95 +348,106 @@ const DeliveryScreen = () => {
 
   const transformApiDataToDeliveries = (apiData: any[]): Delivery[] => {
     if (!apiData || !Array.isArray(apiData)) return [];
-  
+
     return apiData.map((order) => ({
       id: order._id,
-      customerName: `${order.customerId.firstName} ${order.customerId.lastName}`,
+      customerName: `${order.customerId?.firstName || ""} ${order.customerId?.lastName || ""}`.trim() || "Unknown",
       phone: order.customerId?.userId?.phone || "N/A",
-      apartmentName: order.customerId.address[0]?.premises?.apartmentName || 'Unknown Apartment',
-      areaName: order.customerId.address[0]?.premises?.areaName || 'Unknown Area',
-      apartmentNumber: order.customerId.address[0]?.apartmentNumber || 'N/A',
-      pincode: order.customerId.address[0]?.premises?.pincode || 'N/A',
-      blockNumber: order.customerId.address[0]?.blockNumber || 'N/A',
+      apartmentName: order.customerId?.address?.[0]?.premises?.apartmentName || "Unknown Apartment",
+      areaName: order.customerId?.address?.[0]?.premises?.areaName || "Unknown Area",
+      apartmentNumber: order.customerId?.address?.[0]?.apartmentNumber || "N/A",
+      pincode: order.customerId?.address?.[0]?.premises?.pincode || "N/A",
+      blockNumber: order.customerId?.address?.[0]?.blockNumber || "N/A",
       orderNumber: order.orderNumber,
       totalAmount: order.totalAmount,
-      status: order.status === 'delivered' ? 'delivered' : 'pending',
-      deliveryDate: moment(order.deliveryDate).format('DD.MM.YYYY'),
-      order_status: order.status as 'ready' | 'placed',
-      menuName: order.menuId.name,
+      status: order.status === "delivered" ? "delivered" : "pending",
+      deliveryDate: moment(order.deliveryDate).format("DD.MM.YYYY"),
+      order_status: order.status as "ready" | "placed",
+      menuName: order.menuId?.name || "Menu Item",
       quantity: order.quantity || 0,
     }));
   };
 
-  const handleConfirmDelivery = useCallback(async (deliveryId: string) => {
-    try {
-      const delivery = deliveries.find(d => d.id === deliveryId);
-      if (!delivery) return;
+  const handleConfirmDelivery = useCallback(
+    async (deliveryId: string) => {
+      console.log("=== CONFIRMING DELIVERY ===", {
+        deliveryId,
+        packageIds: packageIds[deliveryId],
+      });
+      // Dismiss keyboard first to prevent double press issue
+      Keyboard.dismiss();
 
-      // Validate package IDs
-      const ids = packageIds[deliveryId] || [];
-      const filledIds = ids.filter(id => id.trim() !== '');
-      
-      if (delivery.quantity > 0 && filledIds.length !== delivery.quantity) {
+      try {
+        const delivery = deliveries.find((d) => d.id === deliveryId);
+        if (!delivery) return;
+
+        // Validate package IDs
+        const ids = packageIds[deliveryId] || [];
+        const filledIds = ids.filter((id) => id.trim() !== "");
+
+        if (delivery.quantity > 0 && filledIds.length !== delivery.quantity) {
+          setSuccessModalConfig({
+            title: "Incomplete Package IDs",
+            subtitle: `Please enter all ${delivery.quantity} package ${delivery.quantity === 1 ? "ID" : "IDs"} before confirming delivery.`,
+            buttonTitle: "OK",
+            buttonColor: theme.colors.orange,
+            onClose: () => setShowSuccessModal(false),
+            modalType: "warning",
+          });
+          setShowSuccessModal(true);
+          return;
+        }
+
+        setUpdatingOrderId(deliveryId);
+
+        await updateOrderMutation.mutateAsync({
+          _id: deliveryId,
+          packageIds: filledIds,
+        });
+
+        setDeliveries((prev) =>
+          prev.map((d) => (d.id === deliveryId ? { ...d, status: "delivered" as const } : d))
+        );
+
+        // Clear package IDs for this delivery
+        setPackageIds((prev) => {
+          const updated = { ...prev };
+          delete updated[deliveryId];
+          return updated;
+        });
+
         setSuccessModalConfig({
-          title: "Incomplete Package IDs",
-          subtitle: `Please enter all ${delivery.quantity} package ${delivery.quantity === 1 ? 'ID' : 'IDs'} before confirming delivery.`,
-          buttonTitle: "OK",
-          buttonColor: "$orange",
-          onClose: () => setShowSuccessModal(false)
+          title: "Delivery Confirmed!",
+          subtitle: `Successfully delivered Order #${delivery.orderNumber} to ${delivery.customerName}`,
+          buttonTitle: "Continue",
+          buttonColor: theme.colors.success0,
+          onClose: () => setShowSuccessModal(false),
+          modalType: "success",
         });
         setShowSuccessModal(true);
-        return;
+      } catch (err) {
+        console.error("Error confirming delivery:", err);
+
+        setSuccessModalConfig({
+          title: "Update Failed",
+          subtitle: "Failed to update delivery status. Please try again.",
+          buttonTitle: "OK",
+          buttonColor: theme.colors.red1,
+          onClose: () => setShowSuccessModal(false),
+          modalType: "error",
+        });
+        setShowSuccessModal(true);
+      } finally {
+        setUpdatingOrderId(null);
       }
-
-      setUpdatingOrderId(deliveryId);
-
-      const result = await updateOrder({
-        _id: deliveryId,
-        packageIds: filledIds,
-      }).unwrap();
-
-      setDeliveries((prev) =>
-        prev.map((d) =>
-          d.id === deliveryId
-            ? { ...d, status: 'delivered' as const }
-            : d
-        )
-      );
-
-      // Clear package IDs for this delivery
-      setPackageIds((prev) => {
-        const updated = { ...prev };
-        delete updated[deliveryId];
-        return updated;
-      });
-
-      setSuccessModalConfig({
-        title: "Delivery Confirmed!",
-        subtitle: `Successfully delivered Order #${delivery.orderNumber} to ${delivery.customerName}`,
-        buttonTitle: "Continue",
-        buttonColor: "$green10",
-        onClose: () => setShowSuccessModal(false)
-      });
-      setShowSuccessModal(true);
-
-    } catch (error) {
-      console.error("Error confirming delivery:", error);
-      
-      setSuccessModalConfig({
-        title: "Update Failed",
-        subtitle: "Failed to update delivery status. Please try again.",
-        buttonTitle: "OK",
-        buttonColor: "$red1",
-        onClose: () => setShowSuccessModal(false)
-      });
-      setShowSuccessModal(true);
-    } finally {
-      setUpdatingOrderId(null);
-    }
-  }, [deliveries, updateOrder, packageIds]);
+    },
+    [deliveries, packageIds, updateOrderMutation]
+  );
 
   const handleJobCompleted = useCallback(() => {
+    // Dismiss keyboard first to prevent double press issue
+    Keyboard.dismiss();
+
     setSuccessModalConfig({
       title: "Job Completed!",
       subtitle: "Congratulations! You have successfully completed all deliveries for today.",
@@ -585,14 +456,13 @@ const DeliveryScreen = () => {
       onClose: () => {
         setShowSuccessModal(false);
         router.back();
-      }
+      },
+      modalType: "success",
     });
     setShowSuccessModal(true);
   }, [router]);
 
   useEffect(() => {
-    console.log("Orders on bundle id", JSON.stringify(data, null, 2));
-    
     if (data) {
       const transformedDeliveries = transformApiDataToDeliveries(data);
       setDeliveries(transformedDeliveries);
@@ -608,23 +478,22 @@ const DeliveryScreen = () => {
     setLoading(isLoading);
   }, [isLoading]);
 
-  const hasPendingDeliveries = deliveries.some(delivery => delivery.status === 'pending');
+  const hasPendingDeliveries = deliveries.some((delivery) => delivery.status === "pending");
 
-  useEffect(() =>{ 
-    console.log("Data",data)
-  }, [data])
-
-  const handlePackageIdChange = useCallback((deliveryId: string, index: number, value: string) => {
-    setPackageIds((prev) => {
-      const currentIds = prev[deliveryId] || [];
-      const updatedIds = [...currentIds];
-      updatedIds[index] = value;
-      return {
-        ...prev,
-        [deliveryId]: updatedIds,
-      };
-    });
-  }, []);
+  const handlePackageIdChange = useCallback(
+    (deliveryId: string, index: number, value: string) => {
+      setPackageIds((prev) => {
+        const currentIds = prev[deliveryId] || [];
+        const updatedIds = [...currentIds];
+        updatedIds[index] = value;
+        return {
+          ...prev,
+          [deliveryId]: updatedIds,
+        };
+      });
+    },
+    []
+  );
 
   const renderDeliveryCard = ({ item }: { item: Delivery }) => (
     <DeliveryCard
@@ -638,150 +507,88 @@ const DeliveryScreen = () => {
 
   if (loading) {
     return (
-      <YStack flex={1} backgroundColor="$grey6">
+      <View style={{ flex: 1 }} bg="grey6">
         <Header title="Pending Orders" />
-        <YStack flex={1} alignItems="center" justifyContent="center" padding="$6">
-          <View
-            backgroundColor="$background"
-            padding="$6"
-            borderRadius="$8"
-            alignItems="center"
-            gap="$4"
-          >
-            <Icon type="feather" name="truck" size={48} color="#FE8C00" />
-            <YStack alignItems="center" gap="$2">
-              <Text fontSize="$6" fontWeight="700" color="$black1" fontFamily="$heading">
-                Loading Deliveries
-              </Text>
-              <Text fontSize="$4" color="$gray10" textAlign="center" fontFamily="$body">
-                Please wait...
-              </Text>
-            </YStack>
+        <View style={{ flex: 1 }} center p="xl" gap="lg">
+          <View bg="white" p="xl" radius="lg" center gap="md">
+            <Skeleton width={60} height={60} borderRadius={30} />
+            <Skeleton width={150} height={24} />
+            <Skeleton width={200} height={16} />
           </View>
-        </YStack>
-      </YStack>
+        </View>
+      </View>
     );
   }
 
   if (error) {
     return (
-      <YStack flex={1} backgroundColor="$grey6">
+      <View style={{ flex: 1 }} bg="grey6">
         <Header title="Pending Deliveries" />
-        <YStack flex={1} padding="$4" justifyContent="center">
-          <Card
-            backgroundColor="$background"
-            borderRadius="$7"
-            padding="$6"
-            alignItems="center"
-            gap="$4"
-          >
-            <View
-              backgroundColor="$grey6"
-              padding="$4"
-              borderRadius="$8"
-              alignItems="center"
-              justifyContent="center"
-              width={64}
-              height={64}
-            >
-              <Icon type="feather" name="alert-circle" size={32} color="#E74C3C" />
+        <View style={{ flex: 1 }} p="lg" justify="center">
+          <Card variant="outlined" style={styles.errorCard}>
+            <View bg="grey6" p="xl" radius="lg" style={styles.errorIcon}>
+              <Icon type="material" name="error-outline" size={32} color={theme.colors.red1} />
             </View>
-            <YStack alignItems="center" gap="$2">
-              <Text fontSize="$6" color="$black1" fontWeight="700" fontFamily="$heading">
-                Connection Error
-              </Text>
-              <Text fontSize="$4" color="$gray10" textAlign="center" fontFamily="$body">
-                {error}
-              </Text>
-            </YStack>
-            <Button
-              backgroundColor="$orange"
-              borderRadius="$7"
-              size="$4"
-              onPress={() => refetch()}
-              marginTop="$2"
-            >
+            <Text variant="h3" weight="bold" align="center">
+              Connection Error
+            </Text>
+            <Text variant="body" align="center" color="gray10">
+              {error}
+            </Text>
+            <Button variant="primary" onPress={() => refetch()} style={styles.retryButton}>
               Try Again
             </Button>
           </Card>
-        </YStack>
-      </YStack>
+        </View>
+      </View>
     );
   }
 
   if (deliveries.length === 0) {
     return (
-      <YStack flex={1} backgroundColor="$grey6">
+      <View style={{ flex: 1 }} bg="grey6">
         <Header title="Pending Deliveries" />
-        <YStack flex={1} padding="$4" justifyContent="center">
-          <Card
-            backgroundColor="$background"
-            borderRadius="$7"
-            padding="$6"
-            alignItems="center"
-            gap="$4"
-          >
-            <View
-              backgroundColor="$grey6"
-              padding="$4"
-              borderRadius="$8"
-              alignItems="center"
-              justifyContent="center"
-              width={80}
-              height={80}
-            >
-              <Icon type="feather" name="package" size={40} color="#878787" />
+        <View style={{ flex: 1 }} p="lg" justify="center">
+          <Card variant="elevated" style={styles.emptyCard}>
+            <View bg="grey6" p="xl" radius="lg" style={styles.emptyIcon}>
+              <Icon type="material" name="local-shipping" size={40} color={theme.colors.gray10} />
             </View>
-            <YStack alignItems="center" gap="$2">
-              <Text fontSize="$6" fontWeight="700" color="$black1" fontFamily="$heading">
-                No Deliveries Found
-              </Text>
-              <Text
-                fontSize="$4"
-                color="$gray10"
-                textAlign="center"
-                maxWidth={280}
-                fontFamily="$body"
-              >
-                No delivery assignments for today
-              </Text>
-            </YStack>
+            <Text variant="h3" weight="bold" align="center">
+              No Deliveries Found
+            </Text>
+            <Text variant="body" color="gray10" align="center">
+              No delivery assignments for today
+            </Text>
           </Card>
-        </YStack>
-      </YStack>
+        </View>
+      </View>
     );
   }
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={{ flex: 1 }}
-    >
-      <YStack flex={1} backgroundColor="$grey6">
+    <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
+      <View style={{ flex: 1 }} bg="grey6">
         <Header title="Pending Deliveries" />
 
-        <YStack flex={1}>
+        <View style={{ flex: 1 }}>
           <FlatList
             data={deliveries}
             renderItem={renderDeliveryCard}
             keyExtractor={(item) => item.id}
             showsVerticalScrollIndicator={true}
-            contentContainerStyle={{
-              paddingTop: 16,
-              paddingBottom: 120, 
-            }}
-            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={styles.listContent}
+            keyboardShouldPersistTaps="always"
             scrollEnabled={true}
             refreshControl={
               <RefreshControl
                 refreshing={isRefreshing}
                 onRefresh={onRefresh}
-                colors={["#FE8C00"]}
-                tintColor="#FE8C00"
+                colors={[theme.colors.orange]}
+                tintColor={theme.colors.orange}
               />
             }
           />
-        </YStack>
+        </View>
 
         <FixedJobCompletedButton
           onJobCompleted={handleJobCompleted}
@@ -795,10 +602,83 @@ const DeliveryScreen = () => {
           subTitle={successModalConfig.subtitle}
           buttonTitle={successModalConfig.buttonTitle}
           buttonColor={successModalConfig.buttonColor}
+          modalType={successModalConfig.modalType}
         />
-      </YStack>
+      </View>
     </KeyboardAvoidingView>
   );
 };
- 
+
+const styles = StyleSheet.create({
+  deliveryCard: {
+    marginHorizontal: theme.spacing.lg,
+    marginBottom: theme.spacing.lg,
+    padding: 0,
+    overflow: "hidden",
+  },
+  deliveredCard: {
+    opacity: 0.6,
+  },
+  smallIconContainer: {
+    width: 32,
+    height: 32,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  iconSmall: {
+    width: 28,
+    height: 28,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  uppercase: {
+    textTransform: "uppercase",
+  },
+  listContent: {
+    paddingTop: theme.spacing.lg,
+    paddingBottom: 120,
+  },
+  fixedButtonContainer: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: theme.colors.white,
+    padding: theme.spacing.lg,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.grey7,
+    ...theme.shadows.lg,
+  },
+  disabledButton: {
+    opacity: 0.5,
+  },
+  errorCard: {
+    padding: theme.spacing.xl,
+    alignItems: "center",
+    gap: theme.spacing.md,
+    borderColor: theme.colors.red1,
+  },
+  errorIcon: {
+    width: 64,
+    height: 64,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  retryButton: {
+    marginTop: theme.spacing.md,
+    minWidth: 120,
+  },
+  emptyCard: {
+    padding: theme.spacing.xl,
+    alignItems: "center",
+    gap: theme.spacing.lg,
+  },
+  emptyIcon: {
+    width: 80,
+    height: 80,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+});
+
 export default DeliveryScreen;

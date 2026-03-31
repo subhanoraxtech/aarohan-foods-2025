@@ -1,22 +1,19 @@
-
-import React, { useEffect } from 'react';
-import {
-  YStack,
-  XStack,
-  Text,
-  View,
-  Avatar,
-  ScrollView,
-  Card,
-  Separator,
-  Button,
-} from 'tamagui';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import { useDispatch } from 'react-redux';
-import { logoutUser } from '@/store/slice/user.slice';
-import Icon from '@/components/common/Icon';
-import { useGetOrdersForSecurityQuery } from '@/services/order/order.service';
+import React from "react";
+import { ScrollView, StyleSheet } from "react-native";
+import { useRouter } from "expo-router";
+import { View } from "@/components/ui/View";
+import { Text } from "@/components/ui/Text";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import Header from "@/components/common/Header";
+import Icon from "@/components/common/Icon";
+import { useAuth } from "@/hooks/useAuth";
+import { useOrdersForSecurity } from "@/hooks/useOrders";
+import { useLogout } from "@/hooks/useAuthQuery";
+import { getExpoPushTokenSilently } from "@/utils/pushNotification";
+import { useLoading } from "@/contexts/LoadingContext";
+import { theme } from "@/theme";
+import { Skeleton } from "@/components/skeletons";
 
 interface OrderData {
   aptNumber: string;
@@ -39,17 +36,44 @@ interface DeliveryAgent {
   aadharNumber: string;
 }
 
-const SecurityPersonScreen = () => {
+function getStatusStyle(status: string) {
+  const statusLower = status.toLowerCase();
+  switch (statusLower) {
+    case 'delivered':
+      return { bg: '#DCFCE7', color: '#16A34A', text: 'Delivered' };
+    case 'pending':
+      return { bg: '#FEF3C7', color: '#D97706', text: 'Pending' };
+    case 'in-transit':
+    case 'in_transit':
+      return { bg: '#DBEAFE', color: '#2563EB', text: 'In Transit' };
+    case 'cancelled':
+      return { bg: '#FEE2E2', color: '#DC2626', text: 'Cancelled' };
+    default:
+      return { bg: '#F3F4F6', color: '#6B7280', text: status };
+  }
+}
+
+export default function SecurityPersonScreen() {
   const router = useRouter();
-  const dispatch = useDispatch();
+  const { setLoading } = useLoading();
+  const logout = useLogout();
+  const auth = useAuth();
+  const { data, isLoading, isError } = useOrdersForSecurity();
 
-  const { data, isLoading, isError } = useGetOrdersForSecurityQuery({});
-
-  useEffect(() => {
-    if (data) {
-      console.log(JSON.stringify(data, null, 2));
+  const handleLogout = async () => {
+    try {
+      setLoading(true, "Logging out...");
+      const expoToken = await getExpoPushTokenSilently();
+      if (expoToken) {
+        await logout.mutateAsync({ expoToken: String(expoToken) });
+      }
+      router.replace('/(auth)/login');
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      setLoading(false);
     }
-  }, [data]);
+  };
 
   // Extract orders and delivery agent from API data
   const orders: OrderData[] = data?.data?.orders?.map((order: any) => {
@@ -76,361 +100,290 @@ const SecurityPersonScreen = () => {
     aadharNumber: data.data.deliveryAgent.aadharNumber || 'N/A',
   } : null;
 
-  const handleLogout = () => {
-    dispatch(logoutUser());
-    router.replace('/(auth)/login');
-  };
-
-  // Helper function to get status color and background
-  const getStatusStyle = (status: string) => {
-    const statusLower = status.toLowerCase();
-    switch (statusLower) {
-      case 'delivered':
-        return { bg: '#DCFCE7', color: '#16A34A', text: 'Delivered' };
-      case 'pending':
-        return { bg: '#FEF3C7', color: '#D97706', text: 'Pending' };
-      case 'in-transit':
-      case 'in_transit':
-        return { bg: '#DBEAFE', color: '#2563EB', text: 'In Transit' };
-      case 'cancelled':
-        return { bg: '#FEE2E2', color: '#DC2626', text: 'Cancelled' };
-      default:
-        return { bg: '#F3F4F6', color: '#6B7280', text: status };
-    }
-  };
-
   return (
+    <View style={{ flex: 1 }}>
+      <ScrollView contentContainerStyle={{ flexGrow: 1 }} style={styles.scrollView}>
+        <View px="lg" py="lg" center style={styles.header}>
+          <Text variant="h3" weight="bold" color="text">
+            Today&apos;s Deliveries
+          </Text>
+        </View>
 
-    <View flex={1}>
-      <ScrollView
-        flex={1}
-        bg="$background"
-      >
-        <YStack flex={1} minH="100%">
-          {/* Enhanced Header */}
-          <XStack
-            paddingHorizontal="$4"
-            paddingVertical="$4"
-            alignItems="center"
-            justifyContent="center"
-            borderBottomWidth={1}
-            borderBottomColor="#E5E5E5"
-            backgroundColor="white"
-            shadowColor="#000"
-            shadowOffset={{ width: 0, height: 2 }}
-            shadowOpacity={0.05}
-            shadowRadius={3}
-          >
-            <Text fontSize="$7" fontWeight="700" color="#1A1A1A">
-              Today's Deliveries
+        {/* Loading State */}
+        {isLoading && (
+          <View p="xl" center>
+            <Skeleton width={200} height={20} />
+          </View>
+        )}
+
+        {/* Error State */}
+        {isError && (
+          <View p="xl" center>
+            <Text color="red1">Failed to load orders</Text>
+          </View>
+        )}
+
+        {/* Orders List */}
+        {!isLoading && !isError && orders.length > 0 && (
+          <View px="lg" pt="lg" gap="md" pb="xl">
+            <Text variant="h3" weight="semibold" mb="sm">
+              Delivery Details ({orders.length})
             </Text>
-          </XStack>
 
-          {/* Loading State */}
-          {isLoading && (
-            <View padding="$6" alignItems="center">
-              <Text fontSize="$4" color="$gray10">Loading orders...</Text>
-            </View>
-          )}
-
-          {/* Error State */}
-          {isError && (
-            <View padding="$6" alignItems="center">
-              <Text fontSize="$4" color="$red10">Failed to load orders</Text>
-            </View>
-          )}
-
-          {/* Orders List */}
-          {!isLoading && !isError && orders.length > 0 && (
-            <YStack paddingHorizontal="$4" paddingTop="$4" space="$3" paddingBottom="$6">
-              <Text fontSize="$5" fontWeight="600" color="#1A1A1A" marginBottom="$2">
-                Delivery Details ({orders.length})
-              </Text>
-
-              {orders.map((order, index) => (
-                <Card
-                  key={index}
-                  backgroundColor="white"
-                  borderRadius="$4"
-                  padding="$4"
-                  borderWidth={1}
-                  borderColor="#E5E5E5"
-                  shadowColor="#000"
-                  shadowOffset={{ width: 0, height: 1 }}
-                  shadowOpacity={0.08}
-                  shadowRadius={2}
-                  marginBottom="$2"
-                >
-                  <YStack space="$3">
-                    {/* Customer Info Row */}
-                    <XStack justifyContent="space-between" alignItems="flex-start">
-                      <YStack flex={1}>
-                        <Text fontSize="$5" fontWeight="600" color="#1A1A1A">
-                          {order.customerName}
+            {orders.map((order, index) => (
+              <Card key={index} variant="elevated" style={styles.orderCard}>
+                <View gap="md" p="md">
+                  {/* Customer Info Row */}
+                  <View row justify="space-between" align="flex-start">
+                    <View style={{ flex: 1 }}>
+                      <Text variant="h3" weight="semibold">{order.customerName}</Text>
+                      <Text variant="caption" color="gray10" mt="xs">
+                        {order.phoneNumber}
+                      </Text>
+                    </View>
+                    <View align="flex-end" gap="xs">
+                      <Text variant="caption" color="gray10" weight="medium">
+                        Apt Code
+                      </Text>
+                      <View bg="#F0F9FF" px="md" py="sm" radius="sm">
+                        <Text variant="caption" weight="bold" color="#0369A1">
+                          {order.apartmentCode}
                         </Text>
-                        <Text fontSize="$3" color="$gray10" marginTop="$1">
-                          {order.phoneNumber}
+                      </View>
+                    </View>
+                  </View>
+
+                  {/* Order Details Row */}
+                  <View row justify="space-between" align="center">
+                    <View style={{ flex: 1 }}>
+                      <Text variant="caption" color="gray10" weight="medium">
+                        Item
+                      </Text>
+                      <Text variant="body" weight="semibold" mt="xs">
+                        {order.menuName}
+                      </Text>
+                    </View>
+
+                    <View row gap="md" align="center">
+                      <View bg="#FEF3C7" px="md" py="sm" radius="md">
+                        <Text variant="caption" weight="semibold" color="#D97706">
+                          Qty: {order.quantity}
                         </Text>
-                      </YStack>
-                      <YStack alignItems="flex-end" space="$1">
-                        <Text fontSize="$2" color="$gray10" fontWeight="500">
-                          Apt Code
+                      </View>
+
+                      {(() => {
+                        const style = getStatusStyle(order.status);
+                        return (
+                          <View bg={style.bg} px="md" py="sm" radius="md">
+                            <Text variant="caption" weight="semibold" color={style.color}>
+                              {style.text}
+                            </Text>
+                          </View>
+                        );
+                      })()}
+                    </View>
+                  </View>
+
+                  {/* Address Details */}
+                  <View gap="sm">
+                    <View row align="center" gap="sm">
+                      <Icon type="material" name="location-on" size={16} color="#6B7280" />
+                      <Text variant="caption" color="gray10" weight="medium">
+                        Apartment Name
+                      </Text>
+                    </View>
+                    <Text variant="body" weight="semibold">
+                      {order.premisesName}
+                    </Text>
+
+                    <View row gap="md" flexWrap="wrap">
+                      <View gap="xs" minW={80}>
+                        <Text variant="caption" color="gray10" weight="medium">
+                          Apartment No.
                         </Text>
-                        <View
-                          backgroundColor="#F0F9FF"
-                          paddingHorizontal="$3"
-                          paddingVertical="$2"
-                          borderRadius="$2"
-                        >
-                          <Text fontSize="$3" fontWeight="700" color="#0369A1">
-                            {order.apartmentCode}
-                          </Text>
-                        </View>
-                      </YStack>
-                    </XStack>
-
-                    <Separator backgroundColor="#F5F5F5" />
-
-                    {/* Order Details Row */}
-                    <XStack justifyContent="space-between" alignItems="center">
-                      <YStack flex={1}>
-                        <Text fontSize="$3" color="$gray10" fontWeight="500">
-                          Item
+                        <Text variant="body" weight="semibold">
+                          {order.aptNumber}
                         </Text>
-                        <Text fontSize="$4" color="#1A1A1A" fontWeight="600" marginTop="$1">
-                          {order.menuName}
+                      </View>
+
+                      <View gap="xs" minW={80}>
+                        <Text variant="caption" color="gray10" weight="medium">
+                          Block
                         </Text>
-                      </YStack>
+                        <Text variant="body" weight="semibold">
+                          {order.blockNumber}
+                        </Text>
+                      </View>
 
-                      <XStack space="$3" alignItems="center">
-                        <View
-                          backgroundColor="#FEF3C7"
-                          paddingHorizontal="$3"
-                          paddingVertical="$2"
-                          borderRadius="$3"
-                        >
-                          <Text fontSize="$3" fontWeight="600" color="#D97706">
-                            Qty: {order.quantity}
-                          </Text>
-                        </View>
+                      <View gap="xs" minW={80}>
+                        <Text variant="caption" color="gray10" weight="medium">
+                          City
+                        </Text>
+                        <Text variant="body" weight="semibold">
+                          {order.city}
+                        </Text>
+                      </View>
 
-                        <View
-                          backgroundColor={getStatusStyle(order.status).bg}
-                          paddingHorizontal="$3"
-                          paddingVertical="$2"
-                          borderRadius="$3"
-                        >
-                          <Text
-                            fontSize="$3"
-                            fontWeight="600"
-                            color={getStatusStyle(order.status).color}
-                          >
-                            {getStatusStyle(order.status).text}
-                          </Text>
-                        </View>
-                      </XStack>
-                    </XStack>
+                      <View gap="xs" minW={80}>
+                        <Text variant="caption" color="gray10" weight="medium">
+                          Pincode
+                        </Text>
+                        <Text variant="body" weight="semibold">
+                          {order.pincode}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                </View>
+              </Card>
+            ))}
+          </View>
+        )}
 
-                    <Separator backgroundColor="#F5F5F5" />
+        {/* No Orders State */}
+        {!isLoading && !isError && orders.length === 0 && (
+          <View center p="xl" gap="lg" style={{ flex: 1 }}>
+            <Icon type="material" name="receipt-long" size={80} color="#D1D5DB" />
+            <Text variant="h2" weight="bold" color="text">
+              No orders available
+            </Text>
+            <Text variant="body" color="gray10" align="center">
+              Items will appear here when a delivery agent is nearby
+            </Text>
+          </View>
+        )}
 
-                    {/* Address Details */}
-                    <YStack space="$2.5">
-                      <XStack alignItems="center" space="$2">
-                        <Icon type="material" name="location-on" size={16} color="#6B7280" />
-                        <YStack flex={1}>
-                          <Text fontSize="$2" color="$gray10" fontWeight="500" marginBottom="$0.5">
-                            Apartment Name
-                          </Text>
-                          <Text fontSize="$4" fontWeight="600" color="#374151">
-                            {order.premisesName}
-                          </Text>
-                        </YStack>
-                      </XStack>
-
-                      <XStack space="$3" flexWrap="wrap">
-                        <YStack space="$1" minWidth="$10">
-                          <Text fontSize="$2" color="$gray10" fontWeight="500">
-                            Apartment No.
-                          </Text>
-                          <Text fontSize="$3" color="#1A1A1A" fontWeight="600">
-                            {order.aptNumber}
-                          </Text>
-                        </YStack>
-
-                        <YStack space="$1" minWidth="$10">
-                          <Text fontSize="$2" color="$gray10" fontWeight="500">
-                            Block
-                          </Text>
-                          <Text fontSize="$3" color="#1A1A1A" fontWeight="600">
-                            {order.blockNumber}
-                          </Text>
-                        </YStack>
-
-                        <YStack space="$1" minWidth="$10">
-                          <Text fontSize="$2" color="$gray10" fontWeight="500">
-                            City
-                          </Text>
-                          <Text fontSize="$3" color="#1A1A1A" fontWeight="600">
-                            {order.city}
-                          </Text>
-                        </YStack>
-
-                        <YStack space="$1" minWidth="$10">
-                          <Text fontSize="$2" color="$gray10" fontWeight="500">
-                            Pincode
-                          </Text>
-                          <Text fontSize="$3" color="#1A1A1A" fontWeight="600">
-                            {order.pincode}
-                          </Text>
-                        </YStack>
-                      </XStack>
-                    </YStack>
-                  </YStack>
-                </Card>
-              ))}
-            </YStack>
-          )}
-
-          {/* No Orders State */}
-          {!isLoading && !isError && orders.length === 0 && (
-            <View flex={1} alignItems="center" justifyContent="center" padding="$6">
-              <Icon type="material" name="receipt-long" size={80} color="#D1D5DB" />
-              <Text fontSize="$7" fontWeight="700" color="#374151" mt="$4">
-                No orders available
-              </Text>
-              <Text fontSize="$4" fontWeight="500" color="#6B7280" mt="$2" style={{ textAlign: 'center' }}>
-                Items will appear here when a delivery agent is nearby
-              </Text>
-            </View>
-          )}
-
-          {/* Bottom Spacing */}
-          <View height={320} />
-        </YStack>
+        {/* Bottom Spacing */}
+        <View h={320} />
       </ScrollView>
 
       {/* Fixed Delivery Agent Section - Sticky at Bottom */}
       {deliveryAgent && (
-        <View
-          position="absolute"
-          bottom={0}
-          left={0}
-          right={0}
-          backgroundColor="white"
-          borderTopWidth={1}
-          borderTopColor="#E5E5E5"
-          paddingHorizontal="$4"
-          paddingVertical="$4"
-          shadowColor="#000"
-          shadowOffset={{ width: 0, height: -2 }}
-          shadowOpacity={0.1}
-          shadowRadius={8}
-        >
-          <Text fontSize="$4" fontWeight="600" color="#1A1A1A" marginBottom="$3">
+        <View style={styles.agentSection}>
+          <Text variant="h3" weight="semibold" mb="md">
             Delivery Agent
           </Text>
 
-          <Card
-            backgroundColor="#F9FAFB"
-            borderRadius="$4"
-            padding="$4"
-            borderWidth={1}
-            borderColor="#E5E5E5"
-          >
-            <XStack space="$3" alignItems="center">
-              {/* Avatar with Border */}
-              <View
-                borderRadius={100}
-                borderWidth={3}
-                borderColor="#10B981"
-                padding="$1"
-              >
-                <Avatar circular size="$8">
-                  <Avatar.Image
-                    source={{
-                      uri: deliveryAgent.photo || 'https://via.placeholder.com/150',
-                    }}
-                  />
-                  <Avatar.Fallback backgroundColor="$orange" display='flex' alignItems='center' justify="center">
-                    <Text fontSize="$5" fontWeight="600" color="white">
-                      {deliveryAgent?.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+          <Card variant="outlined" style={styles.agentCard}>
+            <View row gap="md" align="center">
+              {/* Avatar */}
+              <View style={styles.avatarContainer}>
+                {deliveryAgent.photo ? (
+                  <View style={styles.avatar}>
+                    {/* Image would go here */}
+                  </View>
+                ) : (
+                  <View style={styles.avatarFallback}>
+                    <Text variant="h3" weight="bold" color="white">
+                      {deliveryAgent.name.split(' ').map(n => n[0]).join('').toUpperCase()}
                     </Text>
-                  </Avatar.Fallback>
-                </Avatar>
+                  </View>
+                )}
               </View>
 
               {/* Agent Details */}
-              <YStack flex={1} space="$2">
-                <Text
-                  fontSize="$5"
-                  fontWeight="700"
-                  color="#1A1A1A"
-                >
+              <View style={{ flex: 1 }} gap="sm">
+                <Text variant="h3" weight="bold">
                   {deliveryAgent.name}
                 </Text>
-                <Text
-                  fontSize="$2"
-                  fontWeight="600"
-                  color="#10B981"
-                  textTransform="uppercase"
-                  letterSpacing={0.5}
-                >
-                  Verified Agent
+                <Text variant="caption" weight="semibold" color="success0" style={styles.verifiedBadge}>
+                  VERIFIED AGENT
                 </Text>
 
-                <YStack space="$1.5">
-                  <XStack alignItems="center" space="$2">
+                <View gap="xs">
+                  <View row align="center" gap="sm">
                     <Icon type="material" name="phone" size={14} color="#6B7280" />
-                    <Text
-                      fontSize="$3"
-                      fontWeight="500"
-                      color="#374151"
-                    >
+                    <Text variant="body-sm" weight="medium">
                       {deliveryAgent.mobile}
                     </Text>
-                  </XStack>
+                  </View>
 
-                  <XStack alignItems="center" space="$2">
+                  <View row align="center" gap="sm">
                     <Icon type="material" name="credit-card" size={14} color="#6B7280" />
-                    <Text
-                      fontSize="$3"
-                      fontWeight="500"
-                      color="#374151"
-                    >
+                    <Text variant="body-sm" weight="medium">
                       {deliveryAgent.aadharNumber}
                     </Text>
-                  </XStack>
-                </YStack>
-              </YStack>
-            </XStack>
+                  </View>
+                </View>
+              </View>
+            </View>
           </Card>
         </View>
       )}
 
-      {/* Logout Button - Enhanced */}
+      {/* Logout Button */}
       <Button
-        position="absolute"
-        bottom={deliveryAgent ? 240 : 20}
-        right="$4"
-        backgroundColor="#EF4444"
-        borderRadius={50}
-        width={70}
-        height={70}
+        variant="danger"
+        size="icon"
         onPress={handleLogout}
-        pressStyle={{
-          scale: 0.95,
-          backgroundColor: "#DC2626"
-        }}
-        shadowColor="#EF4444"
-        shadowOffset={{ width: 0, height: 4 }}
-        shadowOpacity={0.3}
-        shadowRadius={8}
+        style={[styles.logoutButton, { bottom: deliveryAgent ? 240 : 20 }]}
       >
         <Icon type="material" name="logout" size={28} color="white" />
       </Button>
     </View>
-
   );
-};
+}
 
-export default SecurityPersonScreen;
+const styles = StyleSheet.create({
+  scrollView: {
+    flex: 1,
+  },
+  header: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E5E5',
+    backgroundColor: 'white',
+    ...theme.shadows.sm,
+  },
+  orderCard: {
+    marginBottom: theme.spacing.sm,
+    borderWidth: 1,
+    borderColor: '#E5E5E5',
+  },
+  agentSection: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'white',
+    borderTopWidth: 1,
+    borderTopColor: '#E5E5E5',
+    padding: theme.spacing.lg,
+    ...theme.shadows.lg,
+  },
+  agentCard: {
+    borderColor: '#E5E5E5',
+    padding: theme.spacing.md,
+  },
+  avatarContainer: {
+    borderRadius: 100,
+    borderWidth: 3,
+    borderColor: '#10B981',
+    padding: theme.spacing.xs,
+  },
+  avatar: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    overflow: 'hidden',
+  },
+  avatarFallback: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: theme.colors.orange,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  verifiedBadge: {
+    letterSpacing: 0.5,
+  },
+  logoutButton: {
+    position: 'absolute',
+    right: theme.spacing.lg,
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    ...theme.shadows.md,
+  },
+});
+

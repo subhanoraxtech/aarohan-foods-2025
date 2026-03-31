@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { YStack, Spinner, Text } from 'tamagui';
+import { View, ActivityIndicator, Text, StyleSheet } from 'react-native';
+import { theme } from '@/theme';
 
 interface LoadingContextType {
   isLoading: boolean;
@@ -36,38 +37,53 @@ export const LoadingProvider: React.FC<LoadingProviderProps> = ({ children }) =>
       
       {/* Global Loading Overlay */}
       {isLoading && (
-        <YStack
-          position="absolute"
-          top={0}
-          left={0}
-          right={0}
-          bottom={0}
-          backgroundColor="rgba(0, 0, 0, 0.5)"
-          zIndex={9999}
-          alignItems="center"
-          justifyContent="center"
-        >
-          <YStack
-            backgroundColor="white"
-            padding="$6"
-            borderRadius="$4"
-            alignItems="center"
-            justifyContent="center"
-            gap="$3"
-            minWidth={200}
-          >
-            <Spinner size="large" color="$orange" />
-            <Text
-              fontSize="$4"
-              fontWeight="500"
-              color="$gray10"
-              textAlign="center"
-            >
+        <View style={styles.overlay}>
+          <View style={styles.loaderContainer}>
+            <ActivityIndicator size="large" color={theme.colors.orange} />
+            <Text style={styles.loadingText}>
               {loadingMessage}
             </Text>
-          </YStack>
-        </YStack>
+          </View>
+        </View>
       )}
     </LoadingContext.Provider>
   );
 };
+
+const styles = StyleSheet.create({
+  overlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    zIndex: 9999,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loaderContainer: {
+    backgroundColor: 'white',
+    padding: 24,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 200,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  loadingText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: theme.colors.gray10,
+    textAlign: 'center',
+    marginTop: 12,
+    fontFamily: theme.typography.fontFamily.medium,
+  },
+});

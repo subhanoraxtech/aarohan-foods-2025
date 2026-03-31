@@ -13,6 +13,7 @@ export interface BundleType {
   supplierId: Supplier | string | null;
   orderIds: string[] | OrderType[];
   status: BUNDLE_STATUS;
+  bundleDate?: string;
   deliveryDate?: string;
   availableFrom?: string;
   availableTo?: string;

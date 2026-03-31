@@ -1,24 +1,182 @@
-import * as Notifications from "expo-notifications";
+import * as ExpoNotifications from "expo-notifications";
 import { useRouter } from "expo-router";
 import moment from "moment";
 import "moment-timezone";
-import { Skeleton } from "moti/skeleton";
 import React, { useState } from "react";
-import { Image, Linking, RefreshControl, SectionList } from "react-native";
-import { Text, XStack, YStack } from "tamagui";
+import {
+  Image,
+  Linking,
+  RefreshControl,
+  SectionList,
+  StyleSheet,
+} from "react-native";
 
-import Button from "@/components/common/Button";
+import { View } from "@/components/ui/View";
+import { Text } from "@/components/ui/Text";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
 import Header from "@/components/common/Header";
 import Icon from "@/components/common/Icon";
 import SuccessModal from "@/components/common/SuccesModal";
+import { Skeleton } from "@/components/skeletons";
+
 import { useAuth } from "@/hooks/useAuth";
-import { useGetAllNotificationsQuery } from "@/services/notifications/notification.service";
+import { useNotificationList } from "@/hooks/useNotificationQuery";
 import { NOTIFICATION_TYPE } from "@/types/enums";
 import { NotificationType } from "@/types/notification";
+import { theme } from "@/theme";
 
 const NoServiceImage = require("@/assets/images/no.png");
 
-const NotificationScreen = () => {
+interface NotificationStyle {
+  emoji: string | null;
+  bg: string;
+  label: string;
+  btn: string;
+  image?: any;
+}
+
+function getNotificationStyle(type: string): NotificationStyle {
+  switch (type) {
+    case NOTIFICATION_TYPE.MENU_PLACED:
+      return {
+        emoji: "🍕",
+        bg: theme.colors.orange,
+        label: "Menu Placed",
+        btn: "Order Now",
+      };
+    case NOTIFICATION_TYPE.BUNDLE_AVAILABLE:
+      return {
+        emoji: "📦",
+        bg: theme.colors.info,
+        label: "Bundle Available",
+        btn: "View Bundle",
+      };
+    case NOTIFICATION_TYPE.ORDER_COMPLETED:
+      return {
+        emoji: "✅",
+        bg: theme.colors.success0,
+        label: "Completed",
+        btn: "View Details",
+      };
+    case NOTIFICATION_TYPE.ORDER_READY:
+      return {
+        emoji: "🎉",
+        bg: "#9C27B0",
+        label: "Ready",
+        btn: "View Order",
+      };
+    case NOTIFICATION_TYPE.NO_SERVICE:
+      return {
+        emoji: null,
+        bg: theme.colors.red1,
+        label: "No Service",
+        btn: "",
+        image: NoServiceImage,
+      };
+    default:
+      return {
+        emoji: "🔔",
+        bg: theme.colors.gray10,
+        label: "Notification",
+        btn: "View",
+      };
+  }
+}
+
+function NotificationCard({
+  item,
+  onPress,
+}: {
+  item: NotificationType;
+  onPress: () => void;
+}) {
+  const style = getNotificationStyle(item.type || "");
+  const created = moment
+    .tz(item.createdAt, "Asia/Kolkata")
+    .format("hh:mm A • MMM DD");
+
+  return (
+    <Card
+      variant="elevated"
+      style={[styles.notificationCard, { borderColor: style.bg }]}
+    >
+      <View
+        style={styles.imageContainer}
+        bg="grey5"
+      >
+        {(item.metadata.menuId as any)?.image ? (
+          <Image
+            source={{ uri: (item.metadata.menuId as any).image }}
+            style={styles.notificationImage}
+          />
+        ) : style.image ? (
+          <Image source={style.image} style={styles.notificationImage} />
+        ) : (
+          <Text variant="h1">{style.emoji}</Text>
+        )}
+      </View>
+
+      <View gap="sm" mt="md">
+        <Text variant="h3" weight="bold">
+          {item.title}
+        </Text>
+        <Text variant="body-sm" color="gray10">
+          {item.message}
+        </Text>
+
+        <View row center gap="sm">
+          <View
+            bg={style.bg}
+            px="sm"
+            py="xs"
+            radius="sm"
+          >
+            <Text variant="caption" weight="semibold" color="white">
+              {style.label}
+            </Text>
+          </View>
+          <Text variant="caption" color="gray10">
+            {created}
+          </Text>
+        </View>
+
+        {style.btn && (
+          <Button
+            variant="primary"
+            onPress={onPress}
+            style={{ backgroundColor: style.bg }}
+            mt="sm"
+          >
+            {style.btn}
+          </Button>
+        )}
+      </View>
+    </Card>
+  );
+}
+
+function NotificationSkeleton() {
+  return (
+    <Card variant="elevated" style={styles.skeletonCard}>
+      <Skeleton width="100%" height={150} borderRadius={theme.borderRadius.md} />
+      <View gap="sm" mt="md">
+        <Skeleton width="70%" height={24} />
+        <Skeleton width="100%" height={16} />
+        <Skeleton width="90%" height={16} />
+        <View row center gap="sm" mt="sm">
+          <Skeleton width={80} height={20} borderRadius={6} />
+          <Skeleton width={100} height={16} />
+        </View>
+        <View mt="sm">
+          <Skeleton width="100%" height={45} borderRadius={10} />
+        </View>
+      </View>
+    </Card>
+  );
+}
+
+export default function NotificationScreen() {
   const router = useRouter();
   const { user } = useAuth();
 
@@ -27,42 +185,36 @@ const NotificationScreen = () => {
     string | null
   >(null);
   const [showClosedModal, setShowClosedModal] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const {
     data: notificationData,
     isLoading: isFetchingNotifications,
     error: notificationError,
     refetch,
-  } = useGetAllNotificationsQuery(
-    {},
-    {
-      refetchOnMountOrArgChange: true,
-      refetchOnReconnect: true,
-    },
-  );
+  } = useNotificationList();
 
-  const handleEnableNotifications = async () => {
-    const { status: currentStatus } = await Notifications.getPermissionsAsync();
+  async function handleEnableNotifications() {
+    const { status: currentStatus } =
+      await ExpoNotifications.getPermissionsAsync();
 
     if (currentStatus === "denied") {
       await Linking.openSettings();
     } else {
-      const { status } = await Notifications.requestPermissionsAsync({
+      const { status } = await ExpoNotifications.requestPermissionsAsync({
         ios: { allowAlert: true, allowBadge: true, allowSound: true },
       });
       setNotificationPermission(status);
     }
-  };
+  }
 
-  const onRefresh = async () => {
+  async function handleRefresh() {
     setIsRefreshing(true);
     await refetch();
     setIsRefreshing(false);
-  };
+  }
 
   const notifications: NotificationType[] = Array.isArray(
-    notificationData?.notifications,
+    notificationData?.notifications
   )
     ? notificationData.notifications
     : [];
@@ -79,6 +231,7 @@ const NotificationScreen = () => {
   const hasNoActiveOrders =
     notifications.length === 0 || allNotificationsExpired;
 
+  // Group notifications by date
   const grouped = notifications.reduce<Record<string, NotificationType[]>>(
     (acc, n) => {
       const date = n.deliveryDate
@@ -93,354 +246,159 @@ const NotificationScreen = () => {
       acc[key].push(n);
       return acc;
     },
-    {},
+    {}
   );
 
   const sections = Object.entries(grouped)
     .sort(([a], [b]) => {
       if (a === "Today") return -1;
       if (b === "Today") return 1;
-      return moment(a, "MMM DD, YYYY").isAfter(moment(b)) ? -1 : 1;
+      return moment(a, "MMM DD, YYYY").isAfter(moment(b, "MMM DD, YYYY")) ? -1 : 1;
     })
     .map(([title, data]) => ({ title, data }));
 
-  const getStyle = (type: string) => {
-    switch (type) {
-      case NOTIFICATION_TYPE.MENU_PLACED:
-        return {
-          emoji: "🍕",
-          bg: "$orange",
-          label: "Menu Placed",
-          btn: "Order Now",
-        };
-      case NOTIFICATION_TYPE.BUNDLE_AVAILABLE:
-        return {
-          emoji: "📦",
-          bg: "$blue10",
-          label: "Bundle Available",
-          btn: "View Bundle",
-        };
-      case NOTIFICATION_TYPE.ORDER_COMPLETED:
-        return {
-          emoji: "✅",
-          bg: "$green10",
-          label: "Completed",
-          btn: "View Details",
-        };
-      case NOTIFICATION_TYPE.ORDER_READY:
-        return {
-          emoji: "🎉",
-          bg: "$purple10",
-          label: "Ready",
-          btn: "View Order",
-        };
-      case NOTIFICATION_TYPE.NO_SERVICE:
-        return {
-          emoji: null,
-          bg: "$red10",
-          label: "No Service",
-          btn: "",
-          image: NoServiceImage,
-        };
-      default:
-        return {
-          emoji: "🔔",
-          bg: "$gray10",
-          label: "Notification",
-          btn: "View",
-        };
+  function handleNotificationPress(item: NotificationType) {
+    const bundleData = item?.metadata?.bundleId;
+    if (!bundleData) return;
+
+    let extractedId: string | null = null;
+
+    if (Array.isArray(bundleData)) {
+      const ids = bundleData
+        .map((b: any) => {
+          if (typeof b === "string") return b;
+          if (b?.$oid) return b.$oid;
+          if (b?._id) return b._id;
+          return null;
+        })
+        .filter(Boolean);
+
+      if (ids.length > 0) {
+        extractedId = ids.join(",");
+      }
+    } else if (typeof bundleData === "string") {
+      extractedId = bundleData;
+    } else if ((bundleData as any)?.$oid) {
+      extractedId = (bundleData as any).$oid;
     }
-  };
 
-  const renderRow = ({ item }: { item: NotificationType }) => {
-    const style = getStyle(item.type || "");
-    const created = moment
-      .tz(item.createdAt, "Asia/Kolkata")
-      .format("hh:mm A • MMM DD");
+    if (extractedId) {
+      const targetStatus =
+        item.type === NOTIFICATION_TYPE.DELIVERY_REQUEST_APPROVED ||
+        item.type === NOTIFICATION_TYPE.SUPPLIER_REQUEST_APPROVED
+          ? "approved"
+          : "pending";
 
-    const handlePress = () => {
-      console.log("Notification item pressed:", item);
-      const bundleData = item?.metadata?.bundleId;
-      if (!bundleData) return;
+      router.navigate({
+        pathname: "/(app)/bundles/[id]",
+        params: {
+          id: extractedId,
+          type: item.type,
+          status: targetStatus,
+        },
+      });
+    }
+  }
 
-      let extractedId: string | null = null;
-
-      if (Array.isArray(bundleData)) {
-        const ids = bundleData
-          .map((b: any) => {
-            if (typeof b === "string") return b;
-            if (b?.$oid) return b.$oid;
-            if (b?._id) return b._id;
-            return null;
-          })
-          .filter(Boolean);
-
-        if (ids.length > 0) {
-          extractedId = ids.join(",");
-        }
-      } else if (typeof bundleData === "string") {
-        extractedId = bundleData;
-      } else if ((bundleData as any)?.$oid) {
-        extractedId = (bundleData as any).$oid;
-      }
-
-      if (extractedId) {
-        console.log("Navigating to bundles with ID(s):", extractedId);
-        const targetStatus = (item.type === NOTIFICATION_TYPE.DELIVERY_REQUEST_APPROVED || 
-                             item.type === NOTIFICATION_TYPE.SUPPLIER_REQUEST_APPROVED) 
-                             ? "approved" : "pending";
-
-        router.navigate({
-          pathname: "/(app)/bundles/[id]",
-          params: { 
-            id: extractedId,
-            type: item.type,
-            status: targetStatus
-          },
-        });
-      }
-    };
-
+  function renderNotification({ item }: { item: NotificationType }) {
     return (
-      <YStack
-        {...({
-          mb: "$4",
-          bg: "$background",
-          p: "$3",
-          borderRadius: "$6",
-          borderWidth: 1,
-          borderColor: style.bg as any,
-        } as any)}
-      >
-        <YStack
-          height={150}
-          items="center"
-          justify="center"
-          bg="$grey5"
-          style={{ borderRadius: 12 }}
-        >
-          {(item.metadata.menuId as any)?.image ? (
-            <Image
-              source={{ uri: (item.metadata.menuId as any).image }}
-              style={{ width: "100%", height: "100%" }}
-            />
-          ) : style.image ? (
-            <Image
-              source={style.image}
-              style={{ width: "100%", height: "100%" }}
-            />
-          ) : (
-            <Text fontSize="$8">{style.emoji}</Text>
-          )}
-        </YStack>
-
-        <YStack mt="$3" gap="$2">
-          <Text fontSize="$6" fontWeight="700">
-            {item.title}
-          </Text>
-          <Text fontSize="$3" color="$gray10">
-            {item.message}
-          </Text>
-
-          <XStack gap="$2" items="center">
-            <YStack bg={style.bg as any} px="$2" py="$1" style={{ borderRadius: 8 }}>
-              <Text color="$background" fontSize="$2">
-                {style.label}
-              </Text>
-            </YStack>
-            <Text fontSize="$2">{created}</Text>
-          </XStack>
-
-          {style.btn ? (
-            <Button mt="$2" bg={style.bg as any} onPress={handlePress}>
-              <Text color="$background">{style.btn}</Text>
-            </Button>
-          ) : null}
-        </YStack>
-      </YStack>
+      <NotificationCard
+        item={item}
+        onPress={() => handleNotificationPress(item)}
+      />
     );
-  };
+  }
+
+  function renderSectionHeader({ section: { title } }: { section: { title: string } }) {
+    return (
+      <Text variant="h3" weight="bold" py="md">
+        {title}
+      </Text>
+    );
+  }
 
   return (
-    <YStack flex={1} bg="$background" p="$3">
+    <View flex bg={theme.colors.background} p="lg">
       <Header title="Notifications" />
 
       {notificationPermission !== "granted" &&
         notificationPermission !== null && (
-          <YStack
-            bg="$orange"
-            p="$4"
-            mb="$4"
-            {...({
-              gap: "$3",
-              alignItems: "center",
-              justifyContent: "center",
-              borderRadius: 16,
-            } as any)}
+          <View
+            bg="orange"
+            p="lg"
+            mb="lg"
+            center
+            gap="md"
+            radius="lg"
           >
-            <Text
-              fontSize="$5"
-              fontWeight="700"
-              color="$background"
-              style={{ textAlign: "center" }}
-            >
+            <Text variant="h3" weight="bold" color="white" align="center">
               Enable Notifications
             </Text>
 
-            <Text fontSize="$3" color="$background" style={{ textAlign: "center" }}>
+            <Text variant="body" color="white" align="center">
               Turn on notifications to stay updated about your orders and
               deliveries
             </Text>
 
             <Button
-              bg="$background"
-              borderRadius="$5"
-              px="$4"
-              py="$2"
+              variant="secondary"
               onPress={handleEnableNotifications}
             >
-              <Text fontWeight="700" color="$orange">
-                Turn On Notifications
-              </Text>
+              Turn On Notifications
             </Button>
-          </YStack>
+          </View>
         )}
 
       {isFetchingNotifications ? (
-        <YStack gap="$4">
+        <View gap="lg">
           {[1, 2, 3].map((i) => (
-            <YStack
-              key={i}
-              bg="$background"
-              p="$3"
-              gap="$3"
-              style={{
-                borderRadius: 24,
-                borderWidth: 1,
-              borderColor: "#EBEBED" as any,
-              marginBottom: 16,
-            }}
-            >
-              {/* Image Skeleton */}
-              <Skeleton
-                colorMode="light"
-                width="100%"
-                height={150}
-                radius={12}
-                backgroundColor="#E5E5E5"
-              />
-              <YStack gap="$2" mt="$3">
-                {/* Title Skeleton */}
-                <Skeleton
-                  colorMode="light"
-                  width="70%"
-                  height={24}
-                  backgroundColor="#E5E5E5"
-                />
-                {/* Message Skeleton */}
-                <Skeleton
-                  colorMode="light"
-                  width="100%"
-                  height={16}
-                  backgroundColor="#E5E5E5"
-                />
-                <Skeleton
-                  colorMode="light"
-                  width="90%"
-                  height={16}
-                  backgroundColor="#E5E5E5"
-                />
-
-                {/* Badge and Time Skeleton */}
-                <XStack gap="$2" items="center" mt="$1">
-                  <Skeleton
-                    colorMode="light"
-                    width={80}
-                    height={20}
-                    radius={6}
-                    backgroundColor="#E5E5E5"
-                  />
-                  <Skeleton
-                    colorMode="light"
-                    width={100}
-                    height={16}
-                    backgroundColor="#E5E5E5"
-                  />
-                </XStack>
-
-                {/* Button Skeleton */}
-                <YStack mt="$2">
-                  <Skeleton
-                    colorMode="light"
-                    width="100%"
-                    height={45}
-                    radius={10}
-                    backgroundColor="#E5E5E5"
-                  />
-                </YStack>
-              </YStack>
-            </YStack>
+            <NotificationSkeleton key={i} />
           ))}
-        </YStack>
+        </View>
       ) : sections.length === 0 ? (
-        <YStack
-          {...({
-            flex: 1,
-            alignItems: "center",
-            justifyContent: "flex-start",
-            width: "100%",
-            gap: "$4",
-            marginTop: 40, // Top-centered position below header
-          } as any)}
-        >
-          <YStack
-            {...({
-              bg: "$grey6",
-              p: "$6",
-              br: "$10",
-              alignItems: "center",
-              justifyContent: "center",
-            } as any)}
+        <View flex center gap="lg" mt="xl">
+          <View
+            bg="grey6"
+            p="xl"
+            radius="xl"
+            center
           >
             <Icon
               type="material-community"
               name="bell-off-outline"
               size={60}
-              color="#878787"
+              color={theme.colors.gray10}
             />
-          </YStack>
-          <YStack {...({ items: "center", gap: "$2" } as any)}>
-            <Text
-              fontSize="$7"
-              fontWeight="700"
-              color="$black1"
-              fontFamily="$heading"
-            >
+          </View>
+          <View center gap="sm">
+            <Text variant="h2" weight="bold" align="center">
               No notifications yet
             </Text>
             <Text
-              fontSize="$4"
-              color="$gray10"
-              style={{ textAlign: "center", maxWidth: 280 }}
-              fontFamily="$body"
+              variant="body"
+              color="gray10"
+              align="center"
+              style={styles.emptySubtext}
             >
               We'll let you know when something important happens
             </Text>
-          </YStack>
-        </YStack>
+          </View>
+        </View>
       ) : (
         <SectionList
           sections={sections}
           keyExtractor={(item) => item._id || Math.random().toString()}
-          renderItem={renderRow}
-          renderSectionHeader={({ section: { title } }) => (
-            <Text fontSize="$6" fontWeight="700" py="$2">
-              {title}
-            </Text>
-          )}
+          renderItem={renderNotification}
+          renderSectionHeader={renderSectionHeader}
           refreshControl={
-            <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={handleRefresh}
+              colors={[theme.colors.orange]}
+              tintColor={theme.colors.orange}
+            />
           }
+          contentContainerStyle={styles.listContent}
         />
       )}
 
@@ -452,8 +410,33 @@ const NotificationScreen = () => {
         subTitle="Please wait for a notification from us to place order"
         buttonTitle="OK"
       />
-    </YStack>
+    </View>
   );
-};
+}
 
-export default NotificationScreen;
+const styles = StyleSheet.create({
+  notificationCard: {
+    marginBottom: theme.spacing.lg,
+    borderWidth: 1,
+  },
+  imageContainer: {
+    height: 150,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: theme.borderRadius.md,
+  },
+  notificationImage: {
+    width: "100%",
+    height: "100%",
+    borderRadius: theme.borderRadius.md,
+  },
+  skeletonCard: {
+    marginBottom: theme.spacing.lg,
+  },
+  emptySubtext: {
+    maxWidth: 280,
+  },
+  listContent: {
+    paddingBottom: theme.spacing.xl,
+  },
+});
