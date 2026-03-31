@@ -29,8 +29,10 @@ export function useNotifications() {
       // Sync token with backend if user is logged in
       if (token && isAuthenticated) {
         try {
-          await updateUser({ expoToken: token }).unwrap();
-          console.log("\uD83D\uDD04 Push token synced with backend");
+          // Temporarily commenting this out as the endpoint /user/profile is returning 404
+          // await updateUser({ expoToken: token }).unwrap();
+          // console.log("🔄 Push token synced with backend");
+          console.log("\u2705 Push token obtained:", token);
         } catch (error) {
           console.error("\u274C Failed to sync push token:", error);
         }

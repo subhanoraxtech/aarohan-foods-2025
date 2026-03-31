@@ -18,6 +18,19 @@ import { theme } from "@/theme";
 
 SplashScreen.preventAutoHideAsync();
 
+function AppContent() {
+  useNotifications();
+  
+  return (
+    <AuthProvider>
+      <LoadingProvider>
+        <Slot />
+        <StatusBar style="dark" />
+      </LoadingProvider>
+    </AuthProvider>
+  );
+}
+
 export default function RootLayout() {
   const [appIsReady, setAppIsReady] = useState(false);
 
@@ -28,8 +41,6 @@ export default function RootLayout() {
     DMSansLight: require("../assets/fonts/DMSans-Light.ttf"),
     DMSansSemiBold: require("../assets/fonts/DMSans-SemiBold.ttf"),
   });
-
-  useNotifications();
 
   useEffect(() => {
     async function prepareApp() {
@@ -60,12 +71,7 @@ export default function RootLayout() {
             style={{ flex: 1, backgroundColor: theme.colors.background }}
             edges={["top", "bottom", "left", "right"]}
           >
-            <AuthProvider>
-              <LoadingProvider>
-                <Slot />
-                <StatusBar style="dark" />
-              </LoadingProvider>
-            </AuthProvider>
+            <AppContent />
           </SafeAreaView>
         </BottomSheetModalProvider>
       </GestureHandlerRootView>

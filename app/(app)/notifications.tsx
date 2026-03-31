@@ -356,22 +356,17 @@ export default function NotificationScreen() {
           ))}
         </View>
       ) : sections.length === 0 ? (
-        <View flex center gap="lg" mt="xl">
-          <View
-            bg="grey6"
-            p="xl"
-            radius="xl"
-            center
-          >
-            <Icon
-              type="material-community"
-              name="bell-off-outline"
-              size={60}
-              color={theme.colors.gray10}
-            />
-          </View>
-          <View center gap="sm">
-            <Text variant="h2" weight="bold" align="center">
+        <View flex p="lg" justify="center">
+          <Card variant="elevated" style={styles.emptyCard}>
+            <View bg="grey6" p="xl" radius="lg" style={styles.emptyIcon}>
+              <Icon
+                type="material-community"
+                name="bell-off-outline"
+                size={40}
+                color={theme.colors.gray10}
+              />
+            </View>
+            <Text variant="h3" weight="bold" align="center">
               No notifications yet
             </Text>
             <Text
@@ -380,9 +375,9 @@ export default function NotificationScreen() {
               align="center"
               style={styles.emptySubtext}
             >
-              We'll let you know when something important happens
+              We&apos;ll let you know when something important happens
             </Text>
-          </View>
+          </Card>
         </View>
       ) : (
         <SectionList
@@ -433,6 +428,17 @@ const styles = StyleSheet.create({
   skeletonCard: {
     marginBottom: theme.spacing.lg,
   },
+  emptyCard: {
+    padding: theme.spacing.xl,
+    alignItems: "center",
+    gap: theme.spacing.lg,
+  },
+  emptyIcon: {
+    width: 80,
+    height: 80,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   emptySubtext: {
     maxWidth: 280,
   },
@@ -440,3 +446,4 @@ const styles = StyleSheet.create({
     paddingBottom: theme.spacing.xl,
   },
 });
+
