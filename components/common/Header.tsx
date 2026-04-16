@@ -1,6 +1,7 @@
 import { useRouter } from "expo-router";
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { View, StyleSheet, TouchableOpacity } from "react-native";
+import { Text } from "../ui/Text";
 import { theme } from "@/theme";
 import Icon from "../common/Icon";
 
@@ -43,7 +44,7 @@ const Header = ({
 
       {/* Title in center */}
       {title && (
-        <Text style={styles.title}>
+        <Text variant="h3" weight="medium" style={styles.title}>
           {title}
         </Text>
       )}
@@ -79,10 +80,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   title: {
-    fontSize: 20,
-    fontWeight: "500",
     color: theme.colors.gray3,
-    fontFamily: theme.typography.fontFamily.medium,
   },
   rightIconContainer: {
     position: "absolute",

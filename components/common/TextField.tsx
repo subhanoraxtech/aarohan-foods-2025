@@ -1,7 +1,6 @@
 import React, { ReactNode, useRef } from "react";
 import {
   TextInput,
-  Text,
   View,
   StyleSheet,
   Pressable,
@@ -10,6 +9,7 @@ import {
   StyleProp,
   TextStyle,
 } from "react-native";
+import { Text } from "../ui/Text";
 import { theme } from "@/theme";
 
 interface TextFieldProps extends TextInputProps {
@@ -42,7 +42,7 @@ const TextField = ({
   return (
     <View style={[styles.container, gutterBottom && styles.gutterBottom, containerStyle]}>
       {label && (
-        <Text style={styles.label}>
+        <Text variant="label" color="black1" mb="sm">
           {label}
         </Text>
       )}
@@ -55,7 +55,7 @@ const TextField = ({
       >
         {prefix && (
           <View style={styles.prefixContainer}>
-            <Text style={styles.prefixText}>
+            <Text variant="body" weight="medium" color="grey3">
               {prefix}
             </Text>
           </View>
@@ -78,10 +78,12 @@ const TextField = ({
 
       {helperText && (
         <Text
-          style={[
-            styles.helperText,
-            { color: error ? theme.colors.red1 : theme.colors.grey2 }
-          ]}
+          variant="caption"
+          style={{ 
+            color: error ? theme.colors.red1 : theme.colors.grey2,
+            marginTop: 4,
+            marginLeft: 4
+          }}
         >
           {helperText}
         </Text>
@@ -98,11 +100,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   label: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: theme.colors.black1,
-    marginBottom: 8,
-    fontFamily: theme.typography.fontFamily.medium,
   },
   inputWrapper: {
     flexDirection: "row",
@@ -123,10 +120,6 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   prefixText: {
-    fontSize: 16,
-    fontWeight: "500",
-    color: theme.colors.grey3,
-    fontFamily: theme.typography.fontFamily.medium,
   },
   inputContainer: {
     flex: 1,
@@ -146,11 +139,6 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   helperText: {
-    fontSize: 12,
-    fontWeight: "500",
-    marginTop: 4,
-    marginLeft: 4,
-    fontFamily: theme.typography.fontFamily.medium,
   },
 });
 

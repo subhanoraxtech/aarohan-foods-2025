@@ -74,7 +74,7 @@ const PendingCard = ({
                     <Text variant="caption" color="gray10">
                       Quantity
                     </Text>
-                    <Text variant="h3" weight="bold">
+                    <Text variant="lg" weight="bold">
                       {quantity}
                     </Text>
                   </View>
@@ -91,7 +91,7 @@ const PendingCard = ({
                     <Text variant="caption" color="gray10">
                       Pincode
                     </Text>
-                    <Text variant="h3" weight="bold">
+                    <Text variant="lg" weight="bold">
                       {pickupLocation}
                     </Text>
                   </View>
@@ -109,7 +109,7 @@ const PendingCard = ({
                   <Text variant="caption" color="gray10">
                     Apartment Code
                   </Text>
-                  <Text variant="h3" weight="bold">
+                  <Text variant="lg" weight="bold">
                     {item.servicedPremisesId?.apartmentcode || "N/A"}
                   </Text>
                 </View>
@@ -126,7 +126,7 @@ const PendingCard = ({
                   <Text variant="caption" color="gray10">
                     Delivery Date
                   </Text>
-                  <Text variant="h3" weight="bold">
+                  <Text variant="lg" weight="bold">
                     {formattedDateTime}
                   </Text>
                 </View>

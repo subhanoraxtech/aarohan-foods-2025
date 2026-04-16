@@ -5,7 +5,7 @@ import { theme } from "@/theme";
 type SpacingValue = keyof typeof theme.spacing | number;
 
 interface TextProps extends RNTextProps {
-  variant?: "h1" | "h2" | "h3" | "body" | "body-sm" | "caption" | "label";
+  variant?: "h1" | "h2" | "h3" | "lg" | "body" | "body-sm" | "caption" | "label";
   color?: keyof typeof theme.colors | string;
   weight?: "regular" | "medium" | "semibold" | "bold" | "light";
   align?: "left" | "center" | "right";
@@ -81,8 +81,8 @@ export const Text = React.forwardRef<RNText, TextProps>(
         ref={ref}
         style={[
           styles.base,
-          styles[variant],
-          weight && { fontFamily: (theme.typography.fontFamily as any)[weight] },
+          styles[variant as keyof typeof styles],
+          weight && { fontFamily: theme.typography.fontFamily[weight as keyof typeof theme.typography.fontFamily] as string },
           align && { textAlign: align },
           { color: colorValue },
           resolvedStyle,
@@ -119,6 +119,10 @@ const styles = StyleSheet.create({
     fontSize: theme.typography.sizes["2xl"],
     lineHeight: theme.typography.lineHeight.lg,
     fontFamily: theme.typography.fontFamily.semibold,
+  },
+  lg: {
+    fontSize: theme.typography.sizes.lg,
+    lineHeight: theme.typography.lineHeight.lg,
   },
   body: {
     fontSize: theme.typography.sizes.base,

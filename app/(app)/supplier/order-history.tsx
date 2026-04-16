@@ -9,7 +9,7 @@ import Icon from '../../../components/common/Icon';
 import { useOrderHistory } from '@/hooks/useOrders';
 import moment from 'moment';
 import { theme } from "@/theme";
-import { Skeleton } from "@/components/skeletons";
+import { HistoryCardSkeleton, Skeleton } from "@/components/skeletons";
 
 export default function SupplierOrderHistory() {
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -40,13 +40,32 @@ export default function SupplierOrderHistory() {
     return (
       <View flex bg="grey6">
         <Header title="Order History" />
-        <View flex center p="xl" gap="lg">
-          <View bg="white" p="xl" radius="lg" center gap="md">
-            <Skeleton width={60} height={60} borderRadius={30} />
-            <Skeleton width={150} height={24} />
-            <Skeleton width={200} height={16} />
+        <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
+          <View p="lg" gap="lg">
+            {/* Summary Card Skeleton */}
+            <Card variant="elevated">
+              <View p="lg" row align="center" gap="md">
+                <Skeleton width={56} height={56} borderRadius={theme.borderRadius.md} />
+                <View flex gap="xs">
+                  <Skeleton width={100} height={14} />
+                  <Skeleton width={40} height={32} style={{ marginTop: 4 }} />
+                  <Skeleton width={150} height={14} />
+                </View>
+              </View>
+            </Card>
+
+            {/* Section Header Skeleton */}
+            <View gap="xs">
+              <Skeleton width={120} height={24} />
+              <Skeleton width={200} height={16} style={{ marginTop: 4 }} />
+            </View>
+
+            {/* List Skeletons */}
+            <HistoryCardSkeleton />
+            <HistoryCardSkeleton />
+            <HistoryCardSkeleton />
           </View>
-        </View>
+        </ScrollView>
       </View>
     );
   }
@@ -215,7 +234,7 @@ export default function SupplierOrderHistory() {
                           <Text variant="caption" color="gray10" weight="medium">
                             Quantity
                           </Text>
-                          <Text variant="h3" weight="bold">
+                          <Text variant="lg" weight="bold">
                             {order.quantity}
                           </Text>
                         </View>
@@ -226,7 +245,7 @@ export default function SupplierOrderHistory() {
                           <Text variant="caption" color="gray10" weight="medium">
                             Amount
                           </Text>
-                          <Text variant="h3" weight="bold" color="success1">
+                          <Text variant="lg" weight="bold" color="success1">
                             ₹{order.totalAmount}
                           </Text>
                         </View>

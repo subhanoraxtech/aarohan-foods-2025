@@ -1,5 +1,6 @@
 import React, { useCallback, useRef, useMemo } from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, TouchableOpacity, StyleSheet } from "react-native";
+import { Text } from "../ui/Text";
 import Icon from "./Icon";
 import {
   BottomSheetModal,
@@ -58,10 +59,8 @@ export default function SelectField({
       <TouchableOpacity onPress={handlePresentModalPress}>
         <View style={styles.selector}>
           <Text
-            style={[
-              styles.selectorText,
-              { color: value ? theme.colors.black1 : theme.colors.grey2 }
-            ]}
+            variant="body"
+            style={{ color: value ? theme.colors.black1 : theme.colors.grey2 }}
           >
             {getDisplayValue()}
           </Text>
@@ -89,10 +88,10 @@ export default function SelectField({
         >
           <View style={styles.modalContent}>
             <View style={styles.header}>
-              <Text style={styles.headerTitle}>
+              <Text variant="h2" weight="bold" color="black1">
                 Select Apartment
               </Text>
-              <Text style={styles.headerSubtitle}>
+              <Text variant="body-sm" color="gray10" mt="xs">
                 Choose your apartment from the list
               </Text>
             </View>
@@ -115,10 +114,9 @@ export default function SelectField({
                 >
                   <View style={styles.itemTextContainer}>
                     <Text
-                      style={[
-                        styles.itemText,
-                        { color: value === item.apartmentName ? "white" : theme.colors.black1 }
-                      ]}
+                      variant="body"
+                      weight="semibold"
+                      style={{ color: value === item.apartmentName ? "white" : theme.colors.black1 }}
                     >
                       {item.apartmentName}
                     </Text>
@@ -155,22 +153,20 @@ export default function SelectField({
               >
                 <View style={styles.itemTextContainer}>
                   <Text
-                    style={[
-                      styles.itemText,
-                      { color: value === "not-listed" ? "white" : theme.colors.black1 }
-                    ]}
+                    variant="body"
+                    weight="semibold"
+                    style={{ color: value === "not-listed" ? "white" : theme.colors.black1 }}
                   >
                     Apartment Not Listed
                   </Text>
                   <Text
-                    style={[
-                      styles.itemSubtitle,
-                      {
-                        color: value === "not-listed"
-                          ? "rgba(255,255,255,0.8)"
-                          : theme.colors.gray10
-                      }
-                    ]}
+                    variant="caption"
+                    style={{
+                      color: value === "not-listed"
+                        ? "rgba(255,255,255,0.8)"
+                        : theme.colors.gray10,
+                      marginTop: 4
+                    }}
                   >
                     Can't find your apartment? Select this option
                   </Text>
@@ -202,9 +198,6 @@ const styles = StyleSheet.create({
     minHeight: 48,
   },
   selectorText: {
-    fontSize: 14,
-    fontWeight: "400",
-    fontFamily: theme.typography.fontFamily.regular,
   },
   modalBackground: {
     backgroundColor: "white",
@@ -233,17 +226,8 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: theme.colors.black1,
-    fontFamily: theme.typography.fontFamily.bold,
   },
   headerSubtitle: {
-    fontSize: 14,
-    fontWeight: "400",
-    color: theme.colors.gray10,
-    fontFamily: theme.typography.fontFamily.regular,
-    marginTop: 4,
   },
   itemWrapper: {
     marginBottom: 8,
@@ -267,15 +251,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   itemText: {
-    fontSize: 16,
-    fontWeight: "600",
-    fontFamily: theme.typography.fontFamily.semibold,
   },
   itemSubtitle: {
-    fontSize: 12,
-    fontWeight: "400",
-    fontFamily: theme.typography.fontFamily.regular,
-    marginTop: 4,
   },
   checkIconWrapper: {
     backgroundColor: "rgba(255,255,255,0.2)",

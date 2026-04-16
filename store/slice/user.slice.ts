@@ -55,7 +55,8 @@ interface UserState {
   user: User | null;
   accessToken: string | null;
   refreshToken: string | null;
-  role: Role | null; // Added role field
+  role: Role | null;
+  isSessionExpired: boolean;
 }
 
 const initialState: UserState = {
@@ -63,12 +64,16 @@ const initialState: UserState = {
   accessToken: null,
   refreshToken: null,
   role: null, // Initialize role as SUPPLIER for testing
+  isSessionExpired: false, // Initial state for session expiration
 };
 
 const userSlice = createSlice({
   name: "user",
   initialState,
   reducers: {
+    setSessionExpired: (state, action: PayloadAction<boolean>) => {
+      state.isSessionExpired = action.payload;
+    },
     setUserData: (
       state,
       action: PayloadAction<{
@@ -82,6 +87,7 @@ const userSlice = createSlice({
       state.accessToken = action.payload.accessToken;
       state.refreshToken = action.payload.refreshToken;
       state.role = action.payload.role || (action.payload.user?.role as Role) || null;
+      state.isSessionExpired = false; // Reset on successful login
     },
     updateUserData: (state, action: PayloadAction<User | null>) => {
       state.user = action.payload;
@@ -104,5 +110,5 @@ const userSlice = createSlice({
   },
 });
 
-export const { setUserData, updateUserData, updateUserRole, logoutUser } = userSlice.actions;
+export const { setUserData, updateUserData, updateUserRole, logoutUser, setSessionExpired } = userSlice.actions;
 export default userSlice.reducer;

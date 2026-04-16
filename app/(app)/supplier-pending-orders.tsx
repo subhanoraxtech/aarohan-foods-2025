@@ -13,7 +13,7 @@ import { router, useFocusEffect } from "expo-router";
 import { useBundles } from "@/hooks/useBundles";
 import { BundleType } from "@/types/bundleTypes";
 import { theme } from "@/theme";
-import { ListSkeleton } from "@/components/skeletons";
+import { ListSkeleton, BundleCardSkeleton } from "@/components/skeletons";
 
 const PendingOrdersCard = ({
   item,
@@ -74,7 +74,7 @@ const PendingOrdersCard = ({
                     <Text variant="caption" color="gray10">
                       Quantity
                     </Text>
-                    <Text variant="h3" weight="bold">
+                    <Text variant="lg" weight="bold">
                       {quantity}
                     </Text>
                   </View>
@@ -91,7 +91,7 @@ const PendingOrdersCard = ({
                     <Text variant="caption" color="gray10">
                       Pincode
                     </Text>
-                    <Text variant="h3" weight="bold">
+                    <Text variant="lg" weight="bold">
                       {pickupLocation}
                     </Text>
                   </View>
@@ -109,7 +109,7 @@ const PendingOrdersCard = ({
                   <Text variant="caption" color="gray10">
                     Apartment Code
                   </Text>
-                  <Text variant="h3" weight="bold">
+                  <Text variant="lg" weight="bold">
                     {item.servicedPremisesId?.apartmentcode || "N/A"}
                   </Text>
                 </View>
@@ -126,7 +126,7 @@ const PendingOrdersCard = ({
                   <Text variant="caption" color="gray10">
                     Delivery Date
                   </Text>
-                  <Text variant="h3" weight="bold">
+                  <Text variant="lg" weight="bold">
                     {formattedDateTime}
                   </Text>
                 </View>
@@ -194,8 +194,10 @@ export default function SupplierPendingOrders() {
     return (
       <View flex bg="grey6">
         <Header title="Pending Orders" />
-        <View flex>
-          <ListSkeleton count={3} showHeader={false} />
+        <View flex p="lg">
+          <BundleCardSkeleton />
+          <BundleCardSkeleton />
+          <BundleCardSkeleton />
         </View>
       </View>
     );

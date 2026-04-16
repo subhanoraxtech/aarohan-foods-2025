@@ -40,12 +40,20 @@ const baseQuery = fetchBaseQuery({
   },
 });
 
+import { logoutUser, setSessionExpired } from "@/store/slice/user.slice";
+
 export const baseQueryWithReauth: BaseQueryFn<
   string | FetchArgs,
   unknown,
   FetchBaseQueryError
 > = async (args, api, extraOptions) => {
   const result = await baseQuery(args, api, extraOptions);
+
+  if (result.error && result.error.status === 401) {
+    // Session Expired
+    api.dispatch(setSessionExpired(true));
+    api.dispatch(logoutUser());
+  }
 
   return result;
 };

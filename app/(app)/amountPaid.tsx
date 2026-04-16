@@ -202,8 +202,8 @@ const styles = StyleSheet.create({
     padding: theme.spacing.xl,
   },
   amount: {
-    fontSize: 48,
-    lineHeight: 56,
+    fontSize: 28,
+    lineHeight: 34,
   },
   iconContainer: {
     width: 40,

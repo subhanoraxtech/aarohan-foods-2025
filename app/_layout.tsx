@@ -1,5 +1,10 @@
-import { useEffect, useState } from "react";
-import { useFonts } from "expo-font";
+import {
+  useFonts,
+  Roboto_300Light,
+  Roboto_400Regular,
+  Roboto_500Medium,
+  Roboto_700Bold,
+} from "@expo-google-fonts/roboto";
 import { Provider } from "react-redux";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -7,6 +12,7 @@ import { Slot } from "expo-router";
 
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import * as SplashScreen from "expo-splash-screen";
+import { useEffect, useState } from "react";
 
 import { store } from "@/store";
 import { useNotifications } from "@/hooks/useNotifications";
@@ -18,13 +24,37 @@ import { theme } from "@/theme";
 
 SplashScreen.preventAutoHideAsync();
 
+import { useSelector, useDispatch } from "react-redux";
+import { RootState } from "@/store";
+import { setSessionExpired } from "@/store/slice/user.slice";
+import SuccessModal from "@/components/common/SuccesModal";
+
+function SessionExpiredManager() {
+  const dispatch = useDispatch();
+  const isSessionExpired = useSelector(
+    (state: RootState) => state.user.isSessionExpired
+  );
+
+  return (
+    <SuccessModal
+      isOpen={isSessionExpired}
+      onClose={() => dispatch(setSessionExpired(false))}
+      modalType="error"
+      modalTitle="Session Expired"
+      subTitle="Your session has expired. Please log in again to continue."
+      buttonTitle="Login"
+    />
+  );
+}
+
 function AppContent() {
   useNotifications();
-  
+
   return (
     <AuthProvider>
       <LoadingProvider>
         <Slot />
+        <SessionExpiredManager />
         <StatusBar style="dark" />
       </LoadingProvider>
     </AuthProvider>
@@ -35,11 +65,11 @@ export default function RootLayout() {
   const [appIsReady, setAppIsReady] = useState(false);
 
   const [fontsLoaded, fontError] = useFonts({
-    DMSansRegular: require("../assets/fonts/DMSans-Regular.ttf"),
-    DMSansMedium: require("../assets/fonts/DMSans-Medium.ttf"),
-    DMSansBold: require("../assets/fonts/DMSans-Bold.ttf"),
-    DMSansLight: require("../assets/fonts/DMSans-Light.ttf"),
-    DMSansSemiBold: require("../assets/fonts/DMSans-SemiBold.ttf"),
+    "Roboto-Light": Roboto_300Light,
+    "Roboto-Regular": Roboto_400Regular,
+    "Roboto-Medium": Roboto_500Medium,
+    "Roboto-SemiBold": Roboto_500Medium, // Roboto doesn't have 600, mapping to 500
+    "Roboto-Bold": Roboto_700Bold,
   });
 
   useEffect(() => {

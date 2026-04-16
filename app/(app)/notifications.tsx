@@ -2,7 +2,7 @@ import * as ExpoNotifications from "expo-notifications";
 import { useRouter } from "expo-router";
 import moment from "moment";
 import "moment-timezone";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Image,
   Linking,
@@ -193,6 +193,20 @@ export default function NotificationScreen() {
     refetch,
   } = useNotificationList();
 
+  useEffect(() => {
+    if (notificationData) {
+      console.log("=== NOTIFICATION API RESPONSE ===");
+      console.log(JSON.stringify(notificationData, null, 2));
+    }
+  }, [notificationData]);
+
+  useEffect(() => {
+    (async () => {
+      const { status } = await ExpoNotifications.getPermissionsAsync();
+      setNotificationPermission(status);
+    })();
+  }, []);
+
   async function handleEnableNotifications() {
     const { status: currentStatus } =
       await ExpoNotifications.getPermissionsAsync();
@@ -216,7 +230,13 @@ export default function NotificationScreen() {
   const notifications: NotificationType[] = Array.isArray(
     notificationData?.notifications
   )
-    ? notificationData.notifications
+    ? notificationData.notifications.filter(
+        (n: NotificationType) =>
+          n.type !== NOTIFICATION_TYPE.DELIVERY_REQUEST_APPROVED &&
+          n.type !== NOTIFICATION_TYPE.DELIVERY_REQUEST_REJECTED &&
+          n.type !== NOTIFICATION_TYPE.SUPPLIER_REQUEST_APPROVED &&
+          n.type !== NOTIFICATION_TYPE.SUPPLIER_REQUEST_REJECTED
+      )
     : [];
 
   const currentDate = moment.tz("Asia/Kolkata");
@@ -284,10 +304,17 @@ export default function NotificationScreen() {
 
     if (extractedId) {
       const targetStatus =
-        item.type === NOTIFICATION_TYPE.DELIVERY_REQUEST_APPROVED ||
-        item.type === NOTIFICATION_TYPE.SUPPLIER_REQUEST_APPROVED
-          ? "approved"
+        item.type === NOTIFICATION_TYPE.BUNDLE_ASSIGNED ||
+        item.type === NOTIFICATION_TYPE.ASSIGNED
+          ? "assigned"
           : "pending";
+
+      console.log("=== NAVIGATING TO BUNDLE DETAILS ===");
+      console.log("Nav Params:", {
+        id: extractedId,
+        type: item.type,
+        status: targetStatus,
+      });
 
       router.navigate({
         pathname: "/(app)/bundles/[id]",
@@ -302,89 +329,114 @@ export default function NotificationScreen() {
 
   function renderNotification({ item }: { item: NotificationType }) {
     return (
-      <NotificationCard
-        item={item}
-        onPress={() => handleNotificationPress(item)}
-      />
+      <View px="lg">
+        <NotificationCard
+          item={item}
+          onPress={() => handleNotificationPress(item)}
+        />
+      </View>
     );
   }
 
-  function renderSectionHeader({ section: { title } }: { section: { title: string } }) {
+  function renderSectionHeader({
+    section: { title },
+  }: {
+    section: { title: string };
+  }) {
     return (
-      <Text variant="h3" weight="bold" py="md">
-        {title}
-      </Text>
+      <View px="lg">
+        <Text variant="h3" weight="bold" py="md">
+          {title}
+        </Text>
+      </View>
     );
   }
 
   return (
-    <View flex bg={theme.colors.background} p="lg">
-      <Header title="Notifications" />
-
-      {notificationPermission !== "granted" &&
-        notificationPermission !== null && (
-          <View
-            bg="orange"
-            p="lg"
-            mb="lg"
-            center
-            gap="md"
-            radius="lg"
-          >
-            <Text variant="h3" weight="bold" color="white" align="center">
-              Enable Notifications
-            </Text>
-
-            <Text variant="body" color="white" align="center">
-              Turn on notifications to stay updated about your orders and
-              deliveries
-            </Text>
-
-            <Button
-              variant="secondary"
-              onPress={handleEnableNotifications}
-            >
-              Turn On Notifications
-            </Button>
-          </View>
-        )}
+    <View flex bg={theme.colors.background}>
+      <View px="lg" pt="lg">
+        <Header title="Notifications" />
+      </View>
 
       {isFetchingNotifications ? (
-        <View gap="lg">
+        <View flex px="lg" gap="lg" mt="lg">
           {[1, 2, 3].map((i) => (
             <NotificationSkeleton key={i} />
           ))}
         </View>
-      ) : sections.length === 0 ? (
-        <View flex p="lg" justify="center">
+      ) : notificationError ? (
+        <View flex center px="lg">
           <Card variant="elevated" style={styles.emptyCard}>
-            <View bg="grey6" p="xl" radius="lg" style={styles.emptyIcon}>
+            <View bg="grey6" p="lg" radius="lg" style={styles.emptyIcon}>
               <Icon
-                type="material-community"
-                name="bell-off-outline"
-                size={40}
-                color={theme.colors.gray10}
+                type="material"
+                name="error-outline"
+                size={32}
+                color={theme.colors.red1}
               />
             </View>
             <Text variant="h3" weight="bold" align="center">
-              No notifications yet
+              Connection Error
             </Text>
-            <Text
-              variant="body"
-              color="gray10"
-              align="center"
-              style={styles.emptySubtext}
-            >
-              We&apos;ll let you know when something important happens
+            <Text variant="body" align="center" color="gray10">
+              Unable to load notifications. Please check your connection and
+              try again.
             </Text>
           </Card>
         </View>
       ) : (
         <SectionList
+          style={{ flex: 1 }}
           sections={sections}
           keyExtractor={(item) => item._id || Math.random().toString()}
           renderItem={renderNotification}
           renderSectionHeader={renderSectionHeader}
+          ListHeaderComponent={
+            notificationPermission !== "granted" &&
+            notificationPermission !== null ? (
+              <View px="lg">
+                <View bg="orange" p="lg" mb="lg" center gap="md" radius="lg">
+                  <Text variant="h3" weight="bold" color="white" align="center">
+                    Enable Notifications
+                  </Text>
+
+                  <Text variant="body" color="white" align="center">
+                    Turn on notifications to stay updated about your orders and
+                    deliveries
+                  </Text>
+
+                  <Button variant="secondary" onPress={handleEnableNotifications}>
+                    Turn On Notifications
+                  </Button>
+                </View>
+              </View>
+            ) : null
+          }
+          ListEmptyComponent={
+            <View center px="lg">
+              <Card variant="elevated" style={styles.emptyCard}>
+                <View bg="grey6" p="xl" radius="lg" style={styles.emptyIcon}>
+                  <Icon
+                    type="material-community"
+                    name="bell-off-outline"
+                    size={40}
+                    color={theme.colors.gray10}
+                  />
+                </View>
+                <Text variant="h3" weight="bold" align="center">
+                  No notifications yet
+                </Text>
+                <Text
+                  variant="body"
+                  color="gray10"
+                  align="center"
+                  style={styles.emptySubtext}
+                >
+                  We&apos;ll let you know when something important happens
+                </Text>
+              </Card>
+            </View>
+          }
           refreshControl={
             <RefreshControl
               refreshing={isRefreshing}
@@ -393,7 +445,10 @@ export default function NotificationScreen() {
               tintColor={theme.colors.orange}
             />
           }
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={[
+            styles.listContent,
+            sections.length === 0 && { flexGrow: 1, justifyContent: "center" },
+          ]}
         />
       )}
 
@@ -432,6 +487,8 @@ const styles = StyleSheet.create({
     padding: theme.spacing.xl,
     alignItems: "center",
     gap: theme.spacing.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.grey7,
   },
   emptyIcon: {
     width: 80,

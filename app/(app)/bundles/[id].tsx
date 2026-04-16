@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   RefreshControl,
   StyleSheet,
   ScrollView,
   FlatList,
+  Pressable,
 } from "react-native";
 import moment from "moment";
 import "moment-timezone";
@@ -37,6 +38,7 @@ interface BundlesCardProps {
   requestStatus?: string;
   isRequestView?: boolean;
   hideActionButtons?: boolean;
+  onNavigate?: () => void;
 }
 
 function BundlesCard({
@@ -48,6 +50,7 @@ function BundlesCard({
   requestStatus,
   isRequestView,
   hideActionButtons,
+  onNavigate,
 }: BundlesCardProps) {
   const formattedDateTime = item.deliveryDate
     ? moment.tz(item.deliveryDate, "Asia/Kolkata").format("DD MMM, YYYY")
@@ -67,96 +70,127 @@ function BundlesCard({
   };
   const status = formatStatus(item.status || "N/A");
 
+  const handlePress = () => {
+    console.log("=== BUNDLE CARD PRESSED ===");
+    console.log("isRequestView:", isRequestView);
+    if (isRequestView && onNavigate) {
+      onNavigate();
+    } else if (!isRequestView && onSelect) {
+      onSelect();
+    }
+  };
+
   return (
-    <Card
-      variant={isSelected || requestStatus ? "outlined" : "elevated"}
-      style={[
-        styles.bundleCard,
-        (isSelected || requestStatus) && styles.bundleCardSelected,
-        requestStatus === STATUS.APPROVED && styles.bundleCardApproved,
-        requestStatus === STATUS.REJECTED && styles.bundleCardRejected,
-        isExpired && styles.bundleCardExpired,
-      ]}
-    >
-      <View gap="md">
-        <View row justify="space-between" align="center">
-          <View
-            bg={isExpired ? "grey8" : isSelected ? "success0" : "orange"}
-            px="md"
-            py="sm"
-            radius="full"
-          >
-            <Text
-              variant="body-sm"
-              weight="bold"
-              color="white"
-            >
-              #{String(bundleNumber).padStart(2, "0")}
-            </Text>
-          </View>
+    <View mb="lg" mx="lg">
+      <Pressable
+        onPress={handlePress}
+        style={({ pressed }) => [
+          {
+            opacity: pressed && (isRequestView || !hideActionButtons) ? 0.7 : 1,
+          },
+        ]}
+      >
+        <Card
+          variant={isSelected || requestStatus ? "outlined" : "elevated"}
+          style={[
+            (isSelected || requestStatus) && styles.bundleCardSelected,
+            requestStatus === STATUS.APPROVED && styles.bundleCardApproved,
+            requestStatus === STATUS.REJECTED && styles.bundleCardRejected,
+            isExpired && styles.bundleCardExpired,
+          ]}
+        >
+          <View gap="md" p="md">
+            <View row justify="space-between" align="center">
+              <View
+                bg={isExpired ? "grey8" : isSelected ? "success0" : "orange"}
+                px="md"
+                py="sm"
+                radius="full"
+              >
+                <Text variant="body-sm" weight="bold" color="white">
+                  #{String(bundleNumber).padStart(2, "0")}
+                </Text>
+              </View>
 
-          {!isExpired && !requestStatus && !isRequestView && !hideActionButtons && (
-            <Button
-              variant={isSelected ? "primary" : "secondary"}
-              size="icon"
-              onPress={onSelect}
-              style={styles.selectButton}
-            >
-              {isSelected ? (
-                <Icon name="check" type="feather" size={20} color="white" />
-              ) : (
-                <View style={styles.emptyCheckbox} />
-              )}
-            </Button>
-          )}
-
-        </View>
-
-        <Text variant="h3" weight="bold" numberOfLines={2}>
-          {premisesName}
-        </Text>
-
-        <View gap="md">
-          <View row gap="md">
-            <StatBox
-              icon="package"
-              label="Quantity"
-              value={quantity.toString()}
-            />
-            <StatBox
-              icon="map-pin"
-              label="Pincode"
-              value={pickupLocation}
-            />
-          </View>
-
-          <InfoBox icon="home" label="Apartment Code" value={apartmentCode} />
-          <InfoBox icon="calendar" label="Delivery Date" value={formattedDateTime} />
-        </View>
-
-        <View row gap="sm" wrap>
-          <View bg="grey6" px="md" py="sm" radius="md">
-            <Text variant="caption" weight="semibold">
-              Bundle Status: {status}
-            </Text>
-          </View>
-
-          {requestStatus && (
-            <View
-              bg={requestStatus === STATUS.APPROVED ? "success0" : "red1"}
-              px="md"
-              py="sm"
-              radius="md"
-            >
-              <Text variant="caption" weight="semibold" color="white">
-                Request Status:{" "}
-                {requestStatus.charAt(0).toUpperCase() + requestStatus.slice(1)}
-              </Text>
+              {!isExpired &&
+                (isRequestView
+                  ? !hideActionButtons
+                  : !requestStatus && !isRequestView && !hideActionButtons) && (
+                  <Button
+                    variant={
+                      isRequestView ? "secondary" : isSelected ? "primary" : "secondary"
+                    }
+                    size="icon"
+                    onPress={handlePress} // Use same handler
+                    style={styles.selectButton}
+                  >
+                    {isRequestView ? (
+                      <Icon
+                        name="chevron-right"
+                        type="feather"
+                        size={20}
+                        color={theme.colors.orange}
+                      />
+                    ) : isSelected ? (
+                      <Icon name="check" type="feather" size={20} color="white" />
+                    ) : (
+                      <View style={styles.emptyCheckbox} />
+                    )}
+                  </Button>
+                )}
             </View>
-          )}
-        </View>
-      </View>
-    </Card>
+
+            <Text variant="h3" weight="bold" numberOfLines={2}>
+              {premisesName}
+            </Text>
+
+            <View gap="md">
+              <View row gap="md">
+                <StatBox
+                  icon="package"
+                  label="Quantity"
+                  value={quantity.toString()}
+                />
+                <StatBox
+                  icon="map-pin"
+                  label="Pincode"
+                  value={pickupLocation}
+                />
+              </View>
+
+              <InfoBox icon="home" label="Apartment Code" value={apartmentCode} />
+              <InfoBox
+                icon="calendar"
+                label="Delivery Date"
+                value={formattedDateTime}
+              />
+            </View>
+
+            <View row gap="sm" wrap>
+              <View bg="grey6" px="md" py="sm" radius="md">
+                <Text variant="caption" weight="semibold">
+                  Bundle Status: {status}
+                </Text>
+              </View>
+
+              {requestStatus && (
+                <View
+                  bg={requestStatus === STATUS.APPROVED ? "success0" : "red1"}
+                  px="md"
+                  py="sm"
+                  radius="md"
+                >
+                  <Text variant="caption" weight="semibold" color="white">
+                    Request Status:{" "}
+                    {requestStatus.charAt(0).toUpperCase() + requestStatus.slice(1)}
+                  </Text>
+                </View>
+              )}
+            </View>
+          </View>
+        </Card>
+      </Pressable>
+    </View>
   );
 }
 
@@ -185,7 +219,7 @@ function StatBox({
           <Text variant="caption" color="gray10">
             {label}
           </Text>
-          <Text variant="body" weight="bold">
+          <Text variant="lg" weight="bold">
             {value}
           </Text>
         </View>
@@ -219,7 +253,7 @@ function InfoBox({
           <Text variant="caption" color="gray10">
             {label}
           </Text>
-          <Text variant="body" weight="bold">
+          <Text variant="lg" weight="bold">
             {value}
           </Text>
         </View>
@@ -265,6 +299,11 @@ export default function BundleScreen() {
     status: string;
   }>();
 
+  console.log("=== BUNDLE DETAILS PARAMS ===");
+  console.log("type:", type);
+  console.log("id:", id);
+  console.log("status:", queryStatus);
+
   // State
   const [selectedBundles, setSelectedBundles] = useState<string[]>([]);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -287,19 +326,46 @@ export default function BundleScreen() {
   const { data: settings } = useSettings();
 
   const isBundleView =
-    type === "bundle_available" || queryStatus === "approved";
+    type === "bundle_available" ||
+    type === "assigned" ||
+    type === "bundle_assigned" ||
+    queryStatus === "approved" ||
+    queryStatus === "assigned";
+
+  const isNavigationMode =
+    type === "assigned" ||
+    type === "bundle_assigned" ||
+    queryStatus === "approved" ||
+    queryStatus === "assigned";
+
+  console.log("=== VIEW STATE ===");
+  console.log("isBundleView:", isBundleView);
+  console.log("isNavigationMode:", isNavigationMode);
 
   const { data: bundleData, isLoading: isBundleLoading, isError: bundleIsError, refetch: refetchBundles } = useBundlesByIds({
     _id: idArray,
     status: (queryStatus as string) || BUNDLE_STATUS.PENDING,
   });
 
+  useEffect(() => {
+    if (bundleData) {
+      console.log("=== BUNDLE DATA RECEIVED ===");
+      console.log(JSON.stringify(bundleData, null, 2));
+    }
+  }, [bundleData]);
+
   const getHeaderTitle = () => {
     if (queryStatus === "approved") return "Approved Bundle";
+    if (
+      queryStatus === "assigned" ||
+      type === "assigned" ||
+      type === "bundle_assigned"
+    )
+      return "Bundle Details";
     if (type === "bundle_available") return "Available Bundle";
     if (type?.includes("rejected")) return "Rejected Request";
     if (isBundleView) return "Bundle Details";
-    return "Request Details";
+    return "Bundle Details";
   };
 
   const headerTitle = getHeaderTitle();
@@ -325,12 +391,14 @@ export default function BundleScreen() {
   // Derived data
   const bundles: BundleType[] = isBundleView
     ? bundleData?.bundles || []
-    : (() => {
-        const request = requestData?.requests?.find((req: any) => req._id === id);
-        if (request && request.bundleId) {
-          return [
-            {
-              ...request.bundleId,
+      : (() => {
+          const request = requestData?.requests?.find(
+            (req: any) => req._id === id || req.bundleId?._id === id
+          );
+          if (request && request.bundleId) {
+            return [
+              {
+                ...request.bundleId,
               servicedPremisesId:
                 request.bundleId.servicedPremisesId ||
                 request.servicedPremisesId ||
@@ -438,6 +506,28 @@ export default function BundleScreen() {
     });
   }
 
+  const isNavigating = useRef(false);
+
+  function handleNavigateToOrders(bundleId: string) {
+    if (isNavigating.current) return;
+
+    isNavigating.current = true;
+    console.log("=== NAVIGATING TO BUNDLE ORDERS ===");
+    console.log("Role:", auth?.user?.role);
+    console.log("Bundle ID:", bundleId);
+
+    if (auth?.user?.role === Role.DELIVERY_AGENT) {
+      router.push(`/(app)/pending-deliveries/${bundleId}`);
+    } else if (auth?.user?.role === Role.SUPPLIER) {
+      router.push(`/(app)/supplier/${bundleId}`);
+    }
+
+    // Reset lock after a short delay to allow future navigation (e.g. if user comes back)
+    setTimeout(() => {
+      isNavigating.current = false;
+    }, 1000);
+  }
+
   async function handleAcceptJob() {
     if (selectedBundles.length === 0) return;
 
@@ -475,7 +565,7 @@ export default function BundleScreen() {
       ? requestData?.requests?.find((req: any) => req.bundleId._id === bundle._id)?.status
       : undefined,
   }));
-
+  // Helper inside render to use derived state
   function renderBundleCard({ item }: { item: BundleType & { requestStatus?: string } }) {
     const isExpired =
       item.deliveryDate &&
@@ -486,10 +576,11 @@ export default function BundleScreen() {
         item={item}
         isSelected={selectedBundles.includes(item._id as string)}
         onSelect={() => handleSelectBundle(item._id as string, !!isExpired)}
+        onNavigate={() => handleNavigateToOrders(item._id as string)}
         isExpired={!!isExpired}
         userRole={auth?.user?.role}
         requestStatus={queryStatus === "approved" ? "approved" : item.requestStatus}
-        isRequestView={!isBundleView}
+        isRequestView={isNavigationMode} // Corrected
         hideActionButtons={queryStatus === "approved" || item.requestStatus === "approved" || item.requestStatus === "rejected"}
       />
     );

@@ -5,12 +5,13 @@ import {
 import { useGetOrdersByBundleIdQuery } from "@/services/bundle/bundles.service";
 
 export function useOrderHistory() {
-  const { data, isLoading, isError, refetch } = useGetOrderHistoryQuery({ payload: {} });
+  const { data, isLoading, isError, error, refetch } = useGetOrderHistoryQuery({ payload: {} });
 
   return {
     data,
     isLoading,
     isError,
+    error,
     refetch,
   };
 }
@@ -30,12 +31,13 @@ export function useOrdersByBundleId(bundleId: string) {
 }
 
 export function useOrdersForSecurity() {
-  const { data, isLoading, isError, refetch } = useGetOrdersForSecurityQuery({ payload: {} });
+  const { data, isLoading, isError, error, refetch } = useGetOrdersForSecurityQuery({ payload: {} });
 
   return {
     data,
     isLoading,
     isError,
+    error,
     refetch,
   };
 }

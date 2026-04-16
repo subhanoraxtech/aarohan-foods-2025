@@ -6,57 +6,62 @@ import { theme } from "@/theme";
 export const BundleCardSkeleton: React.FC = () => {
   return (
     <View style={styles.container}>
+      {/* Header: Badge + Arrow */}
       <View style={styles.header}>
-        <Skeleton width={60} height={32} borderRadius={theme.borderRadius.full} />
-        <Skeleton width={36} height={36} borderRadius={18} />
+        <Skeleton width={50} height={28} borderRadius={theme.borderRadius.md} />
+        <Skeleton width={36} height={36} borderRadius={theme.borderRadius.lg} />
       </View>
 
-      <Skeleton width="80%" height={28} style={styles.title} />
+      {/* Title (Premises Name) */}
+      <Skeleton width="80%" height={24} style={styles.title} />
 
-      <View style={styles.statsRow}>
-        <View style={styles.statBox}>
-          <View style={styles.iconRow}>
-            <Skeleton width={36} height={36} borderRadius={10} />
+      {/* Info Grid (Quantity & Pincode) */}
+      <View style={styles.grid}>
+        <View style={styles.gridItem}>
+          <View style={styles.row}>
+            <Skeleton width={32} height={32} borderRadius={theme.borderRadius.md} />
             <View style={styles.textGroup}>
-              <Skeleton width={50} height={14} />
-              <Skeleton width={40} height={20} style={styles.mtXs} />
+              <Skeleton width={50} height={12} />
+              <Skeleton width={40} height={18} style={styles.mtXs} />
             </View>
           </View>
         </View>
-
-        <View style={styles.statBox}>
-          <View style={styles.iconRow}>
-            <Skeleton width={36} height={36} borderRadius={10} />
+        <View style={styles.gridItem}>
+          <View style={styles.row}>
+            <Skeleton width={32} height={32} borderRadius={theme.borderRadius.md} />
             <View style={styles.textGroup}>
-              <Skeleton width={50} height={14} />
-              <Skeleton width={60} height={20} style={styles.mtXs} />
+              <Skeleton width={40} height={12} />
+              <Skeleton width={60} height={18} style={styles.mtXs} />
             </View>
           </View>
         </View>
       </View>
 
-      <View style={styles.fullWidthBox}>
-        <View style={styles.iconRow}>
-          <Skeleton width={36} height={36} borderRadius={10} />
+      {/* Apartment Code Box */}
+      <View style={styles.greyBox}>
+        <View style={styles.row}>
+          <Skeleton width={32} height={32} borderRadius={theme.borderRadius.md} />
           <View style={styles.textGroup}>
-            <Skeleton width={100} height={14} />
-            <Skeleton width={80} height={20} style={styles.mtXs} />
+            <Skeleton width={80} height={12} />
+            <Skeleton width={100} height={18} style={styles.mtXs} />
           </View>
         </View>
       </View>
 
-      <View style={styles.fullWidthBox}>
-        <View style={styles.iconRow}>
-          <Skeleton width={36} height={36} borderRadius={10} />
+      {/* Delivery Date Box */}
+      <View style={styles.greyBox}>
+        <View style={styles.row}>
+          <Skeleton width={32} height={32} borderRadius={theme.borderRadius.md} />
           <View style={styles.textGroup}>
-            <Skeleton width={80} height={14} />
-            <Skeleton width={120} height={20} style={styles.mtXs} />
+            <Skeleton width={70} height={12} />
+            <Skeleton width={120} height={18} style={styles.mtXs} />
           </View>
         </View>
       </View>
 
+      {/* Status Badge */}
       <View style={styles.footer}>
-        <Skeleton width={120} height={28} borderRadius={12} />
+        <Skeleton width={150} height={24} borderRadius={theme.borderRadius.md} />
       </View>
     </View>
   );
@@ -69,7 +74,6 @@ const styles = StyleSheet.create({
     padding: theme.spacing.lg,
     marginHorizontal: theme.spacing.lg,
     marginBottom: theme.spacing.lg,
-    ...theme.shadows.md,
     borderWidth: 1,
     borderColor: theme.colors.grey7,
   },
@@ -82,18 +86,24 @@ const styles = StyleSheet.create({
   title: {
     marginBottom: theme.spacing.lg,
   },
-  statsRow: {
+  grid: {
     flexDirection: "row",
     gap: theme.spacing.md,
     marginBottom: theme.spacing.md,
   },
-  statBox: {
+  gridItem: {
     flex: 1,
     backgroundColor: theme.colors.grey6,
     borderRadius: theme.borderRadius.md,
     padding: theme.spacing.md,
   },
-  iconRow: {
+  greyBox: {
+    backgroundColor: theme.colors.grey6,
+    borderRadius: theme.borderRadius.md,
+    padding: theme.spacing.md,
+    marginBottom: theme.spacing.md,
+  },
+  row: {
     flexDirection: "row",
     alignItems: "center",
     gap: theme.spacing.sm,
@@ -104,13 +114,8 @@ const styles = StyleSheet.create({
   mtXs: {
     marginTop: theme.spacing.xs,
   },
-  fullWidthBox: {
-    backgroundColor: theme.colors.grey6,
-    borderRadius: theme.borderRadius.md,
-    padding: theme.spacing.md,
-    marginBottom: theme.spacing.md,
-  },
   footer: {
+    alignItems: "flex-start",
     marginTop: theme.spacing.sm,
   },
 });

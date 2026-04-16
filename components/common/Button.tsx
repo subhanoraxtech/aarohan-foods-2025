@@ -1,12 +1,12 @@
 import React from "react";
 import {
   TouchableOpacity,
-  Text,
   ActivityIndicator,
   StyleSheet,
   ViewStyle,
   TextStyle,
 } from "react-native";
+import { Text } from "../ui/Text";
 import { theme } from "@/theme";
 
 interface ButtonProps {
@@ -70,14 +70,9 @@ const Button = ({
       ]}
     >
       <Text
-        style={[
-          styles.text,
-          {
-            color: textColor,
-            fontWeight,
-            fontFamily: theme.typography.fontFamily.semibold,
-          },
-        ]}
+        variant="body"
+        weight="semibold"
+        style={{ color: textColor }}
       >
         {children}
       </Text>

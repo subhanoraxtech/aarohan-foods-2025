@@ -23,7 +23,7 @@ import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router";
 import { useOrdersByBundleId } from "@/hooks/useOrders";
 import { useUpdateOrderRequest } from "@/hooks/useRequests";
 import { theme } from "@/theme";
-import { Skeleton } from "@/components/skeletons";
+import { Skeleton, DeliveryCardSkeleton } from "@/components/skeletons";
 
 interface Delivery {
   id: string;
@@ -167,7 +167,7 @@ const DeliveryCard = ({
               <Text variant="caption" color="gray10">
                 Amount
               </Text>
-              <Text variant="h3" weight="bold">
+              <Text variant="lg" weight="bold">
                 ₹{item.totalAmount}
               </Text>
             </View>
@@ -178,7 +178,7 @@ const DeliveryCard = ({
               <Text variant="caption" color="gray10">
                 Pincode
               </Text>
-              <Text variant="h3" weight="bold">
+              <Text variant="lg" weight="bold">
                 {item.pincode}
               </Text>
             </View>
@@ -510,14 +510,14 @@ const DeliveryScreen = () => {
   if (loading) {
     return (
       <View style={{ flex: 1 }} bg="grey6">
-        <Header title="Pending Orders" />
-        <View style={{ flex: 1 }} center p="xl" gap="lg">
-          <View bg="white" p="xl" radius="lg" center gap="md">
-            <Skeleton width={60} height={60} borderRadius={30} />
-            <Skeleton width={150} height={24} />
-            <Skeleton width={200} height={16} />
+        <Header title="Pending Deliveries" />
+        <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
+          <View p="lg" gap="md">
+            <DeliveryCardSkeleton />
+            <DeliveryCardSkeleton />
+            <DeliveryCardSkeleton />
           </View>
-        </View>
+        </ScrollView>
       </View>
     );
   }
