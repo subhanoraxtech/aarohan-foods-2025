@@ -1,1 +1,1 @@
-export const API_URL = "https://cloud-kitchen-backend-wq1x.onrender.com/api";
+export const API_URL = "https://apis-07gq.onrender.com/api";

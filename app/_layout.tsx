@@ -1,3 +1,25 @@
+// Robust polyfill for localStorage to prevent crashes in Node.js environments (e.g. during bundling/SSR)
+if (typeof globalThis !== 'undefined' && (typeof globalThis.localStorage === 'undefined' || !globalThis.localStorage?.getItem)) {
+  const mockStorage = {
+    getItem: () => null,
+    setItem: () => null,
+    removeItem: () => null,
+    clear: () => null,
+    key: () => null,
+    length: 0,
+  };
+  try {
+    Object.defineProperty(globalThis, 'localStorage', {
+      value: mockStorage,
+      writable: true,
+      configurable: true
+    });
+  } catch (e) {
+    // Fallback if defineProperty fails
+    (globalThis as any).localStorage = mockStorage;
+  }
+}
+
 import {
   useFonts,
   Roboto_300Light,
