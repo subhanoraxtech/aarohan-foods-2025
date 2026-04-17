@@ -154,7 +154,7 @@ export default function LoginScreen() {
                 name="acceptedTerms"
                 render={({ field: { onChange, value } }) => (
                   <View gap="sm">
-                    <View row center gap="sm" px="md">
+                    <View row align="center" gap="xs">
                       <TouchableOpacity
                         onPress={() => onChange(!value)}
                         style={[
@@ -166,16 +166,15 @@ export default function LoginScreen() {
                           <Icon
                             name="check"
                             type="feather"
-                            size={16}
+                            size={14}
                             color="white"
                           />
                         )}
                       </TouchableOpacity>
 
                       <View style={styles.termsContainer}>
-                        <View row center>
+                        <View row align="center">
                           <Text variant="caption">
-                            {" "}
                             By proceeding, I agree to{" "}
                           </Text>
                           <TouchableOpacity
@@ -269,9 +268,9 @@ const styles = StyleSheet.create({
     lineHeight: 48,
   },
   checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 6,
+    width: 20,
+    height: 20,
+    borderRadius: 4,
     borderWidth: 2,
     borderColor: theme.colors.orange,
     alignItems: "center",

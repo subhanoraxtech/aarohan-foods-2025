@@ -4,7 +4,6 @@ import {
   useSendOtpMutation,
   useVerifyOtpMutation,
   useResendOtpMutation,
-  useLogoutMutation,
 } from "@/services/auth.service";
 import { User } from "@/types/User";
 
@@ -31,9 +30,6 @@ interface AuthResponse {
   data: AuthResponseData;
 }
 
-interface LogoutPayload {
-  expoToken: string;
-}
 
 async function storeUserData(data: AuthResponseData) {
   await AsyncStorage.setItem("user", JSON.stringify(data.user));
@@ -119,16 +115,13 @@ export function useResendOtp() {
 }
 
 export function useLogout() {
-  const [logout, { isLoading }] = useLogoutMutation();
-
-  const mutateAsync = async (payload: LogoutPayload) => {
-    const response = await logout(payload).unwrap();
+  const mutateAsync = async () => {
     await clearUserData();
-    return response;
+    return { success: true };
   };
 
   return {
     mutateAsync,
-    isPending: isLoading,
+    isPending: false,
   };
 }

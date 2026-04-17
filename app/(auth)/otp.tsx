@@ -196,6 +196,10 @@ export default function OtpScreen() {
               <Button
                 variant="ghost"
                 size="sm"
+                textStyle={{
+                  color: theme.colors.orange,
+                  textDecorationLine: "underline",
+                }}
                 disabled={timeLeft > 0 || resendLoading}
                 onPress={handleResendOtp}
               >

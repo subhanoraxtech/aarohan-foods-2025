@@ -5,7 +5,9 @@ import { View } from "@/components/ui/View";
 import { Text } from "@/components/ui/Text";
 import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/hooks/useAuth";
-import { useLogoutMutation } from "@/services/auth.service";
+import { useLogout, clearUserData } from "@/hooks/useAuthQuery";
+import { logoutUser } from "@/store/slice/user.slice";
+import { useDispatch } from "react-redux";
 import Icon from "@/components/common/Icon";
 import { Role } from "@/types/enums";
 import { getExpoPushTokenSilently } from "@/utils/pushNotification";
@@ -57,19 +59,20 @@ export default function HomeScreen() {
 
 function SupplierHomeScreen() {
   const router = useRouter();
+  const dispatch = useDispatch();
   const { setLoading } = useLoading();
-  const [logout] = useLogoutMutation();
 
   const handleLogout = async () => {
     try {
       setLoading(true, "Logging out...");
-      const expoToken = await getExpoPushTokenSilently();
-      if (expoToken) {
-        await logout({ expoToken: String(expoToken) }).unwrap();
-      }
+      // Clear storage
+      await clearUserData();
+      // Clear redux
+      dispatch(logoutUser());
+      // Navigate to login
       router.replace("/(auth)/login");
     } catch (error) {
-      console.error("Logout API error:", error);
+      console.error("Logout error:", error);
     } finally {
       setLoading(false);
     }
@@ -186,19 +189,20 @@ function SupplierHomeScreen() {
 
 function AgentHomeScreen() {
   const router = useRouter();
+  const dispatch = useDispatch();
   const { setLoading } = useLoading();
-  const [logout] = useLogoutMutation();
 
   const handleLogout = async () => {
     try {
       setLoading(true, "Logging out...");
-      const expoToken = await getExpoPushTokenSilently();
-      if (expoToken) {
-        await logout({ expoToken: String(expoToken) }).unwrap();
-      }
+      // Clear storage
+      await clearUserData();
+      // Clear redux
+      dispatch(logoutUser());
+      // Navigate to login
       router.replace("/(auth)/login");
     } catch (error) {
-      console.error("Logout API error:", error);
+      console.error("Logout error:", error);
     } finally {
       setLoading(false);
     }

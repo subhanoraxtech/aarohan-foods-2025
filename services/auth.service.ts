@@ -44,17 +44,6 @@ export const authApi = createApi({
         },
       }),
     }),
-
-    logout: builder.mutation<any, { expoToken: string }>({
-      query: ({ expoToken }) => ({
-        url: `${PREFIX}/logout`,
-        method: "POST",
-        body: { expoToken },
-        headers: {
-          "x-app-type": "ops",
-        },
-      }),
-    }),
   }),
 });
 
@@ -62,5 +51,4 @@ export const {
   useSendOtpMutation,
   useVerifyOtpMutation,
   useResendOtpMutation,
-  useLogoutMutation,
 } = authApi;
