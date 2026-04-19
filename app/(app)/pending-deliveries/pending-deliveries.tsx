@@ -1,19 +1,19 @@
-import React, { useCallback, useState } from "react";
-import { FlatList, Pressable, RefreshControl, StyleSheet } from "react-native";
-import { View } from "@/components/ui/View";
-import { Text } from "@/components/ui/Text";
-import { Card } from "@/components/ui/Card";
-import { Button } from "@/components/ui/Button";
-import Icon from "@/components/common/Icon";
 import Header from "@/components/common/Header";
+import Icon from "@/components/common/Icon";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { Text } from "@/components/ui/Text";
+import { View } from "@/components/ui/View";
+import { router, useFocusEffect } from "expo-router";
 import moment from "moment";
 import "moment-timezone";
-import { router, useFocusEffect } from "expo-router";
+import React, { useCallback, useState } from "react";
+import { FlatList, Pressable, RefreshControl, StyleSheet } from "react-native";
 
-import { useBundles } from "@/hooks/useBundles";
-import { BundleType } from "@/types/bundleTypes";
-import { theme } from "@/theme";
 import { ListSkeleton } from "@/components/skeletons";
+import { useBundles } from "@/hooks/useBundles";
+import { theme } from "@/theme";
+import { BundleType } from "@/types/bundleTypes";
 
 const PendingCard = ({
   item,
@@ -28,15 +28,16 @@ const PendingCard = ({
 
   const formatStatus = (status: string) => {
     return status
-      .split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
+      .split("-")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
   };
 
   const bundleNumber = item.bundleNumber;
   const quantity = item.totalOrders || 0;
   const pickupLocation = item.servicedPremisesId?.pincode || "N/A";
-  const premisesName = item.servicedPremisesId?.apartmentName || "Unknown Premises";
+  const premisesName =
+    item.servicedPremisesId?.apartmentName || "Unknown Premises";
   const status = formatStatus(item.status || "N/A");
 
   return (
@@ -47,12 +48,23 @@ const PendingCard = ({
           <View row justify="space-between" align="center">
             <View bg="orange" px="md" py="sm" radius="md">
               <Text variant="body" weight="bold" color="white">
-                #{String(bundleNumber).padStart(2, "0")}
+                Bundle Number - {String(bundleNumber).padStart(2, "0")}
               </Text>
             </View>
 
-            <View bg="orange" p="sm" radius="lg" center style={styles.arrowButton}>
-              <Icon name="chevron-right" type="feather" size={20} color="white" />
+            <View
+              bg="orange"
+              p="sm"
+              radius="lg"
+              center
+              style={styles.arrowButton}
+            >
+              <Icon
+                name="chevron-right"
+                type="feather"
+                size={20}
+                color="white"
+              />
             </View>
           </View>
 
@@ -67,12 +79,22 @@ const PendingCard = ({
               {/* Quantity Card */}
               <View flex bg="grey6" radius="md" p="md">
                 <View row align="center" gap="sm">
-                  <View bg="white" p="sm" radius="md" style={styles.iconContainer}>
-                    <Icon name="package" type="feather" size={16} color={theme.colors.orange} />
+                  <View
+                    bg="white"
+                    p="sm"
+                    radius="md"
+                    style={styles.iconContainer}
+                  >
+                    <Icon
+                      name="package"
+                      type="feather"
+                      size={16}
+                      color={theme.colors.orange}
+                    />
                   </View>
                   <View flex>
                     <Text variant="caption" color="gray10">
-                      Quantity
+                      Total Quantity
                     </Text>
                     <Text variant="lg" weight="bold">
                       {quantity}
@@ -84,8 +106,18 @@ const PendingCard = ({
               {/* Pincode Card */}
               <View flex bg="grey6" radius="md" p="md">
                 <View row align="center" gap="sm">
-                  <View bg="white" p="sm" radius="md" style={styles.iconContainer}>
-                    <Icon name="map-pin" type="feather" size={16} color={theme.colors.orange} />
+                  <View
+                    bg="white"
+                    p="sm"
+                    radius="md"
+                    style={styles.iconContainer}
+                  >
+                    <Icon
+                      name="map-pin"
+                      type="feather"
+                      size={16}
+                      color={theme.colors.orange}
+                    />
                   </View>
                   <View flex>
                     <Text variant="caption" color="gray10">
@@ -99,18 +131,55 @@ const PendingCard = ({
               </View>
             </View>
 
-            {/* Apartment Code Card */}
+            {/* Apartment Name Card */}
             <View bg="grey6" radius="md" p="md">
               <View row align="center" gap="sm">
-                <View bg="white" p="sm" radius="md" style={styles.iconContainer}>
-                  <Icon name="home" type="feather" size={16} color={theme.colors.orange} />
+                <View
+                  bg="white"
+                  p="sm"
+                  radius="md"
+                  style={styles.iconContainer}
+                >
+                  <Icon
+                    name="home"
+                    type="feather"
+                    size={16}
+                    color={theme.colors.orange}
+                  />
                 </View>
                 <View flex>
                   <Text variant="caption" color="gray10">
-                    Apartment Code
+                    Apartment Name
                   </Text>
                   <Text variant="lg" weight="bold">
-                    {item.servicedPremisesId?.apartmentcode || "N/A"}
+                    {item.servicedPremisesId?.apartmentName || "N/A"}
+                  </Text>
+                </View>
+              </View>
+            </View>
+
+            {/* Area Card */}
+            <View bg="grey6" radius="md" p="md">
+              <View row align="center" gap="sm">
+                <View
+                  bg="white"
+                  p="sm"
+                  radius="md"
+                  style={styles.iconContainer}
+                >
+                  <Icon
+                    name="map"
+                    type="feather"
+                    size={16}
+                    color={theme.colors.orange}
+                  />
+                </View>
+                <View flex>
+                  <Text variant="caption" color="gray10">
+                    Area
+                  </Text>
+                  <Text variant="lg" weight="bold">
+                    {item.servicedPremisesId?.areaName || "N/A"}
                   </Text>
                 </View>
               </View>
@@ -119,8 +188,18 @@ const PendingCard = ({
             {/* Delivery Date Card */}
             <View bg="grey6" radius="md" p="md">
               <View row align="center" gap="sm">
-                <View bg="white" p="sm" radius="md" style={styles.iconContainer}>
-                  <Icon name="calendar" type="feather" size={16} color={theme.colors.orange} />
+                <View
+                  bg="white"
+                  p="sm"
+                  radius="md"
+                  style={styles.iconContainer}
+                >
+                  <Icon
+                    name="calendar"
+                    type="feather"
+                    size={16}
+                    color={theme.colors.orange}
+                  />
                 </View>
                 <View flex>
                   <Text variant="caption" color="gray10">
@@ -163,7 +242,7 @@ export default function PendingDeliveriesScreen() {
   useFocusEffect(
     useCallback(() => {
       refetch();
-    }, [refetch])
+    }, [refetch]),
   );
 
   const onRefresh = useCallback(async () => {
@@ -206,7 +285,12 @@ export default function PendingDeliveriesScreen() {
         <View flex p="lg" justify="center">
           <Card variant="outlined" style={styles.errorCard}>
             <View bg="grey6" p="xl" radius="lg" style={styles.errorIcon}>
-              <Icon type="feather" name="alert-circle" size={32} color={theme.colors.red1} />
+              <Icon
+                type="feather"
+                name="alert-circle"
+                size={32}
+                color={theme.colors.red1}
+              />
             </View>
             <Text variant="h3" weight="bold" align="center">
               Connection Error
@@ -214,7 +298,11 @@ export default function PendingDeliveriesScreen() {
             <Text variant="body" align="center" color="gray10">
               Failed to load pending deliveries. Please check your connection.
             </Text>
-            <Button variant="primary" onPress={() => refetch()} style={styles.retryButton}>
+            <Button
+              variant="primary"
+              onPress={() => refetch()}
+              style={styles.retryButton}
+            >
               Try Again
             </Button>
           </Card>
@@ -248,13 +336,19 @@ export default function PendingDeliveriesScreen() {
           <View flex p="lg" justify="center">
             <Card variant="elevated" style={styles.emptyCard}>
               <View bg="grey6" p="xl" radius="lg" style={styles.emptyIcon}>
-                <Icon type="feather" name="clock" size={40} color={theme.colors.gray10} />
+                <Icon
+                  type="feather"
+                  name="clock"
+                  size={40}
+                  color={theme.colors.gray10}
+                />
               </View>
               <Text variant="h3" weight="bold" align="center">
                 No Pending Deliveries
               </Text>
               <Text variant="body" color="gray10" align="center">
-                All your deliveries have been processed. Check back later for new pending items.
+                All your deliveries have been processed. Check back later for
+                new pending items.
               </Text>
             </Card>
           </View>

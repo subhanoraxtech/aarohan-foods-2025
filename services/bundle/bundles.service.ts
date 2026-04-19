@@ -30,7 +30,10 @@ export const bundlesApi = createApi({
             method: "GET",
           };
         },
-        transformResponse: (response: any) => response.data,
+        transformResponse: (response: any) => {
+          console.log("=== GET ALL BUNDLES RESPONSE ===", response);
+          return response.data;
+        },
         providesTags: ["Bundles"],
       },
     ),
@@ -45,7 +48,10 @@ export const bundlesApi = createApi({
             body: payload,
           };
         },
-        transformResponse: (response: any) => response.data,
+        transformResponse: (response: any) => {
+          console.log("=== GET BUNDLE BY ID RESPONSE ===", response);
+          return response.data;
+        },
       },
     ),
 
@@ -54,7 +60,10 @@ export const bundlesApi = createApi({
         url: `${API_PREFIX}/getOdersbyBundleId/${id}`,
         method: "GET",
       }),
-      transformResponse: (response: any) => response.data,
+      transformResponse: (response: any) => {
+        console.log("=== GET ORDERS BY BUNDLE ID RESPONSE ===", response);
+        return response.data;
+      },
       providesTags: (result, error, { id }) => [
         { type: "Orders", id: `bundle-${id}` },
         "Orders",

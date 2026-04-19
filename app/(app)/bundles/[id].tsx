@@ -386,6 +386,13 @@ export default function BundleScreen() {
     !isBundleView
   );
 
+  useEffect(() => {
+    if (requestData) {
+      console.log("=== REQUEST DATA RECEIVED ===");
+      console.log(JSON.stringify(requestData, null, 2));
+    }
+  }, [requestData]);
+
   const createRequest = useCreateRequest();
 
   // Derived data

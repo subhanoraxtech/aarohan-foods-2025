@@ -77,8 +77,8 @@ const DeliveryCard = ({
         {/* Header Section */}
         <View row justify="space-between" align="center">
           <View bg="orange" px="md" py="sm" radius="md">
-            <Text variant="body" weight="bold" color="white">
-              #{item.orderNumber}
+            <Text variant="caption" weight="bold" color="white">
+              Order Number - {String(item.orderNumber).padStart(2, "0")}
             </Text>
           </View>
 
@@ -259,9 +259,10 @@ const DeliveryCard = ({
           </View>
         ) : item.order_status === "placed" ? (
           <Button
-            variant={isReadyToConfirm ? "primary" : "ghost"}
+            variant="primary"
             onPress={onConfirm}
             disabled={!isReadyToConfirm}
+            style={!isReadyToConfirm ? styles.disabledConfirmButton : undefined}
           >
             {isUpdating ? "Confirming..." : "Confirm Delivery"}
           </Button>
@@ -288,10 +289,11 @@ const FixedJobCompletedButton = ({
   return (
     <View style={styles.fixedButtonContainer}>
       <Button
-        variant={hasPendingDeliveries ? "ghost" : "primary"}
+        variant={hasPendingDeliveries ? "secondary" : "primary"}
         onPress={onJobCompleted}
         disabled={hasPendingDeliveries}
-        style={hasPendingDeliveries ? styles.disabledButton : undefined}
+        style={hasPendingDeliveries ? { backgroundColor: theme.colors.grey7 } : undefined}
+        textStyle={hasPendingDeliveries ? { color: theme.colors.gray10 } : undefined}
       >
         Job Completed
       </Button>
@@ -510,7 +512,7 @@ const DeliveryScreen = () => {
   if (loading) {
     return (
       <View style={{ flex: 1 }} bg="grey6">
-        <Header title="Pending Deliveries" />
+        <Header title="Pending Orders" />
         <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
           <View p="lg" gap="md">
             <DeliveryCardSkeleton />
@@ -525,7 +527,7 @@ const DeliveryScreen = () => {
   if (error) {
     return (
       <View style={{ flex: 1 }} bg="grey6">
-        <Header title="Pending Deliveries" />
+        <Header title="Pending Orders" />
         <View style={{ flex: 1 }} p="lg" justify="center">
           <Card variant="outlined" style={styles.errorCard}>
             <View bg="grey6" p="xl" radius="lg" style={styles.errorIcon}>
@@ -549,7 +551,7 @@ const DeliveryScreen = () => {
   if (deliveries.length === 0) {
     return (
       <View style={{ flex: 1 }} bg="grey6">
-        <Header title="Pending Deliveries" />
+        <Header title="Pending Orders" />
         <View style={{ flex: 1 }} p="lg" justify="center">
           <Card variant="elevated" style={styles.emptyCard}>
             <View bg="grey6" p="xl" radius="lg" style={styles.emptyIcon}>
@@ -570,7 +572,7 @@ const DeliveryScreen = () => {
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
       <View style={{ flex: 1 }} bg="grey6">
-        <Header title="Pending Deliveries" />
+        <Header title="Pending Orders" />
 
         <View style={{ flex: 1 }}>
           <FlatList
@@ -651,8 +653,8 @@ const styles = StyleSheet.create({
     borderTopColor: theme.colors.grey7,
     ...theme.shadows.lg,
   },
-  disabledButton: {
-    opacity: 0.5,
+  disabledConfirmButton: {
+    backgroundColor: theme.colors.grey2,
   },
   errorCard: {
     padding: theme.spacing.xl,

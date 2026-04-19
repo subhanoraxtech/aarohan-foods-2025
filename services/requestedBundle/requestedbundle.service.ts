@@ -78,6 +78,7 @@ export const getrequestApi = createApi({
         }
       },
       transformResponse: (response: any) => {
+        console.log("=== GET ALL REQUESTS RESPONSE ===", response);
         const requests = Array.isArray(response.data?.requests)
           ? response.data.requests
           : response.data?.requests
