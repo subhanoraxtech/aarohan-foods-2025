@@ -28,23 +28,21 @@ interface Order {
   deliveryDate: string;
   status: string;
   totalAmount: number;
+  deliveredAddress: {
+    premisesId: string;
+    apartmentNumber: string;
+    floorNumber: string;
+    blockNumber: string;
+    apartmentName: string;
+    areaName: string;
+    city: string;
+    state: string;
+    country: string;
+    pincode: string;
+  };
   customerId: {
     firstName: string;
     lastName: string;
-    address: {
-      isActive: boolean;
-      apartmentNumber: string;
-      blockNumber: string;
-      premises: {
-        _id: string;
-        apartmentName: string;
-        areaName: string;
-        city: string;
-        state: string;
-        country: string;
-        pincode: string;
-      };
-    }[];
   };
   menuId: {
     name: string;
@@ -124,9 +122,9 @@ const OrderCard = ({
   const statusText = getStatusText(item.status);
   const statusIcon = getStatusIcon(item.status);
 
-  const address = item.customerId?.address?.[0];
+  const address = item.deliveredAddress;
   const fullAddress = address
-    ? `${address.apartmentNumber}, Block ${address.blockNumber}, ${address.premises?.apartmentName}, ${address.premises?.areaName}, ${address.premises?.city}`
+    ? `${address.apartmentNumber}, Floor ${address.floorNumber}, Block ${address.blockNumber}, ${address.apartmentName}, ${address.areaName}, ${address.city}`
     : "N/A";
 
   return (

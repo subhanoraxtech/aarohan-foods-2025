@@ -32,9 +32,10 @@ interface Delivery {
   apartmentName: string;
   areaName: string;
   apartmentNumber: string;
+  floorNumber: string;
   blockNumber: string;
   orderNumber: number;
-  pincode: number;
+  pincode: string;
   totalAmount: number;
   status: "pending" | "delivered";
   deliveryDate: string;
@@ -149,6 +150,11 @@ const DeliveryCard = ({
               <View bg="white" px="sm" py="xs" radius="sm">
                 <Text variant="caption" weight="semibold">
                   Apt {item.apartmentNumber}
+                </Text>
+              </View>
+              <View bg="white" px="sm" py="xs" radius="sm">
+                <Text variant="caption" weight="semibold">
+                  Floor {item.floorNumber}
                 </Text>
               </View>
               <View bg="white" px="sm" py="xs" radius="sm">
@@ -351,23 +357,27 @@ const DeliveryScreen = () => {
   const transformApiDataToDeliveries = (apiData: any[]): Delivery[] => {
     if (!apiData || !Array.isArray(apiData)) return [];
 
-    return apiData.map((order) => ({
-      id: order._id,
-      customerName: `${order.customerId?.firstName || ""} ${order.customerId?.lastName || ""}`.trim() || "Unknown",
-      phone: order.customerId?.userId?.phone || "N/A",
-      apartmentName: order.customerId?.address?.[0]?.premises?.apartmentName || "Unknown Apartment",
-      areaName: order.customerId?.address?.[0]?.premises?.areaName || "Unknown Area",
-      apartmentNumber: order.customerId?.address?.[0]?.apartmentNumber || "N/A",
-      pincode: order.customerId?.address?.[0]?.premises?.pincode || "N/A",
-      blockNumber: order.customerId?.address?.[0]?.blockNumber || "N/A",
-      orderNumber: order.orderNumber,
-      totalAmount: order.totalAmount,
-      status: order.status === "delivered" ? "delivered" : "pending",
-      deliveryDate: moment(order.deliveryDate).format("DD.MM.YYYY"),
-      order_status: order.status as "ready" | "placed",
-      menuName: order.menuId?.name || "Menu Item",
-      quantity: order.quantity || 0,
-    }));
+    return apiData.map((order) => {
+      const address = order.deliveredAddress;
+      return {
+        id: order._id,
+        customerName: `${order.customerId?.firstName || ""} ${order.customerId?.lastName || ""}`.trim() || "Unknown",
+        phone: order.customerId?.userId?.phone || "N/A",
+        apartmentName: address?.apartmentName || "Unknown Apartment",
+        areaName: address?.areaName || "Unknown Area",
+        apartmentNumber: address?.apartmentNumber || "N/A",
+        floorNumber: address?.floorNumber || "N/A",
+        pincode: address?.pincode || "N/A",
+        blockNumber: address?.blockNumber || "N/A",
+        orderNumber: order.orderNumber,
+        totalAmount: order.totalAmount,
+        status: order.status === "delivered" ? "delivered" : "pending",
+        deliveryDate: moment(order.deliveryDate).format("DD.MM.YYYY"),
+        order_status: order.status as "ready" | "placed",
+        menuName: order.menuId?.name || "Menu Item",
+        quantity: order.quantity || 0,
+      };
+    });
   };
 
   const handleConfirmDelivery = useCallback(

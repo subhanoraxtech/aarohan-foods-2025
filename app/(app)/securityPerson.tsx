@@ -20,6 +20,7 @@ import { Skeleton } from "@/components/skeletons";
 interface OrderData {
   aptNumber: string;
   blockNumber: string;
+  floorNumber: string;
   customerName: string;
   phoneNumber: string;
   premisesName: string;
@@ -95,16 +96,17 @@ export default function SecurityPersonScreen() {
 
   // Extract orders and delivery agent from API data
   const orders: OrderData[] = data?.data?.orders?.map((order: any) => {
-    const activeAddress = order.customerId?.address?.find((addr: any) => addr.isActive);
+    const deliveredAddress = order.deliveredAddress;
     return {
-      aptNumber: activeAddress?.apartmentNumber || 'N/A',
-      blockNumber: activeAddress?.blockNumber || 'N/A',
+      aptNumber: deliveredAddress?.apartmentNumber || 'N/A',
+      blockNumber: deliveredAddress?.blockNumber || 'N/A',
+      floorNumber: deliveredAddress?.floorNumber || 'N/A',
       customerName: `${order.customerId?.firstName || ''} ${order.customerId?.lastName || ''}`.trim() || 'Unknown',
       phoneNumber: order.customerId?.userId || 'N/A',
-      premisesName: activeAddress?.premises?.apartmentName || 'N/A',
-      apartmentCode: activeAddress?.premises?.apartmentcode || 'N/A',
-      pincode: activeAddress?.premises?.pincode || 'N/A',
-      city: activeAddress?.premises?.city || 'N/A',
+      premisesName: deliveredAddress?.apartmentName || 'N/A',
+      apartmentCode: deliveredAddress?.premisesId || 'N/A',
+      pincode: deliveredAddress?.pincode || 'N/A',
+      city: deliveredAddress?.city || 'N/A',
       quantity: order.quantity || 0,
       status: order.status || 'pending',
       menuName: order.menuId?.name || 'N/A',
@@ -221,6 +223,15 @@ export default function SecurityPersonScreen() {
                         </Text>
                         <Text variant="body" weight="semibold">
                           {order.aptNumber}
+                        </Text>
+                      </View>
+
+                      <View gap="xs" minW={80}>
+                        <Text variant="caption" color="gray10" weight="medium">
+                          Floor
+                        </Text>
+                        <Text variant="body" weight="semibold">
+                          {order.floorNumber}
                         </Text>
                       </View>
 

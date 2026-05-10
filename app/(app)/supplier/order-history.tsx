@@ -97,18 +97,16 @@ export default function SupplierOrderHistory() {
   );
 
   const getAddressDetails = (order: any) => {
-    const addresses = order.customerId?.address || [];
-    const address = Array.isArray(addresses) && addresses.length > 0
-      ? addresses.find(addr => addr.isActive) || addresses[0]
-      : null;
+    const address = order.deliveredAddress;
 
     return {
       apartmentNumber: address?.apartmentNumber || 'N/A',
+      floorNumber: address?.floorNumber || 'N/A',
       blockNumber: address?.blockNumber || 'N/A',
-      areaName: address?.premises?.areaName || 'N/A',
-      apartmentName: address?.premises?.apartmentName || 'N/A',
-      city: address?.premises?.city || 'N/A',
-      pincode: address?.premises?.pincode || order.bundle?.pincode || 'N/A'
+      areaName: address?.areaName || 'N/A',
+      apartmentName: address?.apartmentName || 'N/A',
+      city: address?.city || 'N/A',
+      pincode: address?.pincode || order.bundle?.pincode || 'N/A'
     };
   };
 
@@ -263,6 +261,11 @@ export default function SupplierOrderHistory() {
                           <View bg="white" px="sm" py="xs" radius="sm">
                             <Text variant="caption" weight="semibold">
                               Apt {addressDetails.apartmentNumber}
+                            </Text>
+                          </View>
+                          <View bg="white" px="sm" py="xs" radius="sm">
+                            <Text variant="caption" weight="semibold">
+                              Floor {addressDetails.floorNumber}
                             </Text>
                           </View>
                           <View bg="white" px="sm" py="xs" radius="sm">
