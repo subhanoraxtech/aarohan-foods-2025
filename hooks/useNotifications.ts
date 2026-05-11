@@ -2,9 +2,11 @@
 import { useEffect } from "react";
 import * as Notifications from "expo-notifications";
 import { useRouter } from "expo-router";
-import { registerForPushNotificationsAsync } from "@/utils/pushNotification";
-import { useUpdateUserMutation } from "@/services/user.service";
+import { registerForPushNotificationsAsync, getExpoPushTokenSilently } from "@/utils/pushNotification";
+import { useRegisterPushTokenMutation } from "@/services/user.service";
 import { useAuth } from "./useAuth";
+import { AppState, AppStateStatus } from "react-native";
+import Constants from "expo-constants";
 
 // Configure notification handler to show notifications in foreground
 Notifications.setNotificationHandler({
@@ -20,26 +22,36 @@ Notifications.setNotificationHandler({
 export function useNotifications() {
   const router = useRouter();
   const { isAuthenticated } = useAuth();
-  const [updateUser] = useUpdateUserMutation();
+  const [registerPushToken] = useRegisterPushTokenMutation();
 
   useEffect(() => {
     async function setupNotifications() {
-      const token = await registerForPushNotificationsAsync();
+      if (!isAuthenticated) return;
+
+      const tokenData = await getExpoPushTokenSilently();
       
-      // Sync token with backend if user is logged in
-      if (token && isAuthenticated) {
+      if (tokenData) {
         try {
-          // Temporarily commenting this out as the endpoint /user/profile is returning 404
-          // await updateUser({ expoToken: token }).unwrap();
-          // console.log("🔄 Push token synced with backend");
-          console.log("\u2705 Push token obtained:", token);
+          await registerPushToken({
+            expoToken: tokenData.expoToken,
+            projectId: tokenData.projectId,
+          }).unwrap();
+          console.log("✅ Push token registered successfully (silent)");
         } catch (error) {
-          console.error("\u274C Failed to sync push token:", error);
+          console.error("❌ Failed to register push token (silent):", error);
         }
       }
     }
 
     setupNotifications();
+
+    const handleAppStateChange = (nextAppState: AppStateStatus) => {
+      if (nextAppState === "active") {
+        setupNotifications();
+      }
+    };
+
+    const appStateSub = AppState.addEventListener("change", handleAppStateChange);
 
     const foregroundSub = Notifications.addNotificationReceivedListener(
       (notification) => {
@@ -60,12 +72,12 @@ export function useNotifications() {
       }
     );
 
-    // Cleanup listeners on unmount
     return () => {
       foregroundSub.remove();
       responseSub.remove();
+      appStateSub.remove();
     };
-  }, [router, isAuthenticated, updateUser]);
+  }, [router, isAuthenticated, registerPushToken]);
 
   return null;
 }

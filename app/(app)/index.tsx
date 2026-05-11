@@ -122,9 +122,9 @@ function SupplierHomeScreen() {
                 />
               </View>
             }
-            label="Amount Paid"
+            label="Amount Earned"
             color="#F5A623"
-            onPress={() => router.navigate("/(app)/amountPaid")}
+            onPress={() => router.navigate("/(app)/amountEarned")}
           />
 
           <DashboardCard
@@ -252,9 +252,9 @@ function AgentHomeScreen() {
                 />
               </View>
             }
-            label="Amount Paid"
+            label="Amount Earned"
             color="#F5A623"
-            onPress={() => router.navigate("/(app)/amountPaid")}
+            onPress={() => router.navigate("/(app)/amountEarned")}
           />
 
           <DashboardCard

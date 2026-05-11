@@ -10,13 +10,13 @@ import { useStats } from "@/hooks/useStats";
 import { theme } from "@/theme";
 import { Skeleton } from "@/components/skeletons";
 
-export default function AmountPaid() {
+export default function AmountEarned() {
   const { data, isLoading, isError, refetch } = useStats();
 
   if (isLoading) {
     return (
       <View flex style={styles.container}>
-        <Header title="Amount Paid" />
+        <Header title="Amount Earned" />
         <ScrollView style={styles.scrollView}>
           <View style={styles.loadingContainer}>
             <Skeleton width="100%" height={200} borderRadius={theme.borderRadius.lg} />
@@ -31,7 +31,7 @@ export default function AmountPaid() {
   if (isError) {
     return (
       <View flex style={styles.container}>
-        <Header title="Amount Paid" />
+        <Header title="Amount Earned" />
         <ScrollView style={styles.scrollView}>
           <View p="lg">
             <Card variant="outlined" style={[styles.card, styles.errorCard]}>
@@ -58,30 +58,60 @@ export default function AmountPaid() {
 
   return (
     <View flex style={styles.container}>
-      <Header title="Amount Paid" />
+      <Header title="Amount Earned" />
       <ScrollView style={styles.scrollView}>
         <View p="lg" gap="lg">
-          {/* Hero Amount Paid Card */}
+          {/* Hero Amount Earned Card */}
           <Card variant="elevated" style={[styles.card, styles.heroCard]}>
             <View center gap="sm">
               <View row gap="sm" align="center">
                 <Icon type="material" name="account-balance-wallet" size={28} color={theme.colors.success1} />
                 <Text variant="h3" weight="semibold" color="success1">
-                  Total Paid Amount
+                  Total Earned Amount
                 </Text>
               </View>
               <Text variant="h1" weight="bold" color="success1" style={styles.amount}>
                 ₹{data?.amountPaid?.toLocaleString() || 0}
               </Text>
+              <View row gap="xs" align="center">
+                <Text variant="body-sm" color="gray10">Weekly Earning:</Text>
+                <Text variant="body-sm" weight="semibold" color="success1">
+                  ₹{data?.weeklyEarnings?.toLocaleString() || 0}
+                </Text>
+              </View>
               {(data?.paidCount ?? 0) > 0 && (
                 <Text variant="body-sm" color="gray10" align="center">
-                  Across {data?.paidCount} completed {data?.paidCount === 1 ? 'order' : 'orders'}
+                  Across {data?.paidCount} earned {data?.paidCount === 1 ? 'order' : 'orders'}
                 </Text>
               )}
             </View>
           </Card>
 
-          {/* Paid Orders Count Card */}
+          {/* Weekly Earning Card */}
+          <Card variant="elevated" style={styles.card}>
+            <View row justify="space-between" align="center">
+              <View row gap="md" align="center">
+                <View bg="grey5" p="md" radius="md" style={styles.iconContainer}>
+                  <Icon type="material-community" name="calendar-week" size={20} color={theme.colors.orange} />
+                </View>
+                <View>
+                  <Text variant="h3" weight="bold">
+                    Weekly Earning
+                  </Text>
+                  <Text variant="caption" color="gray10">
+                    Earned this week
+                  </Text>
+                </View>
+              </View>
+              <View align="flex-end">
+                <Text variant="h2" weight="bold" color="orange">
+                  ₹{data?.weeklyEarnings?.toLocaleString() || 0}
+                </Text>
+              </View>
+            </View>
+          </Card>
+
+          {/* Earned Orders Count Card */}
           {(data?.paidCount ?? 0) > 0 && (
             <Card variant="elevated" style={styles.card}>
               <View row justify="space-between" align="center">
@@ -94,7 +124,7 @@ export default function AmountPaid() {
                       Completed Orders
                     </Text>
                     <Text variant="caption" color="gray10">
-                      Successfully paid
+                      Successfully earned
                     </Text>
                   </View>
                 </View>
@@ -123,7 +153,7 @@ export default function AmountPaid() {
                       Average Per Order
                     </Text>
                     <Text variant="caption" color="gray10">
-                      Paid amount
+                      Earned amount
                     </Text>
                   </View>
                 </View>
@@ -144,7 +174,7 @@ export default function AmountPaid() {
                     Great Job!
                   </Text>
                   <Text variant="body-sm" color="gray10">
-                    You&apos;ve successfully completed payments. Keep up the good work!
+                    You&apos;ve successfully completed earnings. Keep up the good work!
                   </Text>
                 </View>
               </View>
@@ -160,13 +190,13 @@ export default function AmountPaid() {
                 </View>
                 <View center gap="sm">
                   <Text variant="h2" weight="bold" color="gray10">
-                    No Payment History
+                    No Earning History
                   </Text>
                   <Text variant="body" color="gray10" align="center">
-                    No payments have been made yet
+                    No earnings have been recorded yet
                   </Text>
                   <Text variant="caption" color="grey2" align="center">
-                    Payment history will appear here once you make transactions
+                    Earning history will appear here once you make transactions
                   </Text>
                 </View>
               </View>

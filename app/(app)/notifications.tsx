@@ -4,6 +4,7 @@ import moment from "moment";
 import "moment-timezone";
 import React, { useState, useEffect } from "react";
 import {
+  AppState,
   Image,
   Linking,
   RefreshControl,
@@ -22,9 +23,12 @@ import { Skeleton } from "@/components/skeletons";
 
 import { useAuth } from "@/hooks/useAuth";
 import { useNotificationList } from "@/hooks/useNotificationQuery";
+import { useRegisterPushTokenMutation } from "@/services/user.service";
+import { registerForPushNotificationsAsync } from "@/utils/pushNotification";
 import { NOTIFICATION_TYPE } from "@/types/enums";
 import { NotificationType } from "@/types/notification";
 import { theme } from "@/theme";
+import Constants from "expo-constants";
 
 const NoServiceImage = require("@/assets/images/no.png");
 
@@ -184,6 +188,7 @@ export default function NotificationScreen() {
   const [notificationPermission, setNotificationPermission] = useState<
     string | null
   >(null);
+  const [registerPushToken] = useRegisterPushTokenMutation();
   const [showClosedModal, setShowClosedModal] = useState(false);
 
   const {
@@ -201,11 +206,50 @@ export default function NotificationScreen() {
   }, [notificationData]);
 
   useEffect(() => {
-    (async () => {
+    const checkPermissions = async () => {
       const { status } = await ExpoNotifications.getPermissionsAsync();
       setNotificationPermission(status);
-    })();
+      
+      // We don't necessarily need to call handleRegisterToken here if useNotifications hook handles it globally
+      // but keeping it doesn't hurt as it ensures registration on this screen specifically.
+      if (status === "granted") {
+        await handleRegisterToken();
+      }
+    };
+
+    checkPermissions();
+
+    const subscription = AppState.addEventListener("change", (nextAppState) => {
+      if (nextAppState === "active") {
+        checkPermissions();
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
   }, []);
+
+  async function handleRegisterToken() {
+    try {
+      const token = await registerForPushNotificationsAsync();
+      if (token) {
+        const projectId =
+          Constants.expoConfig?.extra?.eas?.projectId ??
+          Constants.easConfig?.projectId;
+
+        if (projectId) {
+          await registerPushToken({
+            expoToken: token,
+            projectId,
+          }).unwrap();
+          console.log("Push token registered successfully automatically");
+        }
+      }
+    } catch (error) {
+      console.error("Failed to register push token automatically:", error);
+    }
+  }
 
   async function handleEnableNotifications() {
     const { status: currentStatus } =
@@ -214,9 +258,8 @@ export default function NotificationScreen() {
     if (currentStatus === "denied") {
       await Linking.openSettings();
     } else {
-      const { status } = await ExpoNotifications.requestPermissionsAsync({
-        ios: { allowAlert: true, allowBadge: true, allowSound: true },
-      });
+      await handleRegisterToken();
+      const { status } = await ExpoNotifications.getPermissionsAsync();
       setNotificationPermission(status);
     }
   }

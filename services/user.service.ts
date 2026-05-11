@@ -35,7 +35,14 @@ export const userApi = createApi({
       }),
       invalidatesTags: ['User'],
     }),
+    registerPushToken: builder.mutation<any, { expoToken: string; projectId: string }>({
+      query: (body) => ({
+        url: "register-push-token",
+        method: "POST",
+        body,
+      }),
+    }),
   }),
 });
 
-export const { useProfileDataQuery, useUpdateUserMutation } = userApi;
+export const { useProfileDataQuery, useUpdateUserMutation, useRegisterPushTokenMutation } = userApi;
