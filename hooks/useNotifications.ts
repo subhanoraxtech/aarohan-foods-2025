@@ -47,7 +47,7 @@ function handleNotificationResponse(
 
 export function useNotifications() {
   const router = useRouter();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, role } = useAuth();
   const [registerPushToken] = useRegisterPushTokenMutation();
   const hasHandledColdStart = useRef(false);
 
@@ -82,6 +82,13 @@ export function useNotifications() {
       
       if (!isAuthenticated) {
         console.log("⚠️ [useNotifications] Not authenticated — skipping push token registration");
+        return;
+      }
+
+      // Security users don't have a standard User record in the backend,
+      // so push token registration will 404. Skip it entirely.
+      if (role === "security") {
+        console.log("⚠️ [useNotifications] Security role — skipping push token registration");
         return;
       }
 
