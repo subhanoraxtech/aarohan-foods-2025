@@ -1,5 +1,5 @@
 import React from "react";
-import { ScrollView, StyleSheet } from "react-native";
+import { ScrollView, StyleSheet, Image } from "react-native";
 import { useRouter } from "expo-router";
 import { View } from "@/components/ui/View";
 import { Text } from "@/components/ui/Text";
@@ -102,7 +102,7 @@ export default function SecurityPersonScreen() {
       blockNumber: deliveredAddress?.blockNumber || 'N/A',
       floorNumber: deliveredAddress?.floorNumber || 'N/A',
       customerName: `${order.customerId?.firstName || ''} ${order.customerId?.lastName || ''}`.trim() || 'Unknown',
-      phoneNumber: order.customerId?.userId || 'N/A',
+      phoneNumber: order.customerId?.userId?.phone || 'N/A',
       premisesName: deliveredAddress?.apartmentName || 'N/A',
       apartmentCode: deliveredAddress?.premisesId || 'N/A',
       pincode: deliveredAddress?.pincode || 'N/A',
@@ -298,9 +298,10 @@ export default function SecurityPersonScreen() {
               {/* Avatar */}
               <View style={styles.avatarContainer}>
                 {deliveryAgent.photo ? (
-                  <View style={styles.avatar}>
-                    {/* Image would go here */}
-                  </View>
+                  <Image 
+                    source={{ uri: deliveryAgent.photo }} 
+                    style={styles.avatar} 
+                  />
                 ) : (
                   <View style={styles.avatarFallback}>
                     <Text variant="h3" weight="bold" color="white">
