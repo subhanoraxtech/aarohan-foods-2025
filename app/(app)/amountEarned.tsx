@@ -13,6 +13,18 @@ import { Skeleton } from "@/components/skeletons";
 export default function AmountEarned() {
   const { data, isLoading, isError, refetch } = useStats();
 
+  console.log("=== AMOUNT EARNED SCREEN ===");
+  console.log("isLoading:", isLoading);
+  console.log("isError:", isError);
+  console.log("Stats API data:", JSON.stringify(data, null, 2));
+
+  // weeklyEarnings can be a number or an array — handle both
+  const totalWeeklyEarnings = typeof data?.weeklyEarnings === 'number'
+    ? data.weeklyEarnings
+    : Array.isArray(data?.weeklyEarnings)
+      ? data.weeklyEarnings.reduce((sum: number, entry: any) => sum + (entry.earnings || 0), 0)
+      : 0;
+
   if (isLoading) {
     return (
       <View flex style={styles.container}>
@@ -71,12 +83,12 @@ export default function AmountEarned() {
                 </Text>
               </View>
               <Text variant="h1" weight="bold" color="success1" style={styles.amount}>
-                ₹{data?.amountPaid?.toLocaleString() || 0}
+                ₹{data?.totalEarned?.toLocaleString() || 0}
               </Text>
               <View row gap="xs" align="center">
                 <Text variant="body-sm" color="gray10">Weekly Earning:</Text>
                 <Text variant="body-sm" weight="semibold" color="success1">
-                  ₹{data?.weeklyEarnings?.toLocaleString() || 0}
+                  ₹{totalWeeklyEarnings.toLocaleString()}
                 </Text>
               </View>
               {(data?.paidCount ?? 0) > 0 && (
@@ -105,64 +117,13 @@ export default function AmountEarned() {
               </View>
               <View align="flex-end">
                 <Text variant="h2" weight="bold" color="orange">
-                  ₹{data?.weeklyEarnings?.toLocaleString() || 0}
+                  ₹{totalWeeklyEarnings.toLocaleString()}
                 </Text>
               </View>
             </View>
           </Card>
 
-          {/* Earned Orders Count Card */}
-          {(data?.paidCount ?? 0) > 0 && (
-            <Card variant="elevated" style={styles.card}>
-              <View row justify="space-between" align="center">
-                <View row gap="md" align="center">
-                  <View bg="grey5" p="md" radius="md" style={styles.iconContainer}>
-                    <Icon type="material" name="check-circle" size={20} color={theme.colors.success1} />
-                  </View>
-                  <View>
-                    <Text variant="h3" weight="bold">
-                      Completed Orders
-                    </Text>
-                    <Text variant="caption" color="gray10">
-                      Successfully earned
-                    </Text>
-                  </View>
-                </View>
-                <View align="flex-end">
-                  <Text variant="h2" weight="bold" color="success1">
-                    {data?.paidCount || 0}
-                  </Text>
-                  <Text variant="caption" color="gray10" style={styles.uppercase}>
-                    {data?.paidCount === 1 ? 'ORDER' : 'ORDERS'}
-                  </Text>
-                </View>
-              </View>
-            </Card>
-          )}
 
-          {/* Average Per Order Card */}
-          {(data?.paidCount ?? 0) > 0 && (data?.amountPaid ?? 0) > 0 && (
-            <Card variant="elevated" style={styles.card}>
-              <View row justify="space-between" align="center">
-                <View row gap="md" align="center">
-                  <View bg="grey5" p="md" radius="md" style={styles.iconContainer}>
-                    <Icon type="material" name="trending-up" size={20} color={theme.colors.slate1} />
-                  </View>
-                  <View>
-                    <Text variant="h3" weight="bold">
-                      Average Per Order
-                    </Text>
-                    <Text variant="caption" color="gray10">
-                      Earned amount
-                    </Text>
-                  </View>
-                </View>
-                <Text variant="h3" weight="bold" color="slate1">
-                  ₹{Math.round((data?.amountPaid ?? 0) / (data?.paidCount ?? 1)).toLocaleString()}
-                </Text>
-              </View>
-            </Card>
-          )}
 
           {/* Payment Success Message */}
           {(data?.amountPaid ?? 0) > 0 && (

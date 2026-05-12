@@ -13,6 +13,11 @@ import { Skeleton } from "@/components/skeletons";
 export default function AmountDue() {
   const { data, isLoading, isError, refetch } = useStats();
 
+  console.log("=== AMOUNT DUE SCREEN ===");
+  console.log("isLoading:", isLoading);
+  console.log("isError:", isError);
+  console.log("Stats API data:", JSON.stringify(data, null, 2));
+
   if (isLoading) {
     return (
       <View flex style={styles.container}>
@@ -81,58 +86,7 @@ export default function AmountDue() {
             </View>
           </Card>
 
-          {/* Pending Orders Count Card */}
-          {(data?.dueCount ?? 0) > 0 && (
-            <Card variant="elevated" style={styles.card}>
-              <View row justify="space-between" align="center">
-                <View row gap="md" align="center">
-                  <View bg="grey5" p="md" radius="md" style={styles.iconContainer}>
-                    <Icon type="material" name="pending-actions" size={20} color={theme.colors.orange} />
-                  </View>
-                  <View>
-                    <Text variant="h3" weight="bold">
-                      Pending Orders
-                    </Text>
-                    <Text variant="caption" color="gray10">
-                      Awaiting payment
-                    </Text>
-                  </View>
-                </View>
-                <View align="flex-end">
-                  <Text variant="h2" weight="bold" color="red1">
-                    {data?.dueCount || 0}
-                  </Text>
-                  <Text variant="caption" color="gray10" style={styles.uppercase}>
-                    {data?.dueCount === 1 ? 'ORDER' : 'ORDERS'}
-                  </Text>
-                </View>
-              </View>
-            </Card>
-          )}
 
-          {/* Average Per Order Card */}
-          {(data?.dueCount ?? 0) > 0 && (data?.amountDue ?? 0) > 0 && (
-            <Card variant="elevated" style={styles.card}>
-              <View row justify="space-between" align="center">
-                <View row gap="md" align="center">
-                  <View bg="grey5" p="md" radius="md" style={styles.iconContainer}>
-                    <Icon type="material" name="trending-up" size={20} color={theme.colors.slate1} />
-                  </View>
-                  <View>
-                    <Text variant="h3" weight="bold">
-                      Average Per Order
-                    </Text>
-                    <Text variant="caption" color="gray10">
-                      Outstanding amount
-                    </Text>
-                  </View>
-                </View>
-                <Text variant="h3" weight="bold" color="slate1">
-                  ₹{Math.round((data?.amountDue ?? 0) / (data?.dueCount ?? 1)).toLocaleString()}
-                </Text>
-              </View>
-            </Card>
-          )}
 
           {/* Payment Reminder */}
           {(data?.amountDue ?? 0) > 0 && (
