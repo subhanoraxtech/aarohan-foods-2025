@@ -47,7 +47,7 @@ function handleNotificationResponse(
 
 export function useNotifications() {
   const router = useRouter();
-  const { isAuthenticated, role } = useAuth();
+  const { isAuthenticated, role, user } = useAuth();
   const [registerPushToken] = useRegisterPushTokenMutation();
   const hasHandledColdStart = useRef(false);
 
@@ -96,6 +96,18 @@ export function useNotifications() {
       const tokenData = await getExpoPushTokenSilently();
       
       if (tokenData) {
+        // Check if token is already registered to avoid redundant API calls
+        const isAlreadyRegistered = user?.expoTokens?.some((item: any) => {
+          if (typeof item === "string") return item === tokenData.expoToken;
+          if (item && typeof item === "object") return item.token === tokenData.expoToken;
+          return false;
+        });
+
+        if (isAlreadyRegistered) {
+          console.log("🔔 [useNotifications] Push token is already registered with backend. Skipping registration.");
+          return;
+        }
+
         console.log("🔔 [useNotifications] Got token, registering with backend...");
         console.log("🔔 [useNotifications] Token:", tokenData.expoToken);
         console.log("🔔 [useNotifications] ProjectId:", tokenData.projectId);

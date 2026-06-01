@@ -19,6 +19,7 @@ export const notificationApi = createApi({
       }),
       transformResponse: (response: { data: any }) => response.data,
       providesTags: ['Notifications'],
+      keepUnusedDataFor: 0,
     }),
   }),
 })

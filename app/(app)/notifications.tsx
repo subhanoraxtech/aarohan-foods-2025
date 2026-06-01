@@ -1,8 +1,8 @@
 import * as ExpoNotifications from "expo-notifications";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import moment from "moment";
 import "moment-timezone";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   AppState,
   Image,
@@ -205,30 +205,42 @@ export default function NotificationScreen() {
     }
   }, [notificationData]);
 
-  useEffect(() => {
-    const checkPermissions = async () => {
-      const { status } = await ExpoNotifications.getPermissionsAsync();
-      setNotificationPermission(status);
-      
-      // We don't necessarily need to call handleRegisterToken here if useNotifications hook handles it globally
-      // but keeping it doesn't hurt as it ensures registration on this screen specifically.
-      if (status === "granted") {
-        await handleRegisterToken();
-      }
-    };
+  useFocusEffect(
+    useCallback(() => {
+      console.log("🔄 [NotificationScreen] Screen focused. Refetching notifications list (bypassing cache)...");
+      refetch();
 
-    checkPermissions();
+      const checkPermissions = async () => {
+        try {
+          const { status } = await ExpoNotifications.getPermissionsAsync();
+          setNotificationPermission(status);
+          
+          // Register token and request permission ONLY if notifications aren't enabled yet
+          if (status !== "granted") {
+            console.log("🔔 [NotificationScreen] Notifications not enabled. Triggering token registration...");
+            await handleRegisterToken();
+          } else {
+            console.log("🔔 [NotificationScreen] Notifications already enabled. Skipping registration prompt.");
+          }
+        } catch (error) {
+          console.warn("⚠️ [NotificationScreen] Failed to get notification permissions (running in Expo Go?):", error);
+          setNotificationPermission("denied");
+        }
+      };
 
-    const subscription = AppState.addEventListener("change", (nextAppState) => {
-      if (nextAppState === "active") {
-        checkPermissions();
-      }
-    });
+      checkPermissions();
 
-    return () => {
-      subscription.remove();
-    };
-  }, []);
+      const subscription = AppState.addEventListener("change", (nextAppState) => {
+        if (nextAppState === "active") {
+          checkPermissions();
+        }
+      });
+
+      return () => {
+        subscription.remove();
+      };
+    }, [refetch])
+  );
 
   async function handleRegisterToken() {
     try {
@@ -239,6 +251,18 @@ export default function NotificationScreen() {
           Constants.easConfig?.projectId;
 
         if (projectId) {
+          // Check if token is already registered to avoid redundant API calls
+          const isAlreadyRegistered = user?.expoTokens?.some((item: any) => {
+            if (typeof item === "string") return item === token;
+            if (item && typeof item === "object") return item.token === token;
+            return false;
+          });
+
+          if (isAlreadyRegistered) {
+            console.log("🔔 [NotificationScreen] Push token is already registered with backend. Skipping registration.");
+            return;
+          }
+
           await registerPushToken({
             expoToken: token,
             projectId,

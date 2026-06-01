@@ -134,9 +134,12 @@ function LogoSection() {
   );
 }
 
+import { useSettings } from "@/hooks/useSettings";
+
 // ── Home Screen Router ──
 export default function HomeScreen() {
   const auth = useAuth();
+  useSettings(); // Fetch settings early on home screen mount so they are cached and available instantly
 
   if (auth?.user?.role === Role.SUPPLIER) return <SupplierHomeScreen />;
   if (auth?.user?.role === Role.DELIVERY_AGENT) return <AgentHomeScreen />;

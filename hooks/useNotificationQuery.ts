@@ -3,7 +3,9 @@ import {
 } from "@/services/notifications/notification.service";
 
 export function useNotificationList() {
-  const { data, isLoading, isError, error, refetch } = useGetAllNotificationsQuery();
+  const { data, isLoading, isError, error, refetch } = useGetAllNotificationsQuery(undefined, {
+    refetchOnMountOrArgChange: true,
+  });
 
   return {
     data,

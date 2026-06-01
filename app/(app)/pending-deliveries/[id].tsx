@@ -22,6 +22,7 @@ import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router";
 
 import { useOrdersByBundleId } from "@/hooks/useOrders";
 import { useUpdateOrderRequest } from "@/hooks/useRequests";
+import { useSettings } from "@/hooks/useSettings";
 import { theme } from "@/theme";
 import { Skeleton, DeliveryCardSkeleton } from "@/components/skeletons";
 
@@ -50,15 +51,19 @@ const DeliveryCard = ({
   isUpdating,
   packageIds,
   onPackageIdChange,
+  enablePackageNumber,
 }: {
   item: Delivery;
   onConfirm: () => void;
   isUpdating: boolean;
   packageIds: string[];
   onPackageIdChange: (index: number, value: string) => void;
+  enablePackageNumber: boolean;
 }) => {
   // Check if all required package IDs are entered
   const areAllPackageIdsEntered = (): boolean => {
+    // If package numbers are not enabled, they are not required
+    if (!enablePackageNumber) return true;
     // If no package IDs are required, button should be enabled
     if (item.quantity <= 0) return true;
     // Count how many package IDs have been filled
@@ -204,7 +209,7 @@ const DeliveryCard = ({
         </View>
 
         {/* Package ID Input Fields */}
-        {item.quantity > 0 && (
+        {enablePackageNumber && item.quantity > 0 && (
           <KeyboardAvoidingView
             behavior={Platform.OS === "ios" ? "padding" : "height"}
             keyboardVerticalOffset={100}
@@ -246,7 +251,6 @@ const DeliveryCard = ({
                       placeholder={`Package Number ${index + 1}`}
                       value={packageIds[index] || ""}
                       onChangeText={(value) => onPackageIdChange(index, value)}
-                      containerStyle={{ backgroundColor: theme.colors.grey6 }}
                     />
                   ))}
                 </View>
@@ -310,6 +314,9 @@ const FixedJobCompletedButton = ({
 const DeliveryScreen = () => {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
+
+  const { data: settings } = useSettings();
+  const enablePackageNumber = settings?.enablePackageNumber ?? false;
 
   const [deliveries, setDeliveries] = useState<Delivery[]>([]);
   const [loading, setLoading] = useState(true);
@@ -397,7 +404,7 @@ const DeliveryScreen = () => {
         const ids = packageIds[deliveryId] || [];
         const filledIds = ids.filter((id) => id.trim() !== "");
 
-        if (delivery.quantity > 0 && filledIds.length !== delivery.quantity) {
+        if (enablePackageNumber && delivery.quantity > 0 && filledIds.length !== delivery.quantity) {
           setSuccessModalConfig({
             title: "Incomplete Package IDs",
             subtitle: `Please enter all ${delivery.quantity} package ${delivery.quantity === 1 ? "ID" : "IDs"} before confirming delivery.`,
@@ -414,7 +421,7 @@ const DeliveryScreen = () => {
 
         await updateOrderMutation.mutateAsync({
           _id: deliveryId,
-          packageIds: filledIds,
+          packageIds: enablePackageNumber ? filledIds : [],
         });
 
         setDeliveries((prev) =>
@@ -516,6 +523,7 @@ const DeliveryScreen = () => {
       isUpdating={updatingOrderId === item.id}
       packageIds={packageIds[item.id] || []}
       onPackageIdChange={(index, value) => handlePackageIdChange(item.id, index, value)}
+      enablePackageNumber={enablePackageNumber}
     />
   );
 

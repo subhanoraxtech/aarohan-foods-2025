@@ -65,6 +65,7 @@ const settingsSlice = createSlice({
   initialState,
   reducers: {
     setSettings: (state, action: PayloadAction<any>) => {
+      console.log("💾 [Redux settingsSlice] setSettings payload:", action.payload);
       state.data = action.payload;
       state.lastFetchTime = Date.now();
       state.isLoaded = true;

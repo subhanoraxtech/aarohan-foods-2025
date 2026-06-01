@@ -20,6 +20,7 @@ export const SettingsApi = createApi({
       async onQueryStarted(arg, { dispatch, queryFulfilled, getState }) {
         try {
           const { data } = await queryFulfilled;
+          console.log("=== GET ALL SETTINGS RESPONSE ===", data);
           dispatch(setSettings(data));
         } catch (error) {
           console.error("Settings query failed:", error);

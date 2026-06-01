@@ -78,6 +78,7 @@ export interface User {
   banReason?: string
   accessToken?: string // Added for auth context
   refreshToken?: string
+  expoTokens?: Array<{ token: string; _id?: string } | string>
   createdAt?: string
   updatedAt?: string
 }
