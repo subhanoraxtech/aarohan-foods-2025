@@ -54,6 +54,7 @@ function ActionItem({ icon, iconType, label, subtitle, color, onPress }: ActionI
 // ── User Card (flat, no shadow) ──
 function UserCard() {
   const { user, role } = useAuth();
+  const [imageError, setImageError] = React.useState(false);
 
   const supplierData = user?.supplierId;
   const agentData = user?.deliveryAgentId;
@@ -64,8 +65,12 @@ function UserCard() {
   const fullName = `${firstName} ${lastName}`.trim() || "User";
   const photo = typeof profileData?.photo === "string" && profileData.photo.length > 0
     ? profileData.photo
-    : null;
+    : `https://avatar.iran.liara.run/username?username=${encodeURIComponent(fullName)}`;
   const idNumber = supplierData?.supplierNumber || agentData?.deliveryAgentNumber;
+
+  React.useEffect(() => {
+    setImageError(false);
+  }, [photo]);
 
   const initials = `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
   const hasInitials = initials.trim().length > 0;
@@ -81,8 +86,12 @@ function UserCard() {
     <View style={styles.userCard}>
       <View style={styles.userCardRow}>
         <View style={styles.avatarWrap}>
-          {photo ? (
-            <Image source={{ uri: photo }} style={styles.avatar} />
+          {photo && !imageError ? (
+            <Image 
+              source={{ uri: photo }} 
+              style={styles.avatar} 
+              onError={() => setImageError(true)}
+            />
           ) : (
             <View style={styles.avatarFallback}>
               {hasInitials ? (

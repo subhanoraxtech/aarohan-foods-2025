@@ -63,6 +63,11 @@ export default function SecurityPersonScreen() {
   const logout = useLogout();
   const { data, isLoading, isError } = useOrdersForSecurity();
   const auth = useAuth();
+  const [agentImageError, setAgentImageError] = React.useState(false);
+
+  React.useEffect(() => {
+    setAgentImageError(false);
+  }, [data?.data?.deliveryAgent?.photo]);
 
   React.useEffect(() => {
     console.log(" \ud83d\udd10 Security Section Auth:", JSON.stringify(auth, null, 2));
@@ -115,7 +120,9 @@ export default function SecurityPersonScreen() {
 
   const deliveryAgent: DeliveryAgent | null = data?.data?.deliveryAgent ? {
     name: `${data.data.deliveryAgent.firstName || ''} ${data.data.deliveryAgent.lastName || ''}`.trim(),
-    photo: data.data.deliveryAgent.photo || '',
+    photo: data.data.deliveryAgent.photo || `https://avatar.iran.liara.run/username?username=${encodeURIComponent(
+      `${data.data.deliveryAgent.firstName || ''} ${data.data.deliveryAgent.lastName || ''}`.trim() || 'Agent'
+    )}`,
     mobile: data.data.deliveryAgent.mobile || 'N/A',
     aadharNumber: data.data.deliveryAgent.aadharNumber || 'N/A',
   } : null;
@@ -297,10 +304,11 @@ export default function SecurityPersonScreen() {
             <View row gap="md" align="center">
               {/* Avatar */}
               <View style={styles.avatarContainer}>
-                {deliveryAgent.photo ? (
+                {deliveryAgent.photo && !agentImageError ? (
                   <Image 
                     source={{ uri: deliveryAgent.photo }} 
                     style={styles.avatar} 
+                    onError={() => setAgentImageError(true)}
                   />
                 ) : (
                   <View style={styles.avatarFallback}>
